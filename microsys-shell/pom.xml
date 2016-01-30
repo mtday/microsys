@@ -38,6 +38,12 @@
             <artifactId>commons-cli</artifactId>
         </dependency>
 
+        <!-- Used to find all shell command classes on the classpath. -->
+        <dependency>
+            <groupId>org.reflections</groupId>
+            <artifactId>reflections</artifactId>
+        </dependency>
+
         <!-- System configuration management -->
         <dependency>
             <groupId>com.typesafe</groupId>

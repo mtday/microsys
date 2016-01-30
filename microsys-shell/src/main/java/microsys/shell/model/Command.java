@@ -1,8 +1,6 @@
 package microsys.shell.model;
 
-import com.typesafe.config.Config;
-import microsys.service.discovery.DiscoveryManager;
-
+import java.io.PrintWriter;
 import java.util.List;
 import java.util.Objects;
 
@@ -10,23 +8,20 @@ import java.util.Objects;
  *
  */
 public abstract class Command {
-    private final Config config;
-    private final DiscoveryManager discoveryManager;
+    private final ShellEnvironment shellEnvironment;
 
-    public Command(final Config config, final DiscoveryManager discoveryManager) {
-        this.config = Objects.requireNonNull(config);
-        this.discoveryManager = Objects.requireNonNull(discoveryManager);
+    /**
+     * @param shellEnvironment the shell command execution environment
+     */
+    public Command(final ShellEnvironment shellEnvironment) {
+        this.shellEnvironment = Objects.requireNonNull(shellEnvironment);
     }
 
-    protected Config getConfig() {
-        return this.config;
-    }
-
-    public DiscoveryManager getDiscoveryManager() {
-        return this.discoveryManager;
+    protected ShellEnvironment getShellEnvironment() {
+        return this.shellEnvironment;
     }
 
     public abstract List<Registration> getRegistrations();
 
-    public abstract boolean process(UserCommand userCommand);
+    public abstract CommandStatus process(UserCommand userCommand, PrintWriter writer);
 }

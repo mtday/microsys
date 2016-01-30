@@ -1,12 +1,13 @@
 package microsys.shell.command;
 
-import com.typesafe.config.Config;
-import microsys.service.discovery.DiscoveryManager;
 import microsys.shell.model.Command;
 import microsys.shell.model.CommandPath;
+import microsys.shell.model.CommandStatus;
 import microsys.shell.model.Registration;
+import microsys.shell.model.ShellEnvironment;
 import microsys.shell.model.UserCommand;
 
+import java.io.PrintWriter;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -16,11 +17,10 @@ import java.util.Optional;
  */
 public class ExitCommand extends Command {
     /**
-     * @param config
-     * @param discoveryManager
+     * @param shellEnvironment the shell command execution environment
      */
-    public ExitCommand(final Config config, final DiscoveryManager discoveryManager) {
-        super(config, discoveryManager);
+    public ExitCommand(final ShellEnvironment shellEnvironment) {
+        super(shellEnvironment);
     }
 
     /**
@@ -42,7 +42,8 @@ public class ExitCommand extends Command {
      * {@inheritDoc}
      */
     @Override
-    public boolean process(final UserCommand userCommand) {
-        return false;
+    public CommandStatus process(final UserCommand userCommand, final PrintWriter writer) {
+        writer.println("Terminating");
+        return CommandStatus.TERMINATE;
     }
 }

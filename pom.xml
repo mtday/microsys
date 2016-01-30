@@ -198,6 +198,13 @@
                 <version>1.3.1</version>
             </dependency>
 
+            <!-- Used to find all shell command classes on the classpath. -->
+            <dependency>
+                <groupId>org.reflections</groupId>
+                <artifactId>reflections</artifactId>
+                <version>0.9.10</version>
+            </dependency>
+
             <!-- Common utilities -->
             <dependency>
                 <groupId>org.apache.commons</groupId>
