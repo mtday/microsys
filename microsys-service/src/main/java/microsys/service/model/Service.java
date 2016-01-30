@@ -85,6 +85,7 @@ public class Service implements Model, Comparable<Service> {
         }
 
         final CompareToBuilder cmp = new CompareToBuilder();
+        cmp.append(getType(), other.getType());
         cmp.append(getHost(), other.getHost());
         cmp.append(getPort(), other.getPort());
         cmp.append(isSecure(), other.isSecure());
@@ -99,6 +100,7 @@ public class Service implements Model, Comparable<Service> {
     @Override
     public int hashCode() {
         final HashCodeBuilder hash = new HashCodeBuilder();
+        hash.append(getType().name());
         hash.append(getHost());
         hash.append(getPort());
         hash.append(isSecure());
@@ -108,6 +110,7 @@ public class Service implements Model, Comparable<Service> {
     @Override
     public String toString() {
         final ToStringBuilder str = new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE);
+        str.append("type", getType());
         str.append("host", getHost());
         str.append("port", getPort());
         str.append("secure", isSecure());
@@ -117,6 +120,7 @@ public class Service implements Model, Comparable<Service> {
     @Override
     public JsonObject toJson() {
         final JsonObject json = new JsonObject();
+        json.addProperty("type", getType().name());
         json.addProperty("host", getHost());
         json.addProperty("port", getPort());
         json.addProperty("secure", isSecure());

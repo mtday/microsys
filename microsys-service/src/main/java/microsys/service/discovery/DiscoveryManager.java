@@ -62,6 +62,15 @@ public class DiscoveryManager {
         }
     }
 
+    public void unregister(final Service service) throws Exception {
+        final ServiceInstance<String> serviceInstance = service.asServiceInstance();
+        try {
+            getDiscovery().unregisterService(serviceInstance);
+        } catch (final Exception exception) {
+            LOG.error("Failed to unregister service", exception);
+        }
+    }
+
     public SortedSet<Service> getAll() {
         final SortedSet<Service> services = new TreeSet<>();
         Arrays.asList(ServiceType.values()).forEach(t -> services.addAll(getAll(t)));
@@ -73,6 +82,8 @@ public class DiscoveryManager {
         try {
             final List<ServiceInstance<String>> list =
                     new ArrayList<>(getDiscovery().queryForInstances(Objects.requireNonNull(serviceType).name()));
+            LOG.info("Found {} services", list.size());
+            list.forEach(s -> LOG.info("  Service: {}", s.getPayload()));
             list.stream().map(Service::new).forEach(services::add);
         } catch (final Exception exception) {
             LOG.error("Failed to query for services", exception);

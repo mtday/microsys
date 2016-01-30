@@ -3,14 +3,21 @@ package microsys.shell.model;
 import com.google.common.base.Preconditions;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import microsys.common.model.Model;
-import microsys.common.util.CollectionComparator;
+
 import org.apache.commons.lang3.builder.CompareToBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
-import java.util.*;
+import microsys.common.model.Model;
+import microsys.common.util.CollectionComparator;
+
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Objects;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 /**
  * An immutable class used to manage the options available to a command.
@@ -21,8 +28,15 @@ public class Options implements Model, Comparable<Options> {
     /**
      * @param options the individual option objects supported for the command
      */
-    public Options(final Set<Option> options) {
-        this.options.addAll(options);
+    public Options(final Collection<Option> options) {
+        this.options.addAll(Objects.requireNonNull(options));
+    }
+
+    /**
+     * @param options the individual option objects supported for the command
+     */
+    public Options(final Option... options) {
+        this(Arrays.asList(Objects.requireNonNull(options)));
     }
 
     public Options(final JsonObject json) {

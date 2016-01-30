@@ -45,6 +45,8 @@ public abstract class BaseService {
         configureCompression();
 
         this.discoveryManager = new DiscoveryManager(getConfig(), curator);
+        final boolean ssl = getConfig().getBoolean(CommonConfig.SSL_ENABLED.getKey());
+        final Service service = new Service(type, reservation.getHost(), reservation.getPort(), ssl);
 
         // Register with service discovery once the server has started.
         new Thread(() -> {
@@ -52,13 +54,20 @@ public abstract class BaseService {
             LOG.info("Service {} started on {}:{}", type, reservation.getHost(), reservation.getPort());
 
             try {
-                final boolean ssl = getConfig().getBoolean(CommonConfig.SSL_ENABLED.getKey());
-                getDiscoveryManager().register(new Service(type, reservation.getHost(), reservation.getPort(), ssl));
-            } catch (final Exception registrationFailed) {
-                LOG.error("Failed to register with service discovery", registrationFailed);
+                getDiscoveryManager().register(service);
+            } catch (final Exception registerFailed) {
+                LOG.error("Failed to register with service discovery", registerFailed);
                 Spark.stop();
             }
         }).start();
+
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            try {
+                getDiscoveryManager().unregister(service);
+            } catch (final Exception unregisterFailed) {
+                LOG.error("Failed to unregister with service discovery", unregisterFailed);
+            }
+        }));
     }
 
     /**
