@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss} %-6level %-46logger %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>logs/microsys.log</file>
+
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <!-- Daily rollover -->
+            <fileNamePattern>logs/microsys.%d{yyyy-MM-dd}.log</fileNamePattern>
+
+            <timeBasedFileNamingAndTriggeringPolicy
+                    class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+                <!-- Rollover if the file size reaches 100MB also -->
+                <maxFileSize>100MB</maxFileSize>
+            </timeBasedFileNamingAndTriggeringPolicy>
+
+            <!-- Keep 7 days of history -->
+            <maxHistory>7</maxHistory>
+        </rollingPolicy>
+
+        <encoder>
+            <pattern>%d{HH:mm:ss} %-6level %-46logger %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="ASYNC" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="FILE" />
+    </appender>
+
+    <root level="DEBUG">
+        <appender-ref ref="ASYNC" />
+    </root>
+
+    <logger name="microsys" level="DEBUG" additivity="false">
+        <appender-ref ref="ASYNC" />
+        <appender-ref ref="STDOUT" />
+    </logger>
+
+    <logger name="spark" level="INFO">
+        <appender-ref ref="ASYNC" />
+        <appender-ref ref="STDOUT" />
+    </logger>
+
+    <logger name="org.apache.curator" level="WARN">
+        <appender-ref ref="ASYNC" />
+    </logger>
+
+    <logger name="org.apache.zookeeper" level="WARN">
+        <appender-ref ref="ASYNC" />
+    </logger>
+
+    <logger name="org.eclipse.jetty" level="WARN">
+        <appender-ref ref="ASYNC" />
+    </logger>
+
+</configuration>
+
