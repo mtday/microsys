@@ -1,17 +1,13 @@
 package microsys.shell.model;
 
-import com.google.common.base.Preconditions;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
-
 import org.apache.commons.lang3.builder.CompareToBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
-import microsys.common.model.Model;
 import microsys.common.util.CollectionComparator;
 
+import javax.annotation.Nullable;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -22,7 +18,7 @@ import java.util.TreeSet;
 /**
  * An immutable class used to manage the options available to a command.
  */
-public class Options implements Model, Comparable<Options> {
+public class Options implements Comparable<Options> {
     private final SortedSet<Option> options = new TreeSet<>();
 
     /**
@@ -37,16 +33,6 @@ public class Options implements Model, Comparable<Options> {
      */
     public Options(final Option... options) {
         this(Arrays.asList(Objects.requireNonNull(options)));
-    }
-
-    public Options(final JsonObject json) {
-        Objects.requireNonNull(json);
-        Preconditions.checkArgument(json.has("options"), "Options field is required");
-        Preconditions.checkArgument(json.get("options").isJsonArray(), "Options field must be an array");
-
-        final JsonArray optionArr = json.getAsJsonArray("options");
-        optionArr.forEach(e -> Preconditions.checkArgument(e.isJsonObject(), "Option must be an object"));
-        optionArr.forEach(e -> this.options.add(new Option(e.getAsJsonObject())));
     }
 
     /**
@@ -69,18 +55,6 @@ public class Options implements Model, Comparable<Options> {
      * {@inheritDoc}
      */
     @Override
-    public JsonObject toJson() {
-        final JsonArray optionArr = new JsonArray();
-        getOptions().forEach(o -> optionArr.add(o.toJson()));
-        final JsonObject json = new JsonObject();
-        json.add("options", optionArr);
-        return json;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
     public String toString() {
         final ToStringBuilder str = new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE);
         str.append("options", getOptions());
@@ -91,7 +65,7 @@ public class Options implements Model, Comparable<Options> {
      * {@inheritDoc}
      */
     @Override
-    public int compareTo(final Options other) {
+    public int compareTo(@Nullable final Options other) {
         if (other == null) {
             return 1;
         }

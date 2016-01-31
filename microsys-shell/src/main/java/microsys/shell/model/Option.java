@@ -1,22 +1,18 @@
 package microsys.shell.model;
 
-import com.google.common.base.Preconditions;
-import com.google.gson.JsonObject;
-import microsys.common.model.Model;
 import microsys.common.util.OptionalComparator;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.CompareToBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
-import java.util.Objects;
+import javax.annotation.Nullable;
 import java.util.Optional;
 
 /**
  * An immutable class representing a possible option available to a command.
  */
-public class Option implements Model, Comparable<Option> {
+public class Option implements Comparable<Option> {
     private final String description;
     private final String shortOption;
     private final Optional<String> longOption;
@@ -45,48 +41,6 @@ public class Option implements Model, Comparable<Option> {
         this.required = required;
         this.optionalArg = optionalArg;
     }
-
-    public Option(final JsonObject json) {
-        Objects.requireNonNull(json);
-        Preconditions.checkArgument(json.has("description"), "Description is required");
-        Preconditions.checkArgument(json.get("description").isJsonPrimitive(), "Description must be a primitive");
-        Preconditions.checkArgument(json.has("shortOption"), "Short option is required");
-        Preconditions.checkArgument(json.get("shortOption").isJsonPrimitive(), "Short option must be a primitive");
-
-        this.description = json.getAsJsonPrimitive("description").getAsString();
-        this.shortOption = json.getAsJsonPrimitive("shortOption").getAsString();
-
-        if (json.has("longOption")) {
-            this.longOption = Optional.of(json.getAsJsonPrimitive("longOption").getAsString());
-        } else {
-            this.longOption = Optional.empty();
-        }
-
-        if (json.has("argName")) {
-            this.argName = Optional.of(json.getAsJsonPrimitive("argName").getAsString());
-        } else {
-            this.argName = Optional.empty();
-        }
-
-        if (json.has("arguments")) {
-            this.arguments = json.getAsJsonPrimitive("arguments").getAsInt();
-        } else {
-            this.arguments = 0;
-        }
-
-        if (json.has("required")) {
-            this.required = json.getAsJsonPrimitive("required").getAsBoolean();
-        } else {
-            this.required = false;
-        }
-
-        if (json.has("optionalArg")) {
-            this.optionalArg = json.getAsJsonPrimitive("optionalArg").getAsBoolean();
-        } else {
-            this.optionalArg = false;
-        }
-    }
-
 
     /**
      * @return the description of the option
@@ -159,26 +113,6 @@ public class Option implements Model, Comparable<Option> {
      * {@inheritDoc}
      */
     @Override
-    public JsonObject toJson() {
-        final JsonObject json = new JsonObject();
-        json.addProperty("description", getDescription());
-        json.addProperty("shortOption", getShortOption());
-        if (getLongOption().isPresent()) {
-            json.addProperty("longOption", getLongOption().get());
-        }
-        if (getArgName().isPresent()) {
-            json.addProperty("argName", getArgName().get());
-        }
-        json.addProperty("arguments", getArguments());
-        json.addProperty("required", isRequired());
-        json.addProperty("optionalArg", hasOptionalArg());
-        return json;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
     public String toString() {
         final ToStringBuilder str = new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE);
         str.append("description", getDescription());
@@ -195,7 +129,7 @@ public class Option implements Model, Comparable<Option> {
      * {@inheritDoc}
      */
     @Override
-    public int compareTo(final Option other) {
+    public int compareTo(@Nullable final Option other) {
         if (other == null) {
             return 1;
         }

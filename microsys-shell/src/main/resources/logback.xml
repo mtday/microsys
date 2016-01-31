@@ -19,7 +19,7 @@
         <appender-ref ref="STDOUT" />
     </logger>
 
-    <logger name="org.apache.zookeeper" level="WARN">
+    <logger name="org.apache.zookeeper" level="ERROR">
         <appender-ref ref="STDOUT" />
     </logger>
 

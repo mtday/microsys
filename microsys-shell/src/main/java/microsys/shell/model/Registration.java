@@ -1,18 +1,15 @@
 package microsys.shell.model;
 
-import com.google.common.base.Preconditions;
-import com.google.gson.JsonObject;
-import microsys.common.model.Model;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
-import java.util.Objects;
+import javax.annotation.Nullable;
 import java.util.Optional;
 
 /**
  * An immutable representation of a command registration available for use within the shell.
  */
-public class Registration implements Model, Comparable<Registration> {
+public class Registration implements Comparable<Registration> {
     private final CommandPath path;
     private final Optional<Options> options;
     private final Optional<String> description;
@@ -27,26 +24,6 @@ public class Registration implements Model, Comparable<Registration> {
         this.path = path;
         this.options = options;
         this.description = description;
-    }
-
-    public Registration(final JsonObject json) {
-        Objects.requireNonNull(json);
-        Preconditions.checkArgument(json.has("path"), "Path is required");
-        Preconditions.checkArgument(json.get("path").isJsonObject(), "Path must be an object");
-
-        this.path = new CommandPath(json.getAsJsonObject("path"));
-
-        if (json.has("description") && json.get("description").isJsonPrimitive()) {
-            this.description = Optional.of(json.getAsJsonPrimitive("description").getAsString());
-        } else {
-            this.description = Optional.empty();
-        }
-
-        if (json.has("options") && json.get("options").isJsonObject()) {
-            this.options = Optional.of(new Options(json.getAsJsonObject("options")));
-        } else {
-            this.options = Optional.empty();
-        }
     }
 
     /**
@@ -74,22 +51,6 @@ public class Registration implements Model, Comparable<Registration> {
      * {@inheritDoc}
      */
     @Override
-    public JsonObject toJson() {
-        final JsonObject json = new JsonObject();
-        json.add("path", getPath().toJson());
-        if (getOptions().isPresent()) {
-            json.add("options", getOptions().get().toJson());
-        }
-        if (getDescription().isPresent()) {
-            json.addProperty("description", getDescription().get());
-        }
-        return json;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
     public String toString() {
         final ToStringBuilder str = new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE);
         str.append("path", getPath());
@@ -102,7 +63,7 @@ public class Registration implements Model, Comparable<Registration> {
      * {@inheritDoc}
      */
     @Override
-    public int compareTo(final Registration registration) {
+    public int compareTo(@Nullable final Registration registration) {
         if (registration == null) {
             return 1;
         }

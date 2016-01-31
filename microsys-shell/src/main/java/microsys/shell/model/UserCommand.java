@@ -1,51 +1,36 @@
 package microsys.shell.model;
 
-import com.google.common.base.Preconditions;
-import com.google.gson.JsonObject;
-import microsys.common.model.Model;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.lang3.builder.CompareToBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
+import javax.annotation.Nullable;
+import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 
 /**
  * The immutable parsed user command to be executed.
  */
-public class UserCommand implements Model, Comparable<UserCommand> {
+public class UserCommand implements Comparable<UserCommand> {
     private final CommandPath commandPath;
     private final Registration registration;
-    private final TokenizedUserInput userInput;
+    private final List<String> userInput;
 
     /**
      * @param commandPath the {@link CommandPath} representing the user-specified command
      * @param registration the {@link Registration} associated with the command being invoked
-     * @param userInput the {@link TokenizedUserInput} entered in the shell to be executed
+     * @param userInput the list of tokens comprising the user input to be executed
      */
     public UserCommand(
-            final CommandPath commandPath, final Registration registration, final TokenizedUserInput userInput) {
+            final CommandPath commandPath, final Registration registration, final List<String> userInput) {
         this.commandPath = commandPath;
         this.registration = registration;
         this.userInput = userInput;
-    }
-
-    public UserCommand(final JsonObject json) {
-        Objects.requireNonNull(json);
-        Preconditions.checkArgument(json.has("commandPath"), "Command path is required");
-        Preconditions.checkArgument(json.get("commandPath").isJsonObject(), "Command path must be an object");
-        Preconditions.checkArgument(json.has("registration"), "Registration is required");
-        Preconditions.checkArgument(json.get("registration").isJsonObject(), "Registration must be an object");
-        Preconditions.checkArgument(json.has("userInput"), "User input is required");
-        Preconditions.checkArgument(json.get("userInput").isJsonObject(), "User input must be an object");
-
-        this.commandPath = new CommandPath(json.getAsJsonObject("commandPath"));
-        this.registration = new Registration(json.getAsJsonObject("registration"));
-        this.userInput = new TokenizedUserInput(json.getAsJsonObject("userInput"));
     }
 
     /**
@@ -63,10 +48,10 @@ public class UserCommand implements Model, Comparable<UserCommand> {
     }
 
     /**
-     * @return the {@link UserInput} entered in the shell to be executed
+     * @return the tokenized user input entered in the shell to be executed
      */
-    public TokenizedUserInput getUserInput() {
-        return this.userInput;
+    public List<String> getUserInput() {
+        return Collections.unmodifiableList(this.userInput);
     }
 
     /**
@@ -94,18 +79,6 @@ public class UserCommand implements Model, Comparable<UserCommand> {
      * {@inheritDoc}
      */
     @Override
-    public JsonObject toJson() {
-        final JsonObject json = new JsonObject();
-        json.add("commandPath", getCommandPath().toJson());
-        json.add("registration", getRegistration().toJson());
-        json.add("userInput", getUserInput().toJson());
-        return json;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
     public String toString() {
         final ToStringBuilder str = new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE);
         str.append("commandPath", getCommandPath());
@@ -118,7 +91,7 @@ public class UserCommand implements Model, Comparable<UserCommand> {
      * {@inheritDoc}
      */
     @Override
-    public int compareTo(final UserCommand other) {
+    public int compareTo(@Nullable final UserCommand other) {
         if (other == null) {
             return 1;
         }
@@ -143,14 +116,17 @@ public class UserCommand implements Model, Comparable<UserCommand> {
      */
     @Override
     public int hashCode() {
-        return getRegistration().hashCode();
+        final HashCodeBuilder hash = new HashCodeBuilder();
+        hash.append(getCommandPath());
+        hash.append(getRegistration());
+        hash.append(getUserInput());
+        return hash.toHashCode();
     }
 
-    private static Optional<CommandLine> parseCommandLine(
-            final Registration registration, final TokenizedUserInput userInput) throws ParseException {
+    private Optional<CommandLine> parseCommandLine(
+            final Registration registration, final List<String> userInput) throws ParseException {
         if (registration.getOptions().isPresent()) {
-            final List<String> tokens = userInput.getTokens();
-            final String[] array = tokens.toArray(new String[tokens.size()]);
+            final String[] array = userInput.toArray(new String[userInput.size()]);
             return Optional.of(new DefaultParser().parse(registration.getOptions().get().asOptions(), array));
         } else {
             return Optional.empty();

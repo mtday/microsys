@@ -2,22 +2,16 @@ package microsys.shell;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.typesafe.config.Config;
-
-import org.apache.commons.lang3.StringUtils;
-
 import jline.console.ConsoleReader;
 import microsys.common.config.CommonConfig;
-import microsys.shell.model.Command;
-import microsys.shell.model.CommandPath;
-import microsys.shell.model.CommandStatus;
-import microsys.shell.model.Registration;
-import microsys.shell.model.TokenizedUserInput;
-import microsys.shell.model.UserCommand;
-import microsys.shell.model.UserInput;
+import microsys.shell.model.*;
+import microsys.shell.util.Tokenizer;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.text.ParseException;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.SortedSet;
@@ -33,7 +27,7 @@ public class ConsoleManager {
     private final ConsoleReader consoleReader;
 
     /**
-     * @param config the static system configuration information
+     * @param config              the static system configuration information
      * @param registrationManager the shell command registration manager
      * @throws IOException if there is a problem creating the console reader
      */
@@ -48,9 +42,9 @@ public class ConsoleManager {
     }
 
     /**
-     * @param config the static system configuration information
+     * @param config              the static system configuration information
      * @param registrationManager the shell command registration manager
-     * @param consoleReader the {@link ConsoleReader} used to retrieve input from the user
+     * @param consoleReader       the {@link ConsoleReader} used to retrieve input from the user
      */
     @VisibleForTesting
     protected ConsoleManager(
@@ -114,50 +108,57 @@ public class ConsoleManager {
             getConsoleReader().println("Received Ctrl-D");
             return CommandStatus.TERMINATE;
         } else {
-            final UserInput userInput = new UserInput(input.get());
+            final String userInput = StringUtils.trimToEmpty(input.get());
 
-            if (!userInput.isComment() && !userInput.isEmpty()) {
-                return handleInput(userInput);
+            if (userInput.isEmpty() || userInput.startsWith("#")) {
+                return CommandStatus.SUCCESS;
+            }
+
+            try {
+                return handleTokens(Tokenizer.tokenize(userInput));
+            } catch (final ParseException badInput) {
+                if (badInput.getErrorOffset() > 0) {
+                    final int realOffset = badInput.getErrorOffset() + PROMPT.length();
+                    getConsoleReader().println(StringUtils.leftPad("^", realOffset, "-"));
+                }
+                getConsoleReader().println(badInput.getMessage());
+                getConsoleReader().flush();
+                return CommandStatus.FAILED;
             }
         }
-        return CommandStatus.SUCCESS;
     }
 
-    protected CommandStatus handleInput(final UserInput userInput) throws IOException {
-        try {
-            final TokenizedUserInput tokenized = new TokenizedUserInput(userInput);
-            final CommandPath commandPath = new CommandPath(tokenized);
+    protected CommandStatus handleTokens(final List<String> tokens) throws IOException {
+        final CommandPath commandPath = new CommandPath(tokens);
+        final SortedSet<Registration> registrations = getRegistrationManager().getRegistrations(commandPath);
 
-            final SortedSet<Registration> registrations = getRegistrationManager().getRegistrations(commandPath);
-            if (registrations.isEmpty()) {
-                getConsoleReader().println("Unrecognized command: " + commandPath.getPath());
-                getConsoleReader().println("Use 'help' to see all the available commands.");
-                getConsoleReader().flush();
-            } else if (registrations.size() > 1) {
-                // Multiple matching commands. Stick "help" at the front and send back through.
-                return handleInput(Optional.of("help " + userInput.getInput()));
-            } else {
-                // A single matching command, run it.
-                final Registration registration = registrations.iterator().next();
+        if (registrations.isEmpty()) {
+            getConsoleReader().println("Unrecognized command: " + commandPath);
+            getConsoleReader().println("Use 'help' to see all the available commands.");
+            getConsoleReader().flush();
+        } else if (registrations.size() > 1) {
+            // Multiple matching commands. Stick "help" at the front and send back through.
+            return handleInput(Optional.of("help " + commandPath));
+        } else {
+            // A single matching command, run it.
+            final Registration registration = registrations.iterator().next();
 
-                if (!registration.getPath().equals(commandPath)) {
-                    getConsoleReader().println("Assuming you mean: " + registration.getPath());
-                }
+            if (!registration.getPath().equals(commandPath)) {
+                getConsoleReader().println("Assuming you mean: " + registration.getPath());
+            }
 
-                final Optional<Command> command = getRegistrationManager().getCommand(registration);
-                if (command.isPresent()) {
-                    final UserCommand userCommand = new UserCommand(commandPath, registration, tokenized);
+            final Optional<Command> command = getRegistrationManager().getCommand(registration);
+            if (command.isPresent()) {
+                final UserCommand userCommand = new UserCommand(commandPath, registration, tokens);
+                try {
+                    userCommand.validateCommandLine();
                     return command.get().process(userCommand, new PrintWriter(getConsoleReader().getOutput(), true));
+                } catch (final org.apache.commons.cli.ParseException invalidParams) {
+                    getConsoleReader().println(invalidParams.getMessage());
+                    return CommandStatus.FAILED;
                 }
+            }
 
-                getConsoleReader().flush();
-            }
-        } catch (final ParseException badInput) {
-            if (badInput.getErrorOffset() > 0) {
-                final int realOffset = badInput.getErrorOffset() + PROMPT.length();
-                getConsoleReader().println(StringUtils.leftPad("^", realOffset, "-"));
-            }
-            getConsoleReader().println(badInput.getMessage());
             getConsoleReader().flush();
         }
         return CommandStatus.SUCCESS;

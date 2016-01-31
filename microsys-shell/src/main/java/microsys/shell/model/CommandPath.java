@@ -1,39 +1,26 @@
 package microsys.shell.model;
 
-import com.google.common.base.Preconditions;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
-import microsys.common.model.Model;
 import microsys.common.util.CollectionComparator;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.CompareToBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 
+import javax.annotation.Nullable;
 import java.util.*;
 
 /**
  * An immutable representation of the fully qualified path to a shell command.
  */
-public class CommandPath implements Model, Comparable<CommandPath> {
+public class CommandPath implements Comparable<CommandPath> {
     private final List<String> path;
 
     /**
      * @param path the fully qualified path representing a shell command
      */
     public CommandPath(final List<String> path) {
-        this.path = new ArrayList<>(path);
-    }
-
-    /**
-     * @param path the fully qualified path representing a shell command
-     */
-    public CommandPath(final String... path) {
-        this(Arrays.asList(Objects.requireNonNull(path)));
-    }
-
-    public CommandPath(final TokenizedUserInput userInput) {
-        Objects.requireNonNull(userInput);
+        Objects.requireNonNull(path);
         this.path = new ArrayList<>();
-        for (final String part : userInput.getTokens()) {
+        for (final String part : path) {
             final String trimmed = StringUtils.trimToEmpty(part);
             if (StringUtils.isEmpty(trimmed)) {
                 continue;
@@ -47,19 +34,15 @@ public class CommandPath implements Model, Comparable<CommandPath> {
         }
     }
 
-    public CommandPath(final JsonObject json) {
-        Objects.requireNonNull(json);
-        Preconditions.checkArgument(json.has("path"), "Path is required");
-        Preconditions.checkArgument(json.get("path").isJsonArray(), "Path must be an array");
-        json.getAsJsonArray("path").forEach(e ->
-                Preconditions.checkArgument(e.isJsonPrimitive(), "Path element must be a primitive"));
-
-        this.path = new ArrayList<>();
-        json.getAsJsonArray("path").forEach(e -> this.path.add(e.getAsJsonPrimitive().getAsString()));
+    /**
+     * @param path the fully qualified path representing a shell command
+     */
+    public CommandPath(final String... path) {
+        this(Arrays.asList(Objects.requireNonNull(path)));
     }
 
     /**
-     * @return the individual path components
+     * @return the individual path components uniquely identifying a shell command
      */
     public List<String> getPath() {
         return Collections.unmodifiableList(this.path);
@@ -106,7 +89,6 @@ public class CommandPath implements Model, Comparable<CommandPath> {
      * {@code
      * CommandPath ab = CommandPath.Builder("a b").build();
      * CommandPath a = a.getParent().get();
-     * <p>
      * ab.toString(); // a b
      * a.toString(); // a
      * }
@@ -130,10 +112,8 @@ public class CommandPath implements Model, Comparable<CommandPath> {
      * {@code
      * CommandPath ab = CommandPath.Builder("a b").build();
      * CommandPath b = ab.getChild().get();
-     * <p>
      * ab.toString(); // a b
      * b.toString(); // b
-     * <p>
      * b.getChild().isPresent(); // false
      * }
      *
@@ -160,18 +140,6 @@ public class CommandPath implements Model, Comparable<CommandPath> {
      * {@inheritDoc}
      */
     @Override
-    public JsonObject toJson() {
-        final JsonArray pathArr = new JsonArray();
-        getPath().forEach(pathArr::add);
-        final JsonObject json = new JsonObject();
-        json.add("path", pathArr);
-        return json;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
     public String toString() {
         return String.join(" ", getPath());
     }
@@ -180,7 +148,7 @@ public class CommandPath implements Model, Comparable<CommandPath> {
      * {@inheritDoc}
      */
     @Override
-    public int compareTo(final CommandPath other) {
+    public int compareTo(@Nullable final CommandPath other) {
         if (other == null) {
             return 1;
         }
@@ -203,6 +171,8 @@ public class CommandPath implements Model, Comparable<CommandPath> {
      */
     @Override
     public int hashCode() {
-        return getPath().hashCode();
+        final HashCodeBuilder hash = new HashCodeBuilder();
+        hash.append(getPath());
+        return hash.toHashCode();
     }
 }
