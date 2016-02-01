@@ -8,4 +8,14 @@ public enum ServiceType {
      * The dynamic configuration service.
      */
     CONFIG,
+
+    /**
+     * The health and status service.
+     */
+    HEALTH,
+
+    /**
+     * The web user interface service.
+     */
+    WEB,
 }

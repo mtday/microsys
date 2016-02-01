@@ -45,7 +45,7 @@ public class HelpCommand extends Command {
     @Override
     public CommandStatus process(final UserCommand userCommand, final PrintWriter writer) {
         final CommandPath path = userCommand.getCommandPath();
-        if (path.getSize() > 1 && path.isPrefix(new CommandPath("help"))) {
+        if (path.getSize() > 1) {
             // Strip off the "help" at the front and lookup the registrations for which help should be retrieved.
             final CommandPath childPath = path.getChild().get();
             writer.println("Showing help for commands that begin with: " + childPath);
@@ -98,13 +98,26 @@ public class HelpCommand extends Command {
                     str.append("  --");
                     str.append(option.getLongOption().get());
                 }
+
+                final String argName = option.getArgName().isPresent() ? option.getArgName().get() : "arg";
+                if (option.hasOptionalArg()) {
+                    str.append(" [");
+                    str.append(argName);
+                    str.append("]");
+                } else if (option.getArguments() == 1) {
+                    str.append(" <");
+                    str.append(argName);
+                    str.append(">");
+                } else if (option.getArguments() > 1) {
+                    str.append(" <");
+                    str.append(option.getArguments());
+                    str.append(" arguments>");
+                }
                 if (option.isRequired()) {
                     str.append("  (required)");
                 }
-                if (option.getDescription() != null) {
-                    str.append("  ");
-                    str.append(option.getDescription());
-                }
+                str.append("  ");
+                str.append(option.getDescription());
                 output.add(str.toString());
             }
         }

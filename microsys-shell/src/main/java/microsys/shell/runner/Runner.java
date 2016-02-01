@@ -13,30 +13,46 @@ import microsys.shell.ConsoleManager;
 import microsys.shell.RegistrationManager;
 import microsys.shell.model.ShellEnvironment;
 
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 /**
  * Launch the shell.
  */
 public class Runner {
+    private CuratorFramework curator;
+    private ShellEnvironment shellEnvironment;
+    private ConsoleManager consoleManager;
+
     /**
      * @throws Exception if there is a problem creating the curator framework
      */
-    protected Runner() throws Exception {
-        final Config config = ConfigFactory.load();
-        final CuratorFramework curator = createCurator(config);
+    protected Runner(final Config config) throws Exception {
+        this.curator = createCurator(config);
+        this.shellEnvironment = getShellEnvironment(config, curator);
+        this.consoleManager = new ConsoleManager(config, shellEnvironment.getRegistrationManager());
+    }
+
+    protected void setConsoleManager(final ConsoleManager consoleManager) {
+        this.consoleManager = Objects.requireNonNull(consoleManager);
+    }
+
+    protected void run() throws Exception {
+        // Blocks until the shell is finished.
+        this.consoleManager.run();
+    }
+
+    protected void shutdown() {
+        this.curator.close();
+    }
+
+    protected ShellEnvironment getShellEnvironment(final Config config, final CuratorFramework curator) throws Exception {
         final DiscoveryManager discoveryManager = new DiscoveryManager(config, curator);
         final RegistrationManager registrationManager = new RegistrationManager();
         final ShellEnvironment shellEnvironment =
                 new ShellEnvironment(config, discoveryManager, curator, registrationManager);
         registrationManager.loadCommands(shellEnvironment);
-
-        final ConsoleManager consoleManager = new ConsoleManager(config, registrationManager);
-
-        // Blocks until the shell is finished.
-        consoleManager.run();
-
-        curator.close();
+        return shellEnvironment;
     }
 
     protected CuratorFramework createCurator(final Config config) throws Exception {
@@ -57,6 +73,8 @@ public class Runner {
      * @throws Exception if there is a problem creating the curator framework
      */
     public static void main(final String... args) throws Exception {
-        new Runner();
+        final Runner runner = new Runner(ConfigFactory.load());
+        runner.run();
+        runner.shutdown();
     }
 }

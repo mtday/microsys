@@ -115,15 +115,17 @@ public class ServiceCommand extends Command {
             }
             if (totalServices != matchingServices) {
                 if (matchingServices == 1) {
-                    return String.format("Displaying the matching service (of %d)", matchingServices, totalServices);
+                    return String.format("Displaying the matching service (of %d total):", totalServices);
                 }
-                return String.format("Displaying %d matching services (of %d)", matchingServices, totalServices);
+                return String.format("Displaying %d matching services (of %d total):", matchingServices, totalServices);
             }
 
             if (totalServices == 1) {
-                return String.format("Displaying the single available service");
+                return String.format("Displaying the single available service:");
+            } else if (totalServices == 2) {
+                return String.format("Displaying both available services:");
             }
-            return String.format("Displaying all %d services", totalServices);
+            return String.format("Displaying all %d services:", totalServices);
         }
     }
 
@@ -142,7 +144,8 @@ public class ServiceCommand extends Command {
             final String type = StringUtils.rightPad(service.getType().name(), longestType.getAsInt());
             final String host = StringUtils.rightPad(service.getHost(), longestHost.getAsInt());
             final String port = StringUtils.rightPad(String.valueOf(service.getPort()), longestPort.getAsInt());
-            return String.format("    %s  %s  %s", type, host, port);
+            final String secure = service.isSecure() ? "secure" : "insecure";
+            return String.format("    %s  %s  %s  (%s)", type, host, port, secure);
         }
     }
 
