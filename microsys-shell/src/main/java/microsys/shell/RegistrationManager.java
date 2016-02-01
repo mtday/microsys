@@ -44,10 +44,9 @@ public class RegistrationManager {
             final Constructor<? extends Command> constructor =
                     commandClass.getDeclaredConstructor(ShellEnvironment.class);
             return Optional.of(constructor.newInstance(shellEnvironment));
-        } catch (final NoSuchMethodException missingConstructor) {
-            LOG.error("Shell command class is missing required constructor: " + commandClass.getName());
-        } catch (final IllegalAccessException | InstantiationException | InvocationTargetException e) {
-            LOG.error("Shell command class cannot be created: " + commandClass.getName());
+        } catch (final NoSuchMethodException | IllegalAccessException | InstantiationException |
+                InvocationTargetException failed) {
+            LOG.error("Shell command class cannot be created: " + commandClass.getName(), failed);
         }
         return Optional.empty();
     }

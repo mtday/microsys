@@ -2,15 +2,22 @@ package microsys.shell;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.typesafe.config.Config;
+
+import org.apache.commons.lang3.StringUtils;
+
 import jline.console.ConsoleReader;
 import microsys.common.config.CommonConfig;
-import microsys.shell.model.*;
+import microsys.shell.model.Command;
+import microsys.shell.model.CommandPath;
+import microsys.shell.model.CommandStatus;
+import microsys.shell.model.Registration;
+import microsys.shell.model.UserCommand;
 import microsys.shell.util.Tokenizer;
-import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.text.ParseException;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -97,6 +104,10 @@ public class ConsoleManager {
             commandStatus = handleInput(Optional.ofNullable(getConsoleReader().readLine()));
         }
 
+        stop();
+    }
+
+    protected void stop() throws IOException {
         getConsoleReader().println();
         getConsoleReader().getTerminal().setEchoEnabled(true);
         getConsoleReader().shutdown();
@@ -117,10 +128,9 @@ public class ConsoleManager {
             try {
                 return handleTokens(Tokenizer.tokenize(userInput));
             } catch (final ParseException badInput) {
-                if (badInput.getErrorOffset() > 0) {
-                    final int realOffset = badInput.getErrorOffset() + PROMPT.length();
-                    getConsoleReader().println(StringUtils.leftPad("^", realOffset, "-"));
-                }
+                // The error offset is always set in ParseExceptions thrown from Tokenizer.tokenize.
+                final int realOffset = badInput.getErrorOffset() + PROMPT.length();
+                getConsoleReader().println(StringUtils.leftPad("^", realOffset, "-"));
                 getConsoleReader().println(badInput.getMessage());
                 getConsoleReader().flush();
                 return CommandStatus.FAILED;
@@ -132,13 +142,19 @@ public class ConsoleManager {
         final CommandPath commandPath = new CommandPath(tokens);
         final SortedSet<Registration> registrations = getRegistrationManager().getRegistrations(commandPath);
 
+        CommandStatus returnStatus = CommandStatus.SUCCESS;
         if (registrations.isEmpty()) {
             getConsoleReader().println("Unrecognized command: " + commandPath);
             getConsoleReader().println("Use 'help' to see all the available commands.");
             getConsoleReader().flush();
         } else if (registrations.size() > 1) {
-            // Multiple matching commands. Stick "help" at the front and send back through.
-            return handleInput(Optional.of("help " + commandPath));
+            // Multiple matching commands. Send to the "help" command to process.
+            final Registration help = getRegistrationManager().getRegistrations(new CommandPath("help")).first();
+            final List<String> path = new LinkedList<>(commandPath.getPath());
+            path.add(0, "help");
+            final UserCommand userCommand = new UserCommand(new CommandPath(path), help, tokens);
+            returnStatus = getRegistrationManager().getCommand(help).get()
+                    .process(userCommand, new PrintWriter(getConsoleReader().getOutput(), true));
         } else {
             // A single matching command, run it.
             final Registration registration = registrations.iterator().next();
@@ -147,20 +163,20 @@ public class ConsoleManager {
                 getConsoleReader().println("Assuming you mean: " + registration.getPath());
             }
 
+            // This command will always exist.
             final Optional<Command> command = getRegistrationManager().getCommand(registration);
-            if (command.isPresent()) {
-                final UserCommand userCommand = new UserCommand(commandPath, registration, tokens);
-                try {
-                    userCommand.validateCommandLine();
-                    return command.get().process(userCommand, new PrintWriter(getConsoleReader().getOutput(), true));
-                } catch (final org.apache.commons.cli.ParseException invalidParams) {
-                    getConsoleReader().println(invalidParams.getMessage());
-                    return CommandStatus.FAILED;
-                }
+            final UserCommand userCommand = new UserCommand(commandPath, registration, tokens);
+            try {
+                userCommand.validateCommandLine();
+                returnStatus =
+                        command.get().process(userCommand, new PrintWriter(getConsoleReader().getOutput(), true));
+            } catch (final org.apache.commons.cli.ParseException invalidParams) {
+                getConsoleReader().println(invalidParams.getMessage());
+                returnStatus = CommandStatus.FAILED;
             }
 
             getConsoleReader().flush();
         }
-        return CommandStatus.SUCCESS;
+        return returnStatus;
     }
 }

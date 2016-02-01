@@ -31,7 +31,7 @@ public class CommandTest {
         assertEquals(env, testCommand.getShellEnvironment());
     }
 
-    private static class TestCommand extends Command {
+    public static class TestCommand extends Command {
         public TestCommand(final ShellEnvironment env) {
             super(env);
         }

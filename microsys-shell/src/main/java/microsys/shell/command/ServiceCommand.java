@@ -15,7 +15,7 @@ import microsys.shell.model.ShellEnvironment;
 import microsys.shell.model.UserCommand;
 
 import java.io.PrintWriter;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
@@ -38,15 +38,32 @@ public class ServiceCommand extends Command {
      */
     @Override
     public List<Registration> getRegistrations() {
-        final Option type =
+        final Option listType =
                 new Option("the service type to list", "t", Optional.of("type"), Optional.of("type"), 1, false, false);
-        final Option host =
+        final Option listHost =
                 new Option("the host to list", "h", Optional.of("host"), Optional.of("host"), 1, false, false);
-        final Optional<Options> options = Optional.of(new Options(type, host));
+        final Optional<Options> listOptions = Optional.of(new Options(listType, listHost));
 
-        final Optional<String> description = Optional.of("provides information about the available services");
-        final CommandPath service = new CommandPath("service", "list");
-        return Collections.singletonList(new Registration(service, options, description));
+        final Optional<String> listDescription = Optional.of("provides information about the available services");
+        final CommandPath serviceListPath = new CommandPath("service", "list");
+        final Registration serviceList = new Registration(serviceListPath, listOptions, listDescription);
+
+        final Option restartType =
+                new Option("the service type to restart", "t", Optional.of("type"), Optional.of("type"), 1, false,
+                        false);
+        final Option restartHost =
+                new Option("the host of the service to restart", "h", Optional.of("host"), Optional.of("host"), 1,
+                        false, false);
+        final Option restartPort =
+                new Option("the port of the service to restart", "p", Optional.of("port"), Optional.of("port"), 1,
+                        false, false);
+        final Optional<Options> restartOptions = Optional.of(new Options(restartType, restartHost, restartPort));
+
+        final Optional<String> restartDescription = Optional.of("request the restart of a service");
+        final CommandPath serviceRestartPath = new CommandPath("service", "restart");
+        final Registration serviceRestart = new Registration(serviceRestartPath, restartOptions, restartDescription);
+
+        return Arrays.asList(serviceList, serviceRestart);
     }
 
     /**
@@ -54,6 +71,14 @@ public class ServiceCommand extends Command {
      */
     @Override
     public CommandStatus process(final UserCommand userCommand, final PrintWriter writer) {
+        if (userCommand.getCommandPath().equals(new CommandPath("service", "list"))) {
+            return handleList(userCommand, writer);
+        } else {
+            return handleRestart(userCommand, writer);
+        }
+    }
+
+    protected CommandStatus handleList(final UserCommand userCommand, final PrintWriter writer) {
         final SortedSet<Service> services = getShellEnvironment().getDiscoveryManager().getAll();
         final Filter filter = new Filter(userCommand.getCommandLine());
         final Stringer stringer = new Stringer(services);
@@ -64,6 +89,11 @@ public class ServiceCommand extends Command {
         writer.println(new Summary(services.size(), output.size()));
         output.forEach(writer::println);
 
+        return CommandStatus.SUCCESS;
+    }
+
+    protected CommandStatus handleRestart(final UserCommand userCommand, final PrintWriter writer) {
+        // TODO
         return CommandStatus.SUCCESS;
     }
 
@@ -140,10 +170,12 @@ public class ServiceCommand extends Command {
 
         public boolean matches(final Service service) {
             boolean matches = true;
-            if (this.type.isPresent() && !this.type.get().equals(service.getType()))
+            if (this.type.isPresent() && !this.type.get().equals(service.getType())) {
                 matches = false;
-            if (this.host.isPresent() && !StringUtils.equalsIgnoreCase(this.host.get(), service.getHost()))
+            }
+            if (this.host.isPresent() && !StringUtils.equalsIgnoreCase(this.host.get(), service.getHost())) {
                 matches = false;
+            }
             return matches;
         }
     }

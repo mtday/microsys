@@ -45,9 +45,10 @@ public class HelpCommand extends Command {
     @Override
     public CommandStatus process(final UserCommand userCommand, final PrintWriter writer) {
         final CommandPath path = userCommand.getCommandPath();
-        if (path.getSize() > 1) {
+        if (path.getSize() > 1 && path.isPrefix(new CommandPath("help"))) {
             // Strip off the "help" at the front and lookup the registrations for which help should be retrieved.
             final CommandPath childPath = path.getChild().get();
+            writer.println("Showing help for commands that begin with: " + childPath);
             handleRegistrations(getShellEnvironment().getRegistrationManager().getRegistrations(childPath), writer);
         } else {
             // Request all of the available registrations.
