@@ -11,30 +11,24 @@ import com.typesafe.config.ConfigValueFactory;
 
 import org.apache.curator.framework.CuratorFramework;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.mockito.Mockito;
 import org.slf4j.LoggerFactory;
 
 import ch.qos.logback.classic.Level;
-import jline.Terminal;
-import jline.console.ConsoleReader;
-import jline.console.UserInterruptException;
 import jline.console.history.FileHistory;
 import microsys.common.config.CommonConfig;
 import microsys.service.discovery.DiscoveryManager;
 import microsys.shell.model.ShellEnvironment;
 
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
-import javax.annotation.Nonnull;
 
 /**
  * Perform testing on the {@link ConsoleManager} class
@@ -195,6 +189,96 @@ public class ConsoleManagerTest {
     }
 
     @Test
+    public void testRunWithFileDoesNotExist() throws IOException {
+        // Don't want to see stack traces in the output when attempting to create invalid commands during testing.
+        ((ch.qos.logback.classic.Logger) LoggerFactory.getLogger(RegistrationManager.class)).setLevel(Level.OFF);
+
+        final TemporaryFolder tmp = new TemporaryFolder();
+        tmp.create();
+        final File file = new File(tmp.getRoot(), "tmpfile.txt");
+
+        try {
+            final Config config =
+                    ConfigFactory.parseString(String.format("%s = 1.2.3", CommonConfig.SYSTEM_VERSION.getKey()))
+                            .withFallback(ConfigFactory.load());
+            final DiscoveryManager discovery = Mockito.mock(DiscoveryManager.class);
+            final CuratorFramework curator = Mockito.mock(CuratorFramework.class);
+
+            final RegistrationManager registrationManager = new RegistrationManager();
+            final ShellEnvironment shellEnvironment =
+                    new ShellEnvironment(config, discovery, curator, registrationManager);
+            registrationManager.loadCommands(shellEnvironment);
+
+            final CapturingConsoleReader consoleReader = new CapturingConsoleReader("help");
+            consoleReader.setInterrupt("partial");
+
+            final ConsoleManager cm = new ConsoleManager(config, registrationManager, consoleReader);
+            cm.run(file);
+            assertTrue(consoleReader.isShutdown());
+
+            final List<String> lines = consoleReader.getOutputLines();
+            assertEquals(1, lines.size());
+            assertEquals("\n", lines.get(0));
+        } finally {
+            tmp.delete();
+        }
+    }
+
+    @Test
+    public void testRunWithFile() throws IOException {
+        // Don't want to see stack traces in the output when attempting to create invalid commands during testing.
+        ((ch.qos.logback.classic.Logger) LoggerFactory.getLogger(RegistrationManager.class)).setLevel(Level.OFF);
+
+        final TemporaryFolder tmp = new TemporaryFolder();
+        tmp.create();
+        final File file = tmp.newFile();
+        try (final FileWriter fw = new FileWriter(file);
+             final PrintWriter pw = new PrintWriter(fw, true)) {
+            pw.println("help");
+            pw.println("service list -t CONFIG");
+        }
+
+        try {
+            final Config config =
+                    ConfigFactory.parseString(String.format("%s = 1.2.3", CommonConfig.SYSTEM_VERSION.getKey()))
+                            .withFallback(ConfigFactory.load());
+            final DiscoveryManager discovery = Mockito.mock(DiscoveryManager.class);
+            final CuratorFramework curator = Mockito.mock(CuratorFramework.class);
+
+            final RegistrationManager registrationManager = new RegistrationManager();
+            final ShellEnvironment shellEnvironment =
+                    new ShellEnvironment(config, discovery, curator, registrationManager);
+            registrationManager.loadCommands(shellEnvironment);
+
+            final CapturingConsoleReader consoleReader = new CapturingConsoleReader("help");
+            consoleReader.setInterrupt("partial");
+
+            final ConsoleManager cm = new ConsoleManager(config, registrationManager, consoleReader);
+            cm.run(file);
+            assertTrue(consoleReader.isShutdown());
+
+            final List<String> lines = consoleReader.getOutputLines();
+            assertEquals(9, lines.size());
+
+            int line = 0;
+            // help
+            assertEquals("# help", lines.get(line++));
+            assertEquals("  exit             exit the shell", lines.get(line++));
+            assertEquals("  help             display usage information for available shell commands", lines.get(line++));
+            assertEquals("  quit             exit the shell", lines.get(line++));
+            assertEquals("  service list     provides information about the available services", lines.get(line++));
+            assertEquals("  service restart  request the restart of a service", lines.get(line++));
+            assertEquals("# service list -t CONFIG", lines.get(line++));
+            assertEquals("No services are running", lines.get(line++));
+
+            // no more input
+            assertEquals("\n", lines.get(line));
+        } finally {
+            tmp.delete();
+        }
+    }
+
+    @Test
     public void testCreateHistory() throws IOException {
         // Don't want to see stack traces in the output when attempting to create invalid commands during testing.
         ((ch.qos.logback.classic.Logger) LoggerFactory.getLogger(RegistrationManager.class)).setLevel(Level.OFF);
@@ -212,103 +296,17 @@ public class ConsoleManagerTest {
             assertTrue("Failed to delete existing dir: " + file.getAbsolutePath(), file.delete());
         }
 
-        try {
-            final DiscoveryManager discovery = Mockito.mock(DiscoveryManager.class);
-            final CuratorFramework curator = Mockito.mock(CuratorFramework.class);
+        final DiscoveryManager discovery = Mockito.mock(DiscoveryManager.class);
+        final CuratorFramework curator = Mockito.mock(CuratorFramework.class);
 
-            final RegistrationManager registrationManager = new RegistrationManager();
-            final ShellEnvironment shellEnvironment =
-                    new ShellEnvironment(config, discovery, curator, registrationManager);
-            registrationManager.loadCommands(shellEnvironment);
+        final RegistrationManager registrationManager = new RegistrationManager();
+        final ShellEnvironment shellEnvironment = new ShellEnvironment(config, discovery, curator, registrationManager);
+        registrationManager.loadCommands(shellEnvironment);
 
-            final CapturingConsoleReader consoleReader = new CapturingConsoleReader();
-            final ConsoleManager cm = new ConsoleManager(config, registrationManager, consoleReader);
+        final CapturingConsoleReader consoleReader = new CapturingConsoleReader();
+        final ConsoleManager cm = new ConsoleManager(config, registrationManager, consoleReader);
 
-            final Optional<FileHistory> fileHistory = cm.createHistory(config);
-            assertTrue(fileHistory.isPresent());
-        } finally {
-            file.delete();
-        }
-    }
-
-    private static class CapturingConsoleReader extends ConsoleReader {
-        private final List<String> output = new LinkedList<>();
-        private final List<String> lines = new LinkedList<>();
-
-        private Optional<String> interrupt = Optional.empty();
-        private boolean shutdown = false;
-
-        public CapturingConsoleReader(final String... lines) throws IOException {
-            if (lines != null) {
-                this.lines.addAll(Arrays.asList(lines));
-            }
-            super.shutdown();
-        }
-
-        public void setInterrupt(final String partialLine) {
-            this.interrupt = Optional.ofNullable(partialLine);
-        }
-
-        @Override
-        public PrintWriter getOutput() {
-            return new PrintWriter(new StringWriter()) {
-                @Override
-                public void write(@Nonnull final String line, final int offset, final int length) {
-                    if (!"\n".equals(line)) {
-                        output.add(line);
-                    }
-                }
-            };
-        }
-
-        @Override
-        public String readLine() {
-            if (this.interrupt.isPresent()) {
-                final String partial = this.interrupt.get();
-                this.interrupt = Optional.empty();
-                throw new UserInterruptException(partial);
-            }
-            if (this.lines.isEmpty()) {
-                return null;
-            }
-            return this.lines.remove(0);
-        }
-
-        @Override
-        public void print(final CharSequence s) {
-            if (s != null) {
-                this.output.add(s.toString());
-            }
-        }
-
-        @Override
-        public void println() {
-            this.output.add("\n");
-        }
-
-        @Override
-        public void println(final CharSequence line) {
-            if (line != null) {
-                this.output.add(line.toString());
-            }
-        }
-
-        @Override
-        public void shutdown() {
-            this.shutdown = true;
-        }
-
-        @Override
-        public Terminal getTerminal() {
-            return Mockito.mock(Terminal.class);
-        }
-
-        public boolean isShutdown() {
-            return this.shutdown;
-        }
-
-        public List<String> getOutputLines() {
-            return this.output;
-        }
+        final Optional<FileHistory> fileHistory = cm.createHistory(config);
+        assertTrue(fileHistory.isPresent());
     }
 }

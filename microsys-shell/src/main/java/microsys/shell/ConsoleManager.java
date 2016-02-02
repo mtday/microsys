@@ -21,11 +21,13 @@ import microsys.shell.util.Tokenizer;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Scanner;
 import java.util.SortedSet;
 
 /**
@@ -67,7 +69,7 @@ public class ConsoleManager {
      * @param consoleReader the {@link ConsoleReader} used to retrieve input from the user
      */
     @VisibleForTesting
-    protected ConsoleManager(
+    public ConsoleManager(
             final Config config, final RegistrationManager registrationManager, final ConsoleReader consoleReader) {
         this.config = Objects.requireNonNull(config);
         this.registrationManager = Objects.requireNonNull(registrationManager);
@@ -108,13 +110,7 @@ public class ConsoleManager {
         final String systemName = config.getString(CommonConfig.SYSTEM_NAME.getKey());
         final String historyFileName = config.getString(CommonConfig.SHELL_HISTORY_FILE.getKey());
 
-        final File historyDir = new File(String.format("%s/.%s", userHome, systemName));
-        final File historyFile = new File(historyDir, historyFileName);
-
-        if (!historyDir.exists() && !historyDir.mkdirs()) {
-            LOG.warn("Unable to create directory for shell history: " + historyDir.getAbsolutePath());
-        }
-
+        final File historyFile = new File(String.format("%s/.%s/%s", userHome, systemName, historyFileName));
         try {
             return Optional.of(new FileHistory(historyFile));
         } catch (final IOException ioException) {
@@ -135,6 +131,28 @@ public class ConsoleManager {
     }
 
     /**
+     * @param file the input file from which commands should be read and processed
+     * @throws IOException if there is a problem reading from or writing to the console
+     */
+    public void run(final File file) throws IOException {
+        if (!Objects.requireNonNull(file).exists()) {
+            // No file so no need to do anything.
+            stop();
+            return;
+        }
+
+        try (final Scanner scanner = new Scanner(file, StandardCharsets.UTF_8.name())) {
+            CommandStatus commandStatus = CommandStatus.SUCCESS;
+            while (commandStatus != CommandStatus.TERMINATE && scanner.hasNextLine()) {
+                // Continue accepting input until a TERMINATE is returned or we hit the end of the file.
+                commandStatus = handleInput(Optional.ofNullable(scanner.nextLine()), true);
+            }
+        }
+
+        stop();
+    }
+
+    /**
      * @throws IOException if there is a problem reading from or writing to the console
      */
     public void run() throws IOException {
@@ -144,13 +162,14 @@ public class ConsoleManager {
         while (commandStatus != CommandStatus.TERMINATE) {
             try {
                 // Continue accepting input until a TERMINATE is returned.
-                commandStatus = handleInput(Optional.ofNullable(getConsoleReader().readLine()));
+                commandStatus = handleInput(Optional.ofNullable(getConsoleReader().readLine()), false);
             } catch (final UserInterruptException ctrlC) {
-                if (StringUtils.isBlank(ctrlC.getPartialLine())) {
+                if (!StringUtils.isBlank(ctrlC.getPartialLine())) {
+                    // The user typed Ctrl-C with a partial command in the line, continue with new input.
+                    commandStatus = CommandStatus.SUCCESS;
+                } else {
                     // The user typed Ctrl-C with no text in the line, terminate.
                     commandStatus = CommandStatus.TERMINATE;
-                } else {
-                    // The user typed Ctrl-C with a partial command in the line, continue with new input.
                 }
             }
         }
@@ -167,7 +186,7 @@ public class ConsoleManager {
         getConsoleReader().shutdown();
     }
 
-    protected CommandStatus handleInput(final Optional<String> input) throws IOException {
+    protected CommandStatus handleInput(final Optional<String> input, final boolean printCommand) throws IOException {
         if (!input.isPresent()) {
             // User typed Ctrl-D, terminate.
             return CommandStatus.TERMINATE;
@@ -179,6 +198,9 @@ public class ConsoleManager {
             }
 
             try {
+                if (printCommand) {
+                    getConsoleReader().println(String.format("# %s", userInput));
+                }
                 return handleTokens(Tokenizer.tokenize(userInput));
             } catch (final ParseException badInput) {
                 // The error offset is always set in ParseExceptions thrown from Tokenizer.tokenize.

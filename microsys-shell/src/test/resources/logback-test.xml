@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss} %-6level %-46logger %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <logger name="org.apache.curator" level="ERROR">
+        <appender-ref ref="STDOUT" />
+    </logger>
+
+</configuration>
+
