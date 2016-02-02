@@ -209,9 +209,7 @@ public class ConsoleManagerTest {
                     new ShellEnvironment(config, discovery, curator, registrationManager);
             registrationManager.loadCommands(shellEnvironment);
 
-            final CapturingConsoleReader consoleReader = new CapturingConsoleReader("help");
-            consoleReader.setInterrupt("partial");
-
+            final CapturingConsoleReader consoleReader = new CapturingConsoleReader();
             final ConsoleManager cm = new ConsoleManager(config, registrationManager, consoleReader);
             cm.run(file);
             assertTrue(consoleReader.isShutdown());
@@ -250,9 +248,7 @@ public class ConsoleManagerTest {
                     new ShellEnvironment(config, discovery, curator, registrationManager);
             registrationManager.loadCommands(shellEnvironment);
 
-            final CapturingConsoleReader consoleReader = new CapturingConsoleReader("help");
-            consoleReader.setInterrupt("partial");
-
+            final CapturingConsoleReader consoleReader = new CapturingConsoleReader();
             final ConsoleManager cm = new ConsoleManager(config, registrationManager, consoleReader);
             cm.run(file);
             assertTrue(consoleReader.isShutdown());
@@ -264,7 +260,8 @@ public class ConsoleManagerTest {
             // help
             assertEquals("# help", lines.get(line++));
             assertEquals("  exit             exit the shell", lines.get(line++));
-            assertEquals("  help             display usage information for available shell commands", lines.get(line++));
+            assertEquals(
+                    "  help             display usage information for available shell commands", lines.get(line++));
             assertEquals("  quit             exit the shell", lines.get(line++));
             assertEquals("  service list     provides information about the available services", lines.get(line++));
             assertEquals("  service restart  request the restart of a service", lines.get(line++));
@@ -276,6 +273,43 @@ public class ConsoleManagerTest {
         } finally {
             tmp.delete();
         }
+    }
+
+    @Test
+    public void testRunWithCommand() throws IOException {
+        // Don't want to see stack traces in the output when attempting to create invalid commands during testing.
+        ((ch.qos.logback.classic.Logger) LoggerFactory.getLogger(RegistrationManager.class)).setLevel(Level.OFF);
+
+        final Config config =
+                ConfigFactory.parseString(String.format("%s = 1.2.3", CommonConfig.SYSTEM_VERSION.getKey()))
+                        .withFallback(ConfigFactory.load());
+        final DiscoveryManager discovery = Mockito.mock(DiscoveryManager.class);
+        final CuratorFramework curator = Mockito.mock(CuratorFramework.class);
+
+        final RegistrationManager registrationManager = new RegistrationManager();
+        final ShellEnvironment shellEnvironment = new ShellEnvironment(config, discovery, curator, registrationManager);
+        registrationManager.loadCommands(shellEnvironment);
+
+        final CapturingConsoleReader consoleReader = new CapturingConsoleReader();
+
+        final ConsoleManager cm = new ConsoleManager(config, registrationManager, consoleReader);
+        cm.run("help");
+        assertTrue(consoleReader.isShutdown());
+
+        final List<String> lines = consoleReader.getOutputLines();
+        assertEquals(7, lines.size());
+
+        int line = 0;
+        // help
+        assertEquals("# help", lines.get(line++));
+        assertEquals("  exit             exit the shell", lines.get(line++));
+        assertEquals("  help             display usage information for available shell commands", lines.get(line++));
+        assertEquals("  quit             exit the shell", lines.get(line++));
+        assertEquals("  service list     provides information about the available services", lines.get(line++));
+        assertEquals("  service restart  request the restart of a service", lines.get(line++));
+
+        // no more input
+        assertEquals("\n", lines.get(line));
     }
 
     @Test

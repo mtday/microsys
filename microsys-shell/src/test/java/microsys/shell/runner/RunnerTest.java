@@ -67,7 +67,7 @@ public class RunnerTest {
     public void testProcessCommandLineWithNonExistentFile() throws Exception {
         final Runner runner = Mockito.mock(Runner.class);
         Runner.processCommandLine(runner, new String[] {"shell", "-f", "non-existent-file.txt"});
-        Mockito.verify(runner, Mockito.times(0)).run(Mockito.any());
+        Mockito.verify(runner, Mockito.times(0)).run(Mockito.any(File.class));
         Mockito.verify(runner).shutdown();
     }
 
@@ -75,7 +75,7 @@ public class RunnerTest {
     public void testProcessCommandLineWithInvalidArgs() throws Exception {
         final Runner runner = Mockito.mock(Runner.class);
         Runner.processCommandLine(runner, new String[] {"shell", "-a"});
-        Mockito.verify(runner, Mockito.times(0)).run(Mockito.any());
+        Mockito.verify(runner, Mockito.times(0)).run(Mockito.any(File.class));
         Mockito.verify(runner).shutdown();
     }
 
@@ -88,12 +88,20 @@ public class RunnerTest {
         try {
             final Runner runner = Mockito.mock(Runner.class);
             Runner.processCommandLine(runner, new String[] {"shell", "-f", file.getAbsolutePath()});
-            Mockito.verify(runner).run(Mockito.any());
+            Mockito.verify(runner).run(Mockito.any(File.class));
             Mockito.verify(runner).shutdown();
         } finally {
             assertTrue(file.delete());
             tmp.delete();
         }
+    }
+
+    @Test
+    public void testProcessCommandLineWithCommand() throws Exception {
+        final Runner runner = Mockito.mock(Runner.class);
+        Runner.processCommandLine(runner, new String[] {"shell", "-c", "help"});
+        Mockito.verify(runner).run(Mockito.anyString());
+        Mockito.verify(runner).shutdown();
     }
 
     @Test(expected = Exception.class)

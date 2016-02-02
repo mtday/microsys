@@ -45,8 +45,11 @@ public class Runner {
     }
 
     protected void run(final File file) throws Exception {
-        // Blocks until the shell is finished.
         this.consoleManager.run(Objects.requireNonNull(file));
+    }
+
+    protected void run(final String command) throws Exception {
+        this.consoleManager.run(Objects.requireNonNull(command));
     }
 
     protected void run() throws Exception {
@@ -85,12 +88,17 @@ public class Runner {
         final Option fileOption =
                 new Option("run shell commands provided by a file", "f", Optional.of("file"), Optional.of("file"), 1,
                         false, false);
-        final Options options = new Options(fileOption);
+        final Option commandOption =
+                new Option("run the specified shell command", "c", Optional.of("command"), Optional.of("command"), 1,
+                        false, false);
+        final Options options = new Options(fileOption, commandOption);
 
         try {
             final CommandLine commandLine = new DefaultParser().parse(options.asOptions(), args);
 
-            if (commandLine.hasOption("f")) {
+            if (commandLine.hasOption("c")) {
+                runner.run(commandLine.getOptionValue("c"));
+            } else if (commandLine.hasOption("f")) {
                 final File file = new File(commandLine.getOptionValue("f"));
                 if (file.exists()) {
                     // Run the contents of the file.

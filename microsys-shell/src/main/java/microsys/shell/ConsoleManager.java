@@ -131,6 +131,15 @@ public class ConsoleManager {
     }
 
     /**
+     * @param command the command specified on the command line to be executed
+     * @throws IOException if there is a problem reading from or writing to the console
+     */
+    public void run(final String command) throws IOException {
+        handleInput(Optional.ofNullable(command), true);
+        stop();
+    }
+
+    /**
      * @param file the input file from which commands should be read and processed
      * @throws IOException if there is a problem reading from or writing to the console
      */
