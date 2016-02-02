@@ -20,7 +20,9 @@ public enum CommonConfig {
     SERVER_PORT_MIN,
     SERVER_PORT_MAX,
 
-    ZOOKEEPER_HOSTS;
+    ZOOKEEPER_HOSTS,
+
+    SHELL_HISTORY_FILE;
 
     /**
      * @return the key to use when retrieving the common configuration value from the system configuration file

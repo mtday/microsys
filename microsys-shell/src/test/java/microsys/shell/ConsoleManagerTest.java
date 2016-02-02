@@ -6,6 +6,8 @@ import static org.junit.Assert.assertTrue;
 
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
+import com.typesafe.config.ConfigValue;
+import com.typesafe.config.ConfigValueFactory;
 
 import org.apache.curator.framework.CuratorFramework;
 import org.junit.Test;
@@ -15,16 +17,22 @@ import org.slf4j.LoggerFactory;
 import ch.qos.logback.classic.Level;
 import jline.Terminal;
 import jline.console.ConsoleReader;
+import jline.console.UserInterruptException;
+import jline.console.history.FileHistory;
 import microsys.common.config.CommonConfig;
 import microsys.service.discovery.DiscoveryManager;
 import microsys.shell.model.ShellEnvironment;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 import javax.annotation.Nonnull;
 
@@ -60,17 +68,15 @@ public class ConsoleManagerTest {
         registrationManager.loadCommands(shellEnvironment);
 
         final CapturingConsoleReader consoleReader =
-                new CapturingConsoleReader("unrecognized", "", "  #comment", "help", "s", "service li -t",
-                        "'invalid");
+                new CapturingConsoleReader("unrecognized", "", "  #comment", "help", "s", "service li -t", "'invalid");
 
         final ConsoleManager cm = new ConsoleManager(config, registrationManager, consoleReader);
         cm.run();
-        cm.stop();
 
         assertTrue(consoleReader.isShutdown());
 
         final List<String> lines = consoleReader.getOutputLines();
-        assertEquals(21, lines.size());
+        assertEquals(19, lines.size());
 
         int line = 0;
         // Startup
@@ -106,14 +112,130 @@ public class ConsoleManagerTest {
         assertEquals("Missing terminating quote", lines.get(line++));
 
         // no more input
-        assertEquals("Received Ctrl-D", lines.get(line++));
         assertEquals("\n", lines.get(line));
+    }
+
+    @Test
+    public void testRunWithInterrupt() throws IOException {
+        // Don't want to see stack traces in the output when attempting to create invalid commands during testing.
+        ((ch.qos.logback.classic.Logger) LoggerFactory.getLogger(RegistrationManager.class)).setLevel(Level.OFF);
+
+        final Config config =
+                ConfigFactory.parseString(String.format("%s = 1.2.3", CommonConfig.SYSTEM_VERSION.getKey()))
+                        .withFallback(ConfigFactory.load());
+        final DiscoveryManager discovery = Mockito.mock(DiscoveryManager.class);
+        final CuratorFramework curator = Mockito.mock(CuratorFramework.class);
+
+        final RegistrationManager registrationManager = new RegistrationManager();
+        final ShellEnvironment shellEnvironment = new ShellEnvironment(config, discovery, curator, registrationManager);
+        registrationManager.loadCommands(shellEnvironment);
+
+        final CapturingConsoleReader consoleReader = new CapturingConsoleReader("help");
+        consoleReader.setInterrupt("");
+
+        final ConsoleManager cm = new ConsoleManager(config, registrationManager, consoleReader);
+        cm.run();
+        assertTrue(consoleReader.isShutdown());
+
+        final List<String> lines = consoleReader.getOutputLines();
+        assertEquals(5, lines.size());
+
+        int line = 0;
+        // Startup
+        assertEquals("\n", lines.get(line++));
+        assertEquals("microsys 1.2.3", lines.get(line++));
+        assertEquals("\n", lines.get(line++));
+        assertEquals("Type 'help' to list the available commands", lines.get(line++));
+
+        // no more input
+        assertEquals("\n", lines.get(line));
+    }
+
+    @Test
+    public void testRunWithInterruptPartial() throws IOException {
+        // Don't want to see stack traces in the output when attempting to create invalid commands during testing.
+        ((ch.qos.logback.classic.Logger) LoggerFactory.getLogger(RegistrationManager.class)).setLevel(Level.OFF);
+
+        final Config config =
+                ConfigFactory.parseString(String.format("%s = 1.2.3", CommonConfig.SYSTEM_VERSION.getKey()))
+                        .withFallback(ConfigFactory.load());
+        final DiscoveryManager discovery = Mockito.mock(DiscoveryManager.class);
+        final CuratorFramework curator = Mockito.mock(CuratorFramework.class);
+
+        final RegistrationManager registrationManager = new RegistrationManager();
+        final ShellEnvironment shellEnvironment = new ShellEnvironment(config, discovery, curator, registrationManager);
+        registrationManager.loadCommands(shellEnvironment);
+
+        final CapturingConsoleReader consoleReader = new CapturingConsoleReader("help");
+        consoleReader.setInterrupt("partial");
+
+        final ConsoleManager cm = new ConsoleManager(config, registrationManager, consoleReader);
+        cm.run();
+        assertTrue(consoleReader.isShutdown());
+
+        final List<String> lines = consoleReader.getOutputLines();
+        assertEquals(10, lines.size());
+
+        int line = 0;
+        // Startup
+        assertEquals("\n", lines.get(line++));
+        assertEquals("microsys 1.2.3", lines.get(line++));
+        assertEquals("\n", lines.get(line++));
+        assertEquals("Type 'help' to list the available commands", lines.get(line++));
+
+        // help
+        assertEquals("  exit             exit the shell", lines.get(line++));
+        assertEquals("  help             display usage information for available shell commands", lines.get(line++));
+        assertEquals("  quit             exit the shell", lines.get(line++));
+        assertEquals("  service list     provides information about the available services", lines.get(line++));
+        assertEquals("  service restart  request the restart of a service", lines.get(line++));
+
+        // no more input
+        assertEquals("\n", lines.get(line));
+    }
+
+    @Test
+    public void testCreateHistory() throws IOException {
+        // Don't want to see stack traces in the output when attempting to create invalid commands during testing.
+        ((ch.qos.logback.classic.Logger) LoggerFactory.getLogger(RegistrationManager.class)).setLevel(Level.OFF);
+
+        final String tmp = System.getProperty("java.io.tmpdir");
+        final Map<String, ConfigValue> map = new HashMap<>();
+        map.put("user.home", ConfigValueFactory.fromAnyRef(tmp));
+        map.put(CommonConfig.SHELL_HISTORY_FILE.getKey(), ConfigValueFactory.fromAnyRef("history.txt"));
+        final Config config = ConfigFactory.parseMap(map).withFallback(ConfigFactory.load());
+        final String systemName = config.getString(CommonConfig.SYSTEM_NAME.getKey());
+
+        // Make the directory where the history file is stored a file instead.
+        final File file = new File(String.format("%s/.%s", tmp, systemName));
+        if (file.exists()) {
+            assertTrue("Failed to delete existing dir: " + file.getAbsolutePath(), file.delete());
+        }
+
+        try {
+            final DiscoveryManager discovery = Mockito.mock(DiscoveryManager.class);
+            final CuratorFramework curator = Mockito.mock(CuratorFramework.class);
+
+            final RegistrationManager registrationManager = new RegistrationManager();
+            final ShellEnvironment shellEnvironment =
+                    new ShellEnvironment(config, discovery, curator, registrationManager);
+            registrationManager.loadCommands(shellEnvironment);
+
+            final CapturingConsoleReader consoleReader = new CapturingConsoleReader();
+            final ConsoleManager cm = new ConsoleManager(config, registrationManager, consoleReader);
+
+            final Optional<FileHistory> fileHistory = cm.createHistory(config);
+            assertTrue(fileHistory.isPresent());
+        } finally {
+            file.delete();
+        }
     }
 
     private static class CapturingConsoleReader extends ConsoleReader {
         private final List<String> output = new LinkedList<>();
         private final List<String> lines = new LinkedList<>();
 
+        private Optional<String> interrupt = Optional.empty();
         private boolean shutdown = false;
 
         public CapturingConsoleReader(final String... lines) throws IOException {
@@ -121,6 +243,10 @@ public class ConsoleManagerTest {
                 this.lines.addAll(Arrays.asList(lines));
             }
             super.shutdown();
+        }
+
+        public void setInterrupt(final String partialLine) {
+            this.interrupt = Optional.ofNullable(partialLine);
         }
 
         @Override
@@ -137,10 +263,15 @@ public class ConsoleManagerTest {
 
         @Override
         public String readLine() {
-            if (lines.isEmpty()) {
+            if (this.interrupt.isPresent()) {
+                final String partial = this.interrupt.get();
+                this.interrupt = Optional.empty();
+                throw new UserInterruptException(partial);
+            }
+            if (this.lines.isEmpty()) {
                 return null;
             }
-            return lines.remove(0);
+            return this.lines.remove(0);
         }
 
         @Override

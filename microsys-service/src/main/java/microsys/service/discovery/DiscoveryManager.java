@@ -82,8 +82,6 @@ public class DiscoveryManager {
         try {
             final List<ServiceInstance<String>> list =
                     new ArrayList<>(getDiscovery().queryForInstances(Objects.requireNonNull(serviceType).name()));
-            LOG.info("Found {} services", list.size());
-            list.forEach(s -> LOG.info("  Service: {}", s.getPayload()));
             list.stream().map(Service::new).forEach(services::add);
         } catch (final Exception exception) {
             LOG.error("Failed to query for services", exception);

@@ -4,8 +4,12 @@ import com.google.common.annotations.VisibleForTesting;
 import com.typesafe.config.Config;
 
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import jline.console.ConsoleReader;
+import jline.console.UserInterruptException;
+import jline.console.history.FileHistory;
 import microsys.common.config.CommonConfig;
 import microsys.shell.model.Command;
 import microsys.shell.model.CommandPath;
@@ -14,6 +18,7 @@ import microsys.shell.model.Registration;
 import microsys.shell.model.UserCommand;
 import microsys.shell.util.Tokenizer;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.text.ParseException;
@@ -27,14 +32,17 @@ import java.util.SortedSet;
  * Responsible for managing the console reader, along with user input and console output.
  */
 public class ConsoleManager {
+    private final static Logger LOG = LoggerFactory.getLogger(ConsoleManager.class);
+
     private final static String PROMPT = "shell> ";
 
     private final Config config;
     private final RegistrationManager registrationManager;
     private final ConsoleReader consoleReader;
+    private final Optional<FileHistory> fileHistory;
 
     /**
-     * @param config              the static system configuration information
+     * @param config the static system configuration information
      * @param registrationManager the shell command registration manager
      * @throws IOException if there is a problem creating the console reader
      */
@@ -46,12 +54,17 @@ public class ConsoleManager {
         this.consoleReader.setHandleUserInterrupt(true);
         this.consoleReader.setPaginationEnabled(true);
         this.consoleReader.setPrompt(PROMPT);
+
+        this.fileHistory = createHistory(this.config);
+        if (this.fileHistory.isPresent()) {
+            this.consoleReader.setHistory(this.fileHistory.get());
+        }
     }
 
     /**
-     * @param config              the static system configuration information
+     * @param config the static system configuration information
      * @param registrationManager the shell command registration manager
-     * @param consoleReader       the {@link ConsoleReader} used to retrieve input from the user
+     * @param consoleReader the {@link ConsoleReader} used to retrieve input from the user
      */
     @VisibleForTesting
     protected ConsoleManager(
@@ -59,6 +72,7 @@ public class ConsoleManager {
         this.config = Objects.requireNonNull(config);
         this.registrationManager = Objects.requireNonNull(registrationManager);
         this.consoleReader = Objects.requireNonNull(consoleReader);
+        this.fileHistory = Optional.empty();
     }
 
     /**
@@ -82,6 +96,34 @@ public class ConsoleManager {
         return this.consoleReader;
     }
 
+    /**
+     * @return the file history, possibly empty if history is not being managed
+     */
+    protected Optional<FileHistory> getHistory() {
+        return this.fileHistory;
+    }
+
+    protected Optional<FileHistory> createHistory(final Config config) {
+        final String userHome = config.getString("user.home");
+        final String systemName = config.getString(CommonConfig.SYSTEM_NAME.getKey());
+        final String historyFileName = config.getString(CommonConfig.SHELL_HISTORY_FILE.getKey());
+
+        final File historyDir = new File(String.format("%s/.%s", userHome, systemName));
+        final File historyFile = new File(historyDir, historyFileName);
+
+        if (!historyDir.exists() && !historyDir.mkdirs()) {
+            LOG.warn("Unable to create directory for shell history: " + historyDir.getAbsolutePath());
+        }
+
+        try {
+            return Optional.of(new FileHistory(historyFile));
+        } catch (final IOException ioException) {
+            LOG.warn("Failed to load history file: " + historyFile.getAbsolutePath(), ioException);
+        }
+
+        return Optional.empty();
+    }
+
     protected void printStartupOutput() throws IOException {
         final String system = getConfig().getString(CommonConfig.SYSTEM_NAME.getKey());
         final String version = getConfig().getString(CommonConfig.SYSTEM_VERSION.getKey());
@@ -100,14 +142,26 @@ public class ConsoleManager {
 
         CommandStatus commandStatus = CommandStatus.SUCCESS;
         while (commandStatus != CommandStatus.TERMINATE) {
-            // Continue accepting input until a TERMINATE is returned.
-            commandStatus = handleInput(Optional.ofNullable(getConsoleReader().readLine()));
+            try {
+                // Continue accepting input until a TERMINATE is returned.
+                commandStatus = handleInput(Optional.ofNullable(getConsoleReader().readLine()));
+            } catch (final UserInterruptException ctrlC) {
+                if (StringUtils.isBlank(ctrlC.getPartialLine())) {
+                    // The user typed Ctrl-C with no text in the line, terminate.
+                    commandStatus = CommandStatus.TERMINATE;
+                } else {
+                    // The user typed Ctrl-C with a partial command in the line, continue with new input.
+                }
+            }
         }
 
         stop();
     }
 
     protected void stop() throws IOException {
+        if (getHistory().isPresent()) {
+            getHistory().get().flush();
+        }
         getConsoleReader().println();
         getConsoleReader().getTerminal().setEchoEnabled(true);
         getConsoleReader().shutdown();
@@ -115,8 +169,7 @@ public class ConsoleManager {
 
     protected CommandStatus handleInput(final Optional<String> input) throws IOException {
         if (!input.isPresent()) {
-            // User typed Ctrl-D
-            getConsoleReader().println("Received Ctrl-D");
+            // User typed Ctrl-D, terminate.
             return CommandStatus.TERMINATE;
         } else {
             final String userInput = StringUtils.trimToEmpty(input.get());
