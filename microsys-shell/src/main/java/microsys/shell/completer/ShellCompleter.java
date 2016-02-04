@@ -1,4 +1,4 @@
-package microsys.shell.util;
+package microsys.shell.completer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -6,7 +6,6 @@ import org.slf4j.LoggerFactory;
 import jline.console.completer.ArgumentCompleter;
 import jline.console.completer.Completer;
 import microsys.shell.RegistrationManager;
-import microsys.shell.completer.CompletionTree;
 import microsys.shell.model.Registration;
 
 import java.util.Arrays;
@@ -41,13 +40,6 @@ public class ShellCompleter implements Completer {
     }
 
     /**
-     * @param registrations the {@link Registration} objects that define the available completions
-     */
-    public ShellCompleter(final Registration... registrations) {
-        this(Arrays.asList(Objects.requireNonNull(registrations)));
-    }
-
-    /**
      * {@inheritDoc}
      */
     @Override
@@ -61,35 +53,36 @@ public class ShellCompleter implements Completer {
             return cursor;
         } else {
             final List<String> args = Arrays.asList(argumentList.getArguments());
-            for (int i = 0; i <= argumentList.getCursorArgumentIndex(); i++) {
-                final boolean isCursorArg = (i == argumentList.getCursorArgumentIndex());
-                final String arg = i >= args.size() ? "" : args.get(i);
 
-                if (isCursorArg) {
-                    final List<CompletionTree> matches = current.getChildrenMatching(arg);
-
-                    if (matches.size() == 1 && matches.get(0).getCompleter().isPresent()) {
-                        // Let the matching completer do the work.
-                        final Completer completer = matches.get(0).getCompleter().get();
-                        return cursor + completer.complete("", 0, candidates);
-                    } else {
-                        matches.stream().map(CompletionTree::getCandidate).filter(Optional::isPresent).map(Optional
-                                ::get).sorted().forEach(candidates::add);
-                        return cursor - arg.length();
-                    }
+            // Process all the previous arguments to get to the right spot in the completion tree.
+            for (int i = 0; i < argumentList.getCursorArgumentIndex(); i++) {
+                final Optional<CompletionTree> match = current.getChild(args.get(i));
+                if (match.isPresent()) {
+                    // User has already entered this tree node. Continue to the next argument.
+                    current = match.get();
                 } else {
-                    final Optional<CompletionTree> match = current.getChild(arg);
-                    if (match.isPresent()) {
-                        // User has already entered this tree node. Continue to the next argument.
-                        current = match.get();
-                    } else {
-                        // No idea what the user has typed, it is not recognized.
-                        return cursor;
-                    }
+                    // No idea what the user has typed, it is not recognized.
+                    return cursor;
                 }
             }
-        }
 
-        return cursor;
+            // Process the last argument that needs to be tab-completed.
+            final String arg = argumentList.getCursorArgumentIndex() >= args.size() ? "" :
+                    args.get(argumentList.getCursorArgumentIndex());
+            final List<CompletionTree> matches = current.getChildrenMatching(arg);
+
+            if (matches.isEmpty()) {
+                // No idea what the user typed, it is not recognized.
+                return cursor;
+            } else if (matches.size() == 1 && matches.get(0).getCompleter().isPresent()) {
+                // Let the matching completer do the work.
+                final Completer completer = matches.get(0).getCompleter().get();
+                return cursor - arg.length() + completer.complete(arg, arg.length(), candidates);
+            } else {
+                matches.stream().map(CompletionTree::getCandidate).filter(Optional::isPresent).map(Optional
+                        ::get).sorted().forEach(candidates::add);
+                return cursor - arg.length();
+            }
+        }
     }
 }

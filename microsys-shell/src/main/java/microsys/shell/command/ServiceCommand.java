@@ -3,11 +3,11 @@ package microsys.shell.command;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.lang3.StringUtils;
 
-import jline.console.completer.Completer;
-import jline.console.completer.EnumCompleter;
-import jline.console.completer.StringsCompleter;
 import microsys.common.model.ServiceType;
 import microsys.service.model.Service;
+import microsys.shell.completer.ServiceHostCompleter;
+import microsys.shell.completer.ServicePortCompleter;
+import microsys.shell.completer.ServiceTypeCompleter;
 import microsys.shell.model.Command;
 import microsys.shell.model.CommandPath;
 import microsys.shell.model.CommandStatus;
@@ -20,7 +20,6 @@ import microsys.shell.model.UserCommand;
 import java.io.PrintWriter;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.SortedSet;
@@ -47,7 +46,7 @@ public class ServiceCommand extends Command {
                         Optional.of(new ServiceTypeCompleter()));
         final Option listHost =
                 new Option("the host to list", "h", Optional.of("host"), Optional.of("host"), 1, false, false,
-                        Optional.of(new HostCompleter(getShellEnvironment())));
+                        Optional.of(new ServiceHostCompleter(getShellEnvironment())));
         final Optional<Options> listOptions = Optional.of(new Options(listType, listHost));
 
         final Optional<String> listDescription = Optional.of("provides information about the available services");
@@ -59,10 +58,10 @@ public class ServiceCommand extends Command {
                         false, Optional.of(new ServiceTypeCompleter()));
         final Option restartHost =
                 new Option("the host of the service to restart", "h", Optional.of("host"), Optional.of("host"), 1,
-                        false, false, Optional.of(new HostCompleter(getShellEnvironment())));
+                        false, false, Optional.of(new ServiceHostCompleter(getShellEnvironment())));
         final Option restartPort =
                 new Option("the port of the service to restart", "p", Optional.of("port"), Optional.of("port"), 1,
-                        false, false, Optional.of(new PortCompleter(getShellEnvironment())));
+                        false, false, Optional.of(new ServicePortCompleter(getShellEnvironment())));
         final Optional<Options> restartOptions = Optional.of(new Options(restartType, restartHost, restartPort));
 
         final Optional<String> restartDescription = Optional.of("request the restart of a service");
@@ -186,44 +185,6 @@ public class ServiceCommand extends Command {
                 matches = false;
             }
             return matches;
-        }
-    }
-
-    public class ServiceTypeCompleter extends EnumCompleter {
-        public ServiceTypeCompleter() {
-            super(ServiceType.class);
-        }
-    }
-
-    public class HostCompleter implements Completer {
-        private final ShellEnvironment shellEnvironment;
-
-        public HostCompleter(final ShellEnvironment shellEnvironment) {
-            this.shellEnvironment = Objects.requireNonNull(shellEnvironment);
-        }
-
-        @Override
-        public int complete(final String buffer, final int cursor, final List<CharSequence> candidates) {
-            final List<String> hosts =
-                    this.shellEnvironment.getDiscoveryManager().getAll().stream().map(Service::getHost)
-                            .collect(Collectors.toList());
-            return new StringsCompleter(hosts).complete(buffer, cursor, candidates);
-        }
-    }
-
-    public class PortCompleter implements Completer {
-        private final ShellEnvironment shellEnvironment;
-
-        public PortCompleter(final ShellEnvironment shellEnvironment) {
-            this.shellEnvironment = Objects.requireNonNull(shellEnvironment);
-        }
-
-        @Override
-        public int complete(final String buffer, final int cursor, final List<CharSequence> candidates) {
-            final List<String> ports =
-                    this.shellEnvironment.getDiscoveryManager().getAll().stream().map(Service::getPort)
-                            .map(String::valueOf).collect(Collectors.toList());
-            return new StringsCompleter(ports).complete(buffer, cursor, candidates);
         }
     }
 }

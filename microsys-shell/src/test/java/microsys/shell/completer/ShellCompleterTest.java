@@ -1,4 +1,4 @@
-package microsys.shell.util;
+package microsys.shell.completer;
 
 import static org.junit.Assert.assertEquals;
 
@@ -12,12 +12,16 @@ import org.mockito.Mockito;
 import org.slf4j.LoggerFactory;
 
 import ch.qos.logback.classic.Level;
+import microsys.common.model.ServiceType;
 import microsys.service.discovery.DiscoveryManager;
+import microsys.service.model.Service;
 import microsys.shell.RegistrationManager;
 import microsys.shell.model.ShellEnvironment;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 /**
  * Perform testing on the {@link ShellCompleter} class.
@@ -30,15 +34,22 @@ public class ShellCompleterTest {
         // Don't want to see stack traces in the output when attempting to create invalid commands during testing.
         ((ch.qos.logback.classic.Logger) LoggerFactory.getLogger(RegistrationManager.class)).setLevel(Level.OFF);
 
+        final SortedSet<Service> services = new TreeSet<>();
+        services.add(new Service(ServiceType.CONFIG, "host1", 1234, false));
+        services.add(new Service(ServiceType.HEALTH, "host1", 1235, false));
+        services.add(new Service(ServiceType.WEB, "host2", 1236, true));
+        services.add(new Service(ServiceType.WEB, "host2", 1237, true));
+        final DiscoveryManager discovery = Mockito.mock(DiscoveryManager.class);
+        Mockito.when(discovery.getAll()).thenReturn(services);
+
         final Config config = ConfigFactory.load();
         final CuratorFramework curator = Mockito.mock(CuratorFramework.class);
-        final DiscoveryManager discovery = Mockito.mock(DiscoveryManager.class);
 
-        final RegistrationManager registrationManager = new RegistrationManager();
-        final ShellEnvironment shellEnvironment = new ShellEnvironment(config, discovery, curator, registrationManager);
-        registrationManager.loadCommands(shellEnvironment);
+        final RegistrationManager regMgr = new RegistrationManager();
+        final ShellEnvironment shellEnvironment = new ShellEnvironment(config, discovery, curator, regMgr);
+        regMgr.loadCommands(shellEnvironment);
 
-        shellCompleter = new ShellCompleter(registrationManager);
+        shellCompleter = new ShellCompleter(regMgr);
     }
 
     @Test
@@ -62,6 +73,24 @@ public class ShellCompleterTest {
     }
 
     @Test
+    public void testCompleteCommandNoMatch() {
+        final List<CharSequence> candidates = new ArrayList<>();
+        final int position = shellCompleter.complete("xyz", 3, candidates);
+
+        assertEquals(0, candidates.size());
+        assertEquals(3, position);
+    }
+
+    @Test
+    public void testCompleteDoubleCommandNoMatch() {
+        final List<CharSequence> candidates = new ArrayList<>();
+        final int position = shellCompleter.complete("xyz abc", 7, candidates);
+
+        assertEquals(0, candidates.size());
+        assertEquals(7, position);
+    }
+
+    @Test
     public void testCompleteCommandSingleAvailable() {
         final List<CharSequence> candidates = new ArrayList<>();
         final int position = shellCompleter.complete("hel", 3, candidates);
@@ -70,6 +99,18 @@ public class ShellCompleterTest {
         assertEquals(0, position);
         assertEquals("help", candidates.get(0).toString());
     }
+
+    /* TODO: Need to fix completions from the middle of a word
+    @Test
+    public void testCompleteCommandSingleAvailableMiddle() {
+        final List<CharSequence> candidates = new ArrayList<>();
+        final int position = shellCompleter.complete("hel", 2, candidates);
+
+        assertEquals(1, candidates.size());
+        assertEquals(0, position);
+        assertEquals("help", candidates.get(0).toString());
+    }
+    */
 
     @Test
     public void testCompleteCommandMultipleAvailable() {
@@ -176,5 +217,15 @@ public class ShellCompleterTest {
         assertEquals(3, candidates.size());
         assertEquals(20, position);
         assertEquals("[config, health, web]", candidates.toString());
+    }
+
+    @Test
+    public void testCompleteCommandSingleAvailableWithParamCompleteAndPartialValue() {
+        final List<CharSequence> candidates = new ArrayList<>();
+        final int position = shellCompleter.complete("service list --type c", 21, candidates);
+
+        assertEquals(1, candidates.size());
+        assertEquals(20, position);
+        assertEquals("[config]", candidates.toString());
     }
 }

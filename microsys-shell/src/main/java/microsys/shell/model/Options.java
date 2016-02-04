@@ -62,7 +62,7 @@ public class Options implements Comparable<Options> {
         final List<CompletionTree> list = new LinkedList<>();
         getOptions().forEach(option -> {
             if (option.getCompleter().isPresent()) {
-                final CompletionTree comp = new CompletionTree("", option.getCompleter().get());
+                final CompletionTree comp = new CompletionTree(option.getCompleter().get());
 
                 final CompletionTree shortOpt = new CompletionTree("-" + option.getShortOption());
                 shortOpt.add(comp);

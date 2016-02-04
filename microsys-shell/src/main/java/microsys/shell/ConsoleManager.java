@@ -18,7 +18,7 @@ import microsys.shell.model.CommandStatus;
 import microsys.shell.model.Registration;
 import microsys.shell.model.Token;
 import microsys.shell.model.UserCommand;
-import microsys.shell.util.ShellCompleter;
+import microsys.shell.completer.ShellCompleter;
 import microsys.shell.util.Tokenizer;
 
 import java.io.File;
