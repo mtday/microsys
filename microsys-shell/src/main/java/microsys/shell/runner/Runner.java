@@ -28,7 +28,6 @@ import java.util.concurrent.TimeUnit;
  */
 public class Runner {
     private CuratorFramework curator;
-    private ShellEnvironment shellEnvironment;
     private ConsoleManager consoleManager;
 
     /**
@@ -36,7 +35,8 @@ public class Runner {
      */
     protected Runner(final Config config) throws Exception {
         this.curator = createCurator(config);
-        this.shellEnvironment = getShellEnvironment(config, curator);
+
+        final ShellEnvironment shellEnvironment = getShellEnvironment(config, curator);
         this.consoleManager = new ConsoleManager(config, shellEnvironment.getRegistrationManager());
     }
 
@@ -87,10 +87,10 @@ public class Runner {
     protected static void processCommandLine(final Runner runner, final String[] args) throws Exception {
         final Option fileOption =
                 new Option("run shell commands provided by a file", "f", Optional.of("file"), Optional.of("file"), 1,
-                        false, false);
+                        false, false, Optional.empty());
         final Option commandOption =
                 new Option("run the specified shell command", "c", Optional.of("command"), Optional.of("command"), 1,
-                        false, false);
+                        false, false, Optional.empty());
         final Options options = new Options(fileOption, commandOption);
 
         try {

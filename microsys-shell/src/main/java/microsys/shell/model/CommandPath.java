@@ -1,12 +1,22 @@
 package microsys.shell.model;
 
-import microsys.common.util.CollectionComparator;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.CompareToBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
+import microsys.common.util.CollectionComparator;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
 import javax.annotation.Nullable;
-import java.util.*;
 
 /**
  * An immutable representation of the fully qualified path to a shell command.
@@ -15,12 +25,13 @@ public class CommandPath implements Comparable<CommandPath> {
     private final List<String> path;
 
     /**
-     * @param path the fully qualified path representing a shell command
+     * @param path the fully qualified path (typically of strings or tokens) representing a shell command
      */
-    public CommandPath(final List<String> path) {
-        Objects.requireNonNull(path);
+    public CommandPath(final List<?> path) {
         this.path = new ArrayList<>();
-        for (final String part : path) {
+        final List<String> parts =
+                Objects.requireNonNull(path).stream().map(String::valueOf).collect(Collectors.toList());
+        for (final String part : parts) {
             final String trimmed = StringUtils.trimToEmpty(part);
             if (StringUtils.isEmpty(trimmed)) {
                 continue;

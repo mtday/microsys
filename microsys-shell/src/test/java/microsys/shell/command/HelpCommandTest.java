@@ -172,7 +172,8 @@ public class HelpCommandTest {
 
     @Test
     public void testGetOptionsNoLongOptionRequired() {
-        final Option option = new Option("desc", "s", Optional.empty(), Optional.empty(), 0, true, false);
+        final Option option =
+                new Option("desc", "s", Optional.empty(), Optional.empty(), 0, true, false, Optional.empty());
         final Options options = new Options(option);
 
         final HelpCommand helpCommand = new HelpCommand(Mockito.mock(ShellEnvironment.class));
@@ -185,7 +186,8 @@ public class HelpCommandTest {
 
     @Test
     public void testGetOptionsWithOptionalArg() {
-        final Option option = new Option("desc", "s", Optional.empty(), Optional.of("argname"), 0, false, true);
+        final Option option =
+                new Option("desc", "s", Optional.empty(), Optional.of("argname"), 0, false, true, Optional.empty());
         final Options options = new Options(option);
 
         final HelpCommand helpCommand = new HelpCommand(Mockito.mock(ShellEnvironment.class));
@@ -198,7 +200,8 @@ public class HelpCommandTest {
 
     @Test
     public void testGetOptionsWithMultipleArgs() {
-        final Option option = new Option("desc", "s", Optional.of("long"), Optional.empty(), 3, false, false);
+        final Option option =
+                new Option("desc", "s", Optional.of("long"), Optional.empty(), 3, false, false, Optional.empty());
         final Options options = new Options(option);
 
         final HelpCommand helpCommand = new HelpCommand(Mockito.mock(ShellEnvironment.class));

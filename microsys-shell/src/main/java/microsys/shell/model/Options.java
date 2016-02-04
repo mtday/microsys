@@ -6,14 +6,18 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
 import microsys.common.util.CollectionComparator;
+import microsys.shell.completer.CompletionTree;
 
-import javax.annotation.Nullable;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Objects;
 import java.util.SortedSet;
 import java.util.TreeSet;
+
+import javax.annotation.Nullable;
 
 /**
  * An immutable class used to manage the options available to a command.
@@ -49,6 +53,34 @@ public class Options implements Comparable<Options> {
         final org.apache.commons.cli.Options options = new org.apache.commons.cli.Options();
         getOptions().stream().map(Option::asOption).forEach(options::addOption);
         return options;
+    }
+
+    /**
+     * @return the possible completion trees available for tab-completing this collection of options
+     */
+    public List<CompletionTree> getCompletions() {
+        final List<CompletionTree> list = new LinkedList<>();
+        getOptions().forEach(option -> {
+            if (option.getCompleter().isPresent()) {
+                final CompletionTree comp = new CompletionTree("", option.getCompleter().get());
+
+                final CompletionTree shortOpt = new CompletionTree("-" + option.getShortOption());
+                shortOpt.add(comp);
+                list.add(shortOpt);
+
+                if (option.getLongOption().isPresent()) {
+                    final CompletionTree longOpt = new CompletionTree("--" + option.getLongOption().get());
+                    longOpt.add(comp);
+                    list.add(longOpt);
+                }
+            } else {
+                list.add(new CompletionTree("-" + option.getShortOption()));
+                if (option.getLongOption().isPresent()) {
+                    list.add(new CompletionTree("--" + option.getLongOption().get()));
+                }
+            }
+        });
+        return list;
     }
 
     /**

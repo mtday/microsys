@@ -1,11 +1,11 @@
 package microsys.shell.model;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+
 import org.junit.Test;
 
 import java.util.Optional;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
 
 /**
  * Perform testing of the {@link Registration} class.
@@ -17,8 +17,8 @@ public class RegistrationTest {
         final Optional<Options> oa = Optional.empty();
         final Optional<String> da = Optional.of("a");
 
-        final Option oba = new Option("a", "a", Optional.of("a"), Optional.of("a"), 1, true, false);
-        final Option obb = new Option("b", "b", Optional.empty(), Optional.empty(), 0, false, true);
+        final Option oba = new Option("a", "a", Optional.of("a"), Optional.of("a"), 1, true, false, Optional.empty());
+        final Option obb = new Option("b", "b", Optional.empty(), Optional.empty(), 0, false, true, Optional.empty());
         final CommandPath cb = new CommandPath("b");
         final Optional<Options> ob = Optional.of(new Options(oba, obb));
         final Optional<String> db = Optional.empty();
@@ -39,8 +39,8 @@ public class RegistrationTest {
         final Optional<Options> oa = Optional.empty();
         final Optional<String> da = Optional.of("a");
 
-        final Option oba = new Option("a", "a", Optional.of("a"), Optional.of("a"), 1, true, false);
-        final Option obb = new Option("b", "b", Optional.empty(), Optional.empty(), 0, false, true);
+        final Option oba = new Option("a", "a", Optional.of("a"), Optional.of("a"), 1, true, false, Optional.empty());
+        final Option obb = new Option("b", "b", Optional.empty(), Optional.empty(), 0, false, true, Optional.empty());
         final CommandPath cb = new CommandPath("b");
         final Optional<Options> ob = Optional.of(new Options(oba, obb));
         final Optional<String> db = Optional.empty();
@@ -61,8 +61,8 @@ public class RegistrationTest {
         final Optional<Options> oa = Optional.empty();
         final Optional<String> da = Optional.of("a");
 
-        final Option oba = new Option("a", "a", Optional.of("a"), Optional.of("a"), 1, true, false);
-        final Option obb = new Option("b", "b", Optional.empty(), Optional.empty(), 0, false, true);
+        final Option oba = new Option("a", "a", Optional.of("a"), Optional.of("a"), 1, true, false, Optional.empty());
+        final Option obb = new Option("b", "b", Optional.empty(), Optional.empty(), 0, false, true, Optional.empty());
         final CommandPath cb = new CommandPath("b");
         final Optional<Options> ob = Optional.of(new Options(oba, obb));
         final Optional<String> db = Optional.empty();
@@ -83,8 +83,8 @@ public class RegistrationTest {
         final Optional<Options> oa = Optional.empty();
         final Optional<String> da = Optional.of("a");
 
-        final Option oba = new Option("a", "a", Optional.of("a"), Optional.of("a"), 1, true, false);
-        final Option obb = new Option("b", "b", Optional.empty(), Optional.empty(), 0, false, true);
+        final Option oba = new Option("a", "a", Optional.of("a"), Optional.of("a"), 1, true, false, Optional.empty());
+        final Option obb = new Option("b", "b", Optional.empty(), Optional.empty(), 0, false, true, Optional.empty());
         final CommandPath cb = new CommandPath("b");
         final Optional<Options> ob = Optional.of(new Options(oba, obb));
         final Optional<String> db = Optional.empty();

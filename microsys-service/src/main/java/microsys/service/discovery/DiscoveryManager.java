@@ -33,11 +33,12 @@ public class DiscoveryManager {
     /**
      * @param config the static system configuration information
      * @param curator the {@link CuratorFramework} that is managing zookeeper operations
+     * @throws Exception if there is a problem starting the service discovery service
      */
     public DiscoveryManager(final Config config, final CuratorFramework curator) throws Exception {
         this.config = Objects.requireNonNull(config);
 
-        this.discovery = ServiceDiscoveryBuilder.builder(String.class).client(curator).basePath(getBasePath()).build();
+        this.discovery = ServiceDiscoveryBuilder.builder(String.class).client(curator).basePath("/discovery").build();
         this.discovery.start();
     }
 
@@ -47,10 +48,6 @@ public class DiscoveryManager {
 
     protected ServiceDiscovery<String> getDiscovery() {
         return this.discovery;
-    }
-
-    protected String getBasePath() {
-        return String.format("/discovery");
     }
 
     public void register(final Service service) throws Exception {

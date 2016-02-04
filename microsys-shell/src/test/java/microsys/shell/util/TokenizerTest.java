@@ -4,7 +4,10 @@ import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
 
+import microsys.shell.model.Token;
+
 import java.text.ParseException;
+import java.util.List;
 
 /**
  * Perform testing of the {@link Tokenizer} class.
@@ -18,72 +21,114 @@ public class TokenizerTest {
 
     @Test
     public void testTokenizeWithMultipleSpaces() throws ParseException {
-        assertEquals("[a, b]", Tokenizer.tokenize("a  b").toString());
+        final List<Token> tokens = Tokenizer.tokenize("a  b");
+        assertEquals(2, tokens.size());
+        assertEquals(new Token(0, "a"), tokens.get(0));
+        assertEquals(new Token(3, "b"), tokens.get(1));
     }
 
     @Test
     public void testTokenizeWithTab() throws ParseException {
-        assertEquals("[a, b]", Tokenizer.tokenize("a\tb").toString());
+        final List<Token> tokens = Tokenizer.tokenize("a\tb");
+        assertEquals(2, tokens.size());
+        assertEquals(new Token(0, "a"), tokens.get(0));
+        assertEquals(new Token(2, "b"), tokens.get(1));
     }
 
     @Test
     public void testTokenizeWithEscapeDoubleQuote() throws ParseException {
-        assertEquals("[input, \"]", Tokenizer.tokenize("input \\\"").toString());
+        final List<Token> tokens = Tokenizer.tokenize("input \\\"");
+        assertEquals(2, tokens.size());
+        assertEquals(new Token(0, "input"), tokens.get(0));
+        assertEquals(new Token(7, "\""), tokens.get(1));
     }
 
     @Test
     public void testTokenizeWithEscapeSingleQuote() throws ParseException {
-        assertEquals("[input, ']", Tokenizer.tokenize("input \\'").toString());
+        final List<Token> tokens = Tokenizer.tokenize("input \\'");
+        assertEquals(2, tokens.size());
+        assertEquals(new Token(0, "input"), tokens.get(0));
+        assertEquals(new Token(7, "'"), tokens.get(1));
     }
 
     @Test
     public void testTokenizeWithEscapeBackslash() throws ParseException {
-        assertEquals("[input, \\]", Tokenizer.tokenize("input \\\\").toString());
+        final List<Token> tokens = Tokenizer.tokenize("input \\\\");
+        assertEquals(2, tokens.size());
+        assertEquals(new Token(0, "input"), tokens.get(0));
+        assertEquals(new Token(7, "\\"), tokens.get(1));
     }
 
     @Test
     public void testTokenizeWithEscapeSpace() throws ParseException {
-        assertEquals("[input, a b]", Tokenizer.tokenize("input a\\ b").toString());
+        final List<Token> tokens = Tokenizer.tokenize("input a\\ b");
+        assertEquals(2, tokens.size());
+        assertEquals(new Token(0, "input"), tokens.get(0));
+        assertEquals(new Token(7, "a b"), tokens.get(1));
     }
 
     @Test
     public void testTokenizeWithEscapedHexChar() throws ParseException {
-        assertEquals("[input, %]", Tokenizer.tokenize("input \\x25").toString());
+        final List<Token> tokens = Tokenizer.tokenize("input \\x25");
+        assertEquals(2, tokens.size());
+        assertEquals(new Token(0, "input"), tokens.get(0));
+        assertEquals(new Token(9, "%"), tokens.get(1));
     }
 
     @Test
     public void testTokenizeWithDoubleQuotedString() throws ParseException {
-        assertEquals("[input, quoted string]", Tokenizer.tokenize("input \"quoted string\"").toString());
+        final List<Token> tokens = Tokenizer.tokenize("input \"quoted string\"");
+        assertEquals(2, tokens.size());
+        assertEquals(new Token(0, "input"), tokens.get(0));
+        assertEquals(new Token(7, "quoted string"), tokens.get(1));
     }
 
     @Test
     public void testTokenizeWithSingleQuotedString() throws ParseException {
-        assertEquals("[input, quoted string]", Tokenizer.tokenize("input 'quoted string'").toString());
+        final List<Token> tokens = Tokenizer.tokenize("input 'quoted string'");
+        assertEquals(2, tokens.size());
+        assertEquals(new Token(0, "input"), tokens.get(0));
+        assertEquals(new Token(7, "quoted string"), tokens.get(1));
     }
 
     @Test
     public void testTokenizeWithEmptyDoubleQuotedString() throws ParseException {
-        assertEquals("[input, ]", Tokenizer.tokenize("input \"\"").toString());
+        final List<Token> tokens = Tokenizer.tokenize("input \"\"");
+        assertEquals(2, tokens.size());
+        assertEquals(new Token(0, "input"), tokens.get(0));
+        assertEquals(new Token(7, ""), tokens.get(1));
     }
 
     @Test
     public void testTokenizeWithEmptySingleQuotedString() throws ParseException {
-        assertEquals("[input, ]", Tokenizer.tokenize("input ''").toString());
+        final List<Token> tokens = Tokenizer.tokenize("input ''");
+        assertEquals(2, tokens.size());
+        assertEquals(new Token(0, "input"), tokens.get(0));
+        assertEquals(new Token(7, ""), tokens.get(1));
     }
 
     @Test
     public void testTokenizeWithDoubleQuotedStringRightNextToInput() throws ParseException {
-        assertEquals("[input, a]", Tokenizer.tokenize("input\"a\"").toString());
+        final List<Token> tokens = Tokenizer.tokenize("input\"a\"");
+        assertEquals(2, tokens.size());
+        assertEquals(new Token(0, "input"), tokens.get(0));
+        assertEquals(new Token(6, "a"), tokens.get(1));
     }
 
     @Test
     public void testTokenizeWithEmptySingleQuotedStringRightNextToInput() throws ParseException {
-        assertEquals("[input, a]", Tokenizer.tokenize("input'a'").toString());
+        final List<Token> tokens = Tokenizer.tokenize("input'a'");
+        assertEquals(2, tokens.size());
+        assertEquals(new Token(0, "input"), tokens.get(0));
+        assertEquals(new Token(6, "a"), tokens.get(1));
     }
 
     @Test
     public void testTokenizeWithEscapeInsideDoubleQuotedString() throws ParseException {
-        assertEquals("[input, \"]", Tokenizer.tokenize("input \"\\\"\"").toString());
+        final List<Token> tokens = Tokenizer.tokenize("input \"\\\"\"");
+        assertEquals(2, tokens.size());
+        assertEquals(new Token(0, "input"), tokens.get(0));
+        assertEquals(new Token(8, "\""), tokens.get(1));
     }
 
     @Test(expected = ParseException.class)

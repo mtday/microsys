@@ -1,13 +1,20 @@
 package microsys.shell.model;
 
-import microsys.common.util.OptionalComparator;
+import com.google.common.base.Preconditions;
+
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.CompareToBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
-import javax.annotation.Nullable;
+import jline.console.completer.Completer;
+import microsys.common.util.OptionalComparator;
+
+import java.util.Objects;
 import java.util.Optional;
+
+import javax.annotation.Nullable;
 
 /**
  * An immutable class representing a possible option available to a command.
@@ -20,26 +27,36 @@ public class Option implements Comparable<Option> {
     private final int arguments;
     private final boolean required;
     private final boolean optionalArg;
+    private final Optional<Completer> completer;
 
     /**
      * @param description the description of the option
      * @param shortOption the name of the option in short form
      * @param longOption  the name of the option in long form, possibly empty
-     * @param argName     the name of the argument for the option
+     * @param argName     the name of the argument for the option, possibly empty
      * @param arguments   the number of arguments expected with this option
      * @param required    whether this option is required
      * @param optionalArg whether this option supports an optional argument
+     * @param completer   the completer to use when tab-completing this option, possibly empty
      */
     public Option(
             final String description, final String shortOption, final Optional<String> longOption,
-            final Optional<String> argName, final int arguments, final boolean required, final boolean optionalArg) {
+            final Optional<String> argName, final int arguments, final boolean required, final boolean optionalArg,
+            final Optional<Completer> completer) {
+        Objects.requireNonNull(description);
+        Preconditions.checkArgument(StringUtils.isNotEmpty(description), "Description cannot be empty");
+        Objects.requireNonNull(shortOption);
+        Preconditions.checkArgument(StringUtils.isNotEmpty(shortOption), "Short option cannot be empty");
+        Preconditions.checkArgument(arguments >= 0, "Arguments must be non-negative");
+
         this.description = description;
         this.shortOption = shortOption;
-        this.longOption = longOption;
-        this.argName = argName;
+        this.longOption = Objects.requireNonNull(longOption);
+        this.argName = Objects.requireNonNull(argName);
         this.arguments = arguments;
         this.required = required;
         this.optionalArg = optionalArg;
+        this.completer = Objects.requireNonNull(completer);
     }
 
     /**
@@ -89,6 +106,13 @@ public class Option implements Comparable<Option> {
      */
     public boolean hasOptionalArg() {
         return this.optionalArg;
+    }
+
+    /**
+     * @return the completer to use when tab-completing this option
+     */
+    public Optional<Completer> getCompleter() {
+        return this.completer;
     }
 
     /**

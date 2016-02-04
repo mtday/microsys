@@ -9,7 +9,9 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.ParseException;
 import org.junit.Test;
 
-import java.util.Arrays;
+import microsys.shell.util.Tokenizer;
+
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -18,19 +20,19 @@ import java.util.Optional;
  */
 public class UserCommandTest {
     @Test
-    public void testCompareTo() {
+    public void testCompareTo() throws java.text.ParseException {
         final CommandPath ca = new CommandPath("a");
         final Optional<Options> oa = Optional.empty();
         final Optional<String> da = Optional.of("a");
 
-        final Option oba = new Option("a", "a", Optional.of("a"), Optional.of("a"), 1, true, false);
-        final Option obb = new Option("b", "b", Optional.empty(), Optional.empty(), 0, false, true);
+        final Option oba = new Option("a", "a", Optional.of("a"), Optional.of("a"), 1, true, false, Optional.empty());
+        final Option obb = new Option("b", "b", Optional.empty(), Optional.empty(), 0, false, true, Optional.empty());
         final CommandPath cb = new CommandPath("b");
         final Optional<Options> ob = Optional.of(new Options(oba, obb));
         final Optional<String> db = Optional.empty();
 
-        final List<String> ua = Arrays.asList("a");
-        final List<String> ub = Arrays.asList("b");
+        final List<Token> ua = Tokenizer.tokenize("a");
+        final List<Token> ub = Tokenizer.tokenize("b");
 
         final Registration ra = new Registration(ca, oa, da);
         final Registration rb = new Registration(cb, ob, db);
@@ -46,19 +48,19 @@ public class UserCommandTest {
     }
 
     @Test
-    public void testEquals() {
+    public void testEquals() throws java.text.ParseException {
         final CommandPath ca = new CommandPath("a");
         final Optional<Options> oa = Optional.empty();
         final Optional<String> da = Optional.of("a");
 
-        final Option oba = new Option("a", "a", Optional.of("a"), Optional.of("a"), 1, true, false);
-        final Option obb = new Option("b", "b", Optional.empty(), Optional.empty(), 0, false, true);
+        final Option oba = new Option("a", "a", Optional.of("a"), Optional.of("a"), 1, true, false, Optional.empty());
+        final Option obb = new Option("b", "b", Optional.empty(), Optional.empty(), 0, false, true, Optional.empty());
         final CommandPath cb = new CommandPath("b");
         final Optional<Options> ob = Optional.of(new Options(oba, obb));
         final Optional<String> db = Optional.empty();
 
-        final List<String> ua = Arrays.asList("a");
-        final List<String> ub = Arrays.asList("b");
+        final List<Token> ua = Tokenizer.tokenize("a");
+        final List<Token> ub = Tokenizer.tokenize("b");
 
         final Registration ra = new Registration(ca, oa, da);
         final Registration rb = new Registration(cb, ob, db);
@@ -74,19 +76,19 @@ public class UserCommandTest {
     }
 
     @Test
-    public void testHashCode() {
+    public void testHashCode() throws java.text.ParseException {
         final CommandPath ca = new CommandPath("a");
         final Optional<Options> oa = Optional.empty();
         final Optional<String> da = Optional.of("a");
 
-        final Option oba = new Option("a", "a", Optional.of("a"), Optional.of("a"), 1, true, false);
-        final Option obb = new Option("b", "b", Optional.empty(), Optional.empty(), 0, false, true);
+        final Option oba = new Option("a", "a", Optional.of("a"), Optional.of("a"), 1, true, false, Optional.empty());
+        final Option obb = new Option("b", "b", Optional.empty(), Optional.empty(), 0, false, true, Optional.empty());
         final CommandPath cb = new CommandPath("b");
         final Optional<Options> ob = Optional.of(new Options(oba, obb));
         final Optional<String> db = Optional.empty();
 
-        final List<String> ua = Arrays.asList("a");
-        final List<String> ub = Arrays.asList("b");
+        final List<Token> ua = Tokenizer.tokenize("a");
+        final List<Token> ub = Tokenizer.tokenize("b");
 
         final Registration ra = new Registration(ca, oa, da);
         final Registration rb = new Registration(cb, ob, db);
@@ -99,19 +101,19 @@ public class UserCommandTest {
     }
 
     @Test
-    public void testToString() {
+    public void testToString() throws java.text.ParseException {
         final CommandPath ca = new CommandPath("a");
         final Optional<Options> oa = Optional.empty();
         final Optional<String> da = Optional.of("a");
 
-        final Option oba = new Option("a", "a", Optional.of("a"), Optional.of("a"), 1, true, false);
-        final Option obb = new Option("b", "b", Optional.empty(), Optional.empty(), 0, false, true);
+        final Option oba = new Option("a", "a", Optional.of("a"), Optional.of("a"), 1, true, false, Optional.empty());
+        final Option obb = new Option("b", "b", Optional.empty(), Optional.empty(), 0, false, true, Optional.empty());
         final CommandPath cb = new CommandPath("b");
         final Optional<Options> ob = Optional.of(new Options(oba, obb));
         final Optional<String> db = Optional.empty();
 
-        final List<String> ua = Arrays.asList("a");
-        final List<String> ub = Arrays.asList("b");
+        final List<Token> ua = Tokenizer.tokenize("a");
+        final List<Token> ub = Tokenizer.tokenize("b");
 
         final Registration ra = new Registration(ca, oa, da);
         final Registration rb = new Registration(cb, ob, db);
@@ -131,14 +133,14 @@ public class UserCommandTest {
     }
 
     @Test
-    public void testGetCommandLine() {
-        final Option oa = new Option("a", "a", Optional.of("a"), Optional.of("a"), 1, true, false);
-        final Option ob = new Option("b", "b", Optional.empty(), Optional.empty(), 0, false, true);
+    public void testGetCommandLine() throws java.text.ParseException {
+        final Option oa = new Option("a", "a", Optional.of("a"), Optional.of("a"), 1, true, false, Optional.empty());
+        final Option ob = new Option("b", "b", Optional.empty(), Optional.empty(), 0, false, true, Optional.empty());
         final CommandPath c = new CommandPath("a");
         final Optional<Options> o = Optional.of(new Options(oa, ob));
         final Optional<String> d = Optional.empty();
 
-        final List<String> u = Arrays.asList("a", "-a", "5");
+        final List<Token> u = Tokenizer.tokenize("a -a 5");
         final Registration r = new Registration(c, o, d);
         final UserCommand cmd = new UserCommand(c, r, u);
 
@@ -148,14 +150,14 @@ public class UserCommandTest {
     }
 
     @Test
-    public void testGetCommandLineInvalid() throws ParseException {
-        final Option oa = new Option("a", "a", Optional.of("a"), Optional.of("a"), 1, true, false);
-        final Option ob = new Option("b", "b", Optional.empty(), Optional.empty(), 0, false, true);
+    public void testGetCommandLineInvalid() throws ParseException, java.text.ParseException {
+        final Option oa = new Option("a", "a", Optional.of("a"), Optional.of("a"), 1, true, false, Optional.empty());
+        final Option ob = new Option("b", "b", Optional.empty(), Optional.empty(), 0, false, true, Optional.empty());
         final CommandPath c = new CommandPath("a");
         final Optional<Options> o = Optional.of(new Options(oa, ob));
         final Optional<String> d = Optional.empty();
 
-        final List<String> u = Arrays.asList("a"); // Not providing the required parameter
+        final List<Token> u = Tokenizer.tokenize("a"); // Not providing the required parameter
         final Registration r = new Registration(c, o, d);
         final UserCommand cmd = new UserCommand(c, r, u);
 
@@ -163,12 +165,12 @@ public class UserCommandTest {
     }
 
     @Test
-    public void testGetCommandLineNoOptions() throws ParseException {
+    public void testGetCommandLineNoOptions() throws ParseException, java.text.ParseException {
         final CommandPath c = new CommandPath("a");
         final Optional<Options> o = Optional.empty();
         final Optional<String> d = Optional.empty();
 
-        final List<String> u = Arrays.asList("a");
+        final List<Token> u = Tokenizer.tokenize("a");
         final Registration r = new Registration(c, o, d);
         final UserCommand cmd = new UserCommand(c, r, u);
 
@@ -176,14 +178,14 @@ public class UserCommandTest {
     }
 
     @Test
-    public void testValidateCommandLine() throws ParseException {
-        final Option oa = new Option("a", "a", Optional.of("a"), Optional.of("a"), 1, true, false);
-        final Option ob = new Option("b", "b", Optional.empty(), Optional.empty(), 0, false, true);
+    public void testValidateCommandLine() throws ParseException, java.text.ParseException {
+        final Option oa = new Option("a", "a", Optional.of("a"), Optional.of("a"), 1, true, false, Optional.empty());
+        final Option ob = new Option("b", "b", Optional.empty(), Optional.empty(), 0, false, true, Optional.empty());
         final CommandPath c = new CommandPath("a");
         final Optional<Options> o = Optional.of(new Options(oa, ob));
         final Optional<String> d = Optional.empty();
 
-        final List<String> u = Arrays.asList("a", "-a", "5");
+        final List<Token> u = Tokenizer.tokenize("a -a 5");
         final Registration r = new Registration(c, o, d);
         final UserCommand cmd = new UserCommand(c, r, u);
 
@@ -191,17 +193,30 @@ public class UserCommandTest {
     }
 
     @Test(expected = ParseException.class)
-    public void testValidateCommandLineInvalid() throws ParseException {
-        final Option oa = new Option("a", "a", Optional.of("a"), Optional.of("a"), 1, true, false);
-        final Option ob = new Option("b", "b", Optional.empty(), Optional.empty(), 0, false, true);
+    public void testValidateCommandLineInvalid() throws ParseException, java.text.ParseException {
+        final Option oa = new Option("a", "a", Optional.of("a"), Optional.of("a"), 1, true, false, Optional.empty());
+        final Option ob = new Option("b", "b", Optional.empty(), Optional.empty(), 0, false, true, Optional.empty());
         final CommandPath c = new CommandPath("a");
         final Optional<Options> o = Optional.of(new Options(oa, ob));
         final Optional<String> d = Optional.empty();
 
-        final List<String> u = Arrays.asList("a"); // Not providing the required parameter
+        final List<Token> u = Tokenizer.tokenize("a"); // Not providing the required parameter
         final Registration r = new Registration(c, o, d);
         final UserCommand cmd = new UserCommand(c, r, u);
 
         cmd.validateCommandLine();
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testConstructorEmptyUserInput() throws ParseException, java.text.ParseException {
+        final Option oa = new Option("a", "a", Optional.of("a"), Optional.of("a"), 1, true, false, Optional.empty());
+        final Option ob = new Option("b", "b", Optional.empty(), Optional.empty(), 0, false, true, Optional.empty());
+        final CommandPath c = new CommandPath("a");
+        final Optional<Options> o = Optional.of(new Options(oa, ob));
+        final Optional<String> d = Optional.empty();
+
+        final List<Token> u = Collections.emptyList(); // Empty list.
+        final Registration r = new Registration(c, o, d);
+        new UserCommand(c, r, u);
     }
 }

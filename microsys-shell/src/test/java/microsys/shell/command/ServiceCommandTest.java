@@ -151,7 +151,7 @@ public class ServiceCommandTest {
 
         final List<String> output = Arrays.asList(stringWriter.getBuffer().toString().split(System.lineSeparator()));
         assertEquals(1, output.size());
-        assertEquals("None of the running services match", output.get(0));
+        assertEquals("None of the running services (of which there are 4) match", output.get(0));
     }
 
     @Test

@@ -7,6 +7,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import jline.TerminalFactory;
 import jline.console.ConsoleReader;
 import jline.console.UserInterruptException;
 import jline.console.history.FileHistory;
@@ -15,7 +16,9 @@ import microsys.shell.model.Command;
 import microsys.shell.model.CommandPath;
 import microsys.shell.model.CommandStatus;
 import microsys.shell.model.Registration;
+import microsys.shell.model.Token;
 import microsys.shell.model.UserCommand;
+import microsys.shell.util.ShellCompleter;
 import microsys.shell.util.Tokenizer;
 
 import java.io.File;
@@ -42,6 +45,7 @@ public class ConsoleManager {
     private final RegistrationManager registrationManager;
     private final ConsoleReader consoleReader;
     private final Optional<FileHistory> fileHistory;
+    private final Optional<ShellCompleter> completer;
 
     /**
      * @param config the static system configuration information
@@ -61,6 +65,9 @@ public class ConsoleManager {
         if (this.fileHistory.isPresent()) {
             this.consoleReader.setHistory(this.fileHistory.get());
         }
+
+        this.completer = Optional.of(new ShellCompleter(registrationManager));
+        this.consoleReader.addCompleter(this.completer.get());
     }
 
     /**
@@ -75,6 +82,7 @@ public class ConsoleManager {
         this.registrationManager = Objects.requireNonNull(registrationManager);
         this.consoleReader = Objects.requireNonNull(consoleReader);
         this.fileHistory = Optional.empty();
+        this.completer = Optional.empty();
     }
 
     /**
@@ -193,6 +201,11 @@ public class ConsoleManager {
         getConsoleReader().println();
         getConsoleReader().getTerminal().setEchoEnabled(true);
         getConsoleReader().shutdown();
+        try {
+            TerminalFactory.get().restore();
+        } catch (final Exception restoreException) {
+            // Ignored, we are stopping any way.
+        }
     }
 
     protected CommandStatus handleInput(final Optional<String> input, final boolean printCommand) throws IOException {
@@ -222,7 +235,7 @@ public class ConsoleManager {
         }
     }
 
-    protected CommandStatus handleTokens(final List<String> tokens) throws IOException {
+    protected CommandStatus handleTokens(final List<Token> tokens) throws IOException {
         final CommandPath commandPath = new CommandPath(tokens);
         final SortedSet<Registration> registrations = getRegistrationManager().getRegistrations(commandPath);
 

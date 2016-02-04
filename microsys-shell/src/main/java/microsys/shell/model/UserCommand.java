@@ -1,5 +1,7 @@
 package microsys.shell.model;
 
+import com.google.common.base.Preconditions;
+
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.ParseException;
@@ -12,7 +14,9 @@ import microsys.common.util.CollectionComparator;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
 
@@ -30,10 +34,11 @@ public class UserCommand implements Comparable<UserCommand> {
      * @param userInput the list of tokens comprising the user input to be executed
      */
     public UserCommand(
-            final CommandPath commandPath, final Registration registration, final List<String> userInput) {
-        this.commandPath = commandPath;
-        this.registration = registration;
-        this.userInput = userInput;
+            final CommandPath commandPath, final Registration registration, final List<?> userInput) {
+        this.commandPath = Objects.requireNonNull(commandPath);
+        this.registration = Objects.requireNonNull(registration);
+        this.userInput = Objects.requireNonNull(userInput).stream().map(String::valueOf).collect(Collectors.toList());
+        Preconditions.checkArgument(!userInput.isEmpty(), "User input must be provided");
     }
 
     /**
