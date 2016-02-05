@@ -16,8 +16,10 @@ import microsys.service.model.Reservation;
 import microsys.service.model.Service;
 import spark.Spark;
 
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * The base class for a micro service in this system.
@@ -26,6 +28,7 @@ public abstract class BaseService {
     private final static Logger LOG = LoggerFactory.getLogger(BaseService.class);
 
     private final Config config;
+    private final CuratorFramework curator;
     private final DiscoveryManager discoveryManager;
 
     /**
@@ -34,14 +37,14 @@ public abstract class BaseService {
      */
     public BaseService(final Config config, final ServiceType type) throws Exception {
         this.config = Objects.requireNonNull(config);
-
-        final CuratorFramework curator = createCurator();
+        this.curator = createCurator();
 
         // Configure the service.
         final Reservation reservation = new PortManager(getConfig(), curator).reserveServicePort(type, getHostName());
         configurePort(reservation);
         configureThreading();
         configureSecurity();
+        configureRequestLogger();
         configureCompression();
 
         this.discoveryManager = new DiscoveryManager(getConfig(), curator);
@@ -78,6 +81,13 @@ public abstract class BaseService {
     }
 
     /**
+     * @return the {@link CuratorFramework} used to perform communication with zookeeper
+     */
+    public CuratorFramework getCurator() {
+        return this.curator;
+    }
+
+    /**
      * @return the {@link DiscoveryManager} used to manage available services
      */
     public DiscoveryManager getDiscoveryManager() {
@@ -93,7 +103,7 @@ public abstract class BaseService {
         final String namespace = getConfig().getString(CommonConfig.SYSTEM_NAME.getKey());
         final CuratorFramework curator =
                 CuratorFrameworkFactory.builder().connectString(zookeepers).namespace(namespace)
-                        .retryPolicy(new ExponentialBackoffRetry(1000, 3)).build();
+                        .defaultData(new byte[0]).retryPolicy(new ExponentialBackoffRetry(1000, 3)).build();
         curator.start();
         if (!curator.blockUntilConnected(5, TimeUnit.SECONDS)) {
             throw new Exception("Failed to connect to zookeeper");
@@ -127,5 +137,25 @@ public abstract class BaseService {
 
     protected void configureCompression() {
         Spark.after((request, response) -> response.header("Content-Encoding", "gzip"));
+    }
+
+    protected void configureRequestLogger() {
+        Spark.before((request, response) -> {
+            final String params = String.join(
+                    ", ", request.queryMap().toMap().entrySet().stream()
+                            .map(e -> String.format("%s => %s", e.getKey(), Arrays.asList(e.getValue()).toString()))
+                            .collect(Collectors.toList()));
+
+            LOG.info(String.format("%-6s %s  %s", request.requestMethod(), request.uri(), params));
+        });
+    }
+
+    /**
+     * Stop the service.
+     */
+    public void stop() {
+        Spark.stop();
+        this.discoveryManager.close();
+        this.curator.close();
     }
 }

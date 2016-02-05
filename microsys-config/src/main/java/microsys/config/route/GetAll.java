@@ -1,22 +1,26 @@
 package microsys.config.route;
 
 import com.google.common.net.MediaType;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.typesafe.config.Config;
 
-import microsys.service.BaseRoute;
+import microsys.config.service.ConfigService;
 import spark.Request;
 import spark.Response;
 
+import java.util.Map;
+
 /**
- *
+ * Retrieve all of the dynamic system configuration properties managed in this system.
  */
-public class GetAll extends BaseRoute {
+public class GetAll extends BaseConfigRoute {
     /**
      * @param config the system configuration properties
+     * @param configService the {@link ConfigService} used to manage the dynamic system configuration properties
      */
-    public GetAll(final Config config) {
-        super(config);
+    public GetAll(final Config config, final ConfigService configService) {
+        super(config, configService);
     }
 
     /**
@@ -27,8 +31,18 @@ public class GetAll extends BaseRoute {
         response.status(200);
         response.type(MediaType.JSON_UTF_8.type());
 
+        final JsonArray jsonArr = new JsonArray();
+        getConfigService().getAll().entrySet().stream().map(this::asJson).forEach(jsonArr::add);
+
         final JsonObject json = new JsonObject();
-        getConfig().entrySet().forEach(e -> json.addProperty(e.getKey(), e.getValue().render()));
+        json.add("config", jsonArr);
+        return json;
+    }
+
+    protected JsonObject asJson(final Map.Entry<String, String> entry) {
+        final JsonObject json = new JsonObject();
+        json.addProperty("key", entry.getKey());
+        json.addProperty("value", entry.getValue());
         return json;
     }
 }

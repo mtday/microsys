@@ -26,6 +26,12 @@
             <artifactId>microsys-service</artifactId>
         </dependency>
 
+        <!-- Used to perform testing with curator and zookeeper -->
+        <dependency>
+            <groupId>org.apache.curator</groupId>
+            <artifactId>curator-test</artifactId>
+        </dependency>
+
         <!-- Unit Testing -->
         <dependency>
             <groupId>junit</groupId>

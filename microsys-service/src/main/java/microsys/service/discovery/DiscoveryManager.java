@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import microsys.common.model.ServiceType;
 import microsys.service.model.Service;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -29,6 +30,8 @@ public class DiscoveryManager {
 
     private final Config config;
     private final ServiceDiscovery<String> discovery;
+
+    private boolean isClosed = false;
 
     /**
      * @param config the static system configuration information
@@ -50,10 +53,25 @@ public class DiscoveryManager {
         return this.discovery;
     }
 
+    public boolean isClosed() {
+        return this.isClosed;
+    }
+
+    public void close() {
+        try {
+            this.isClosed = true;
+            this.discovery.close();
+        } catch (final IOException ignored) {
+            // Ignored.
+        }
+    }
+
     public void register(final Service service) throws Exception {
         final ServiceInstance<String> serviceInstance = service.asServiceInstance();
         try {
-            getDiscovery().registerService(serviceInstance);
+            if (!isClosed()) {
+                getDiscovery().registerService(serviceInstance);
+            }
         } catch (final Exception exception) {
             LOG.error("Failed to register service", exception);
         }
@@ -62,7 +80,9 @@ public class DiscoveryManager {
     public void unregister(final Service service) throws Exception {
         final ServiceInstance<String> serviceInstance = service.asServiceInstance();
         try {
-            getDiscovery().unregisterService(serviceInstance);
+            if (!isClosed()) {
+                getDiscovery().unregisterService(serviceInstance);
+            }
         } catch (final Exception exception) {
             LOG.error("Failed to unregister service", exception);
         }
@@ -77,9 +97,11 @@ public class DiscoveryManager {
     public SortedSet<Service> getAll(final ServiceType serviceType) {
         final SortedSet<Service> services = new TreeSet<>();
         try {
-            final List<ServiceInstance<String>> list =
-                    new ArrayList<>(getDiscovery().queryForInstances(Objects.requireNonNull(serviceType).name()));
-            list.stream().map(Service::new).forEach(services::add);
+            if (!isClosed()) {
+                final List<ServiceInstance<String>> list =
+                        new ArrayList<>(getDiscovery().queryForInstances(Objects.requireNonNull(serviceType).name()));
+                list.stream().map(Service::new).forEach(services::add);
+            }
         } catch (final Exception exception) {
             LOG.error("Failed to query for services", exception);
         }
@@ -88,11 +110,13 @@ public class DiscoveryManager {
 
     public Optional<Service> getRandom(final ServiceType serviceType) {
         try {
-            final List<ServiceInstance<String>> services =
-                    new ArrayList<>(getDiscovery().queryForInstances(Objects.requireNonNull(serviceType).name()));
-            if (!services.isEmpty()) {
-                // Return a random service instance from the list.
-                return Optional.of(new Service(services.get(new Random().nextInt(services.size()))));
+            if (!isClosed()) {
+                final List<ServiceInstance<String>> services =
+                        new ArrayList<>(getDiscovery().queryForInstances(Objects.requireNonNull(serviceType).name()));
+                if (!services.isEmpty()) {
+                    // Return a random service instance from the list.
+                    return Optional.of(new Service(services.get(new Random().nextInt(services.size()))));
+                }
             }
         } catch (final Exception exception) {
             LOG.error("Failed to query for services", exception);
