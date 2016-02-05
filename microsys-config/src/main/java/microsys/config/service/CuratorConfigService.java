@@ -145,7 +145,15 @@ public class CuratorConfigService implements ConfigService, TreeCacheListener {
      */
     @Override
     public void childEvent(final CuratorFramework client, final TreeCacheEvent event) throws Exception {
-        LOG.info("Configuration {}: {} => {}", event.getType(), event.getData().getPath(),
-                new String(event.getData().getData(), StandardCharsets.UTF_8));
+        if (event.getData() != null) {
+            if (event.getData().getData() != null) {
+                LOG.info("Configuration {}: {} => {}", event.getType(), event.getData().getPath(),
+                        new String(event.getData().getData(), StandardCharsets.UTF_8));
+            } else {
+                LOG.info("Configuration {}: {}", event.getType(), event.getData().getPath());
+            }
+        } else {
+            LOG.info("Configuration {}", event.getType());
+        }
     }
 }
