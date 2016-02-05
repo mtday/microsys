@@ -28,7 +28,7 @@ public class Runner extends BaseService {
      */
     public Runner(final Config config) throws Exception {
         super(Objects.requireNonNull(config), ServiceType.CONFIG);
-        addRoutes(new CuratorConfigService(getCurator()));
+        addRoutes(new CuratorConfigService(getExecutor(), getCurator()));
     }
 
     protected void addRoutes(final ConfigService configService) {

@@ -12,11 +12,13 @@ import com.typesafe.config.Config;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import microsys.config.model.ConfigKeyValue;
 import microsys.config.service.ConfigService;
 import spark.Request;
 import spark.Response;
 
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Perform testing on the {@link Set} class.
@@ -35,7 +37,7 @@ public class SetTest {
         final Object obj = set.handle(request, response);
 
         Mockito.verify(response).status(400);
-        Mockito.verify(response).body("Invalid configuration key or value");
+        Mockito.verify(response).body("Configuration key and value must be provided");
         assertNull(obj);
     }
 
@@ -47,13 +49,13 @@ public class SetTest {
         final Set set = new Set(config, configService);
 
         final Request request = Mockito.mock(Request.class);
-        Mockito.when(request.params("value")).thenReturn("value");
+        Mockito.when(request.body()).thenReturn("{ value: \"value\" }");
         final Response response = Mockito.mock(Response.class);
 
         final Object obj = set.handle(request, response);
 
         Mockito.verify(response).status(400);
-        Mockito.verify(response).body("Invalid configuration key or value");
+        Mockito.verify(response).body("Key field required");
         assertNull(obj);
     }
 
@@ -65,13 +67,13 @@ public class SetTest {
         final Set set = new Set(config, configService);
 
         final Request request = Mockito.mock(Request.class);
-        Mockito.when(request.params("key")).thenReturn("key");
+        Mockito.when(request.body()).thenReturn("{ key: \"key\" }");
         final Response response = Mockito.mock(Response.class);
 
         final Object obj = set.handle(request, response);
 
         Mockito.verify(response).status(400);
-        Mockito.verify(response).body("Invalid configuration key or value");
+        Mockito.verify(response).body("Value field required");
         assertNull(obj);
     }
 
@@ -79,13 +81,12 @@ public class SetTest {
     public void testMissingKey() throws Exception {
         final Config config = Mockito.mock(Config.class);
         final ConfigService configService = Mockito.mock(ConfigService.class);
-        Mockito.when(configService.set(Mockito.anyString(), Mockito.anyString())).thenReturn(Optional.empty());
+        Mockito.when(configService.set(Mockito.any())).thenReturn(CompletableFuture.completedFuture(Optional.empty()));
 
         final Set set = new Set(config, configService);
 
         final Request request = Mockito.mock(Request.class);
-        Mockito.when(request.params("key")).thenReturn("key");
-        Mockito.when(request.queryParams("value")).thenReturn("value");
+        Mockito.when(request.body()).thenReturn(new ConfigKeyValue("key", "value").toJson().toString());
         final Response response = Mockito.mock(Response.class);
 
         final Object obj = set.handle(request, response);
@@ -101,13 +102,13 @@ public class SetTest {
     public void testWithResponse() throws Exception {
         final Config config = Mockito.mock(Config.class);
         final ConfigService configService = Mockito.mock(ConfigService.class);
-        Mockito.when(configService.set(Mockito.anyString(), Mockito.anyString())).thenReturn(Optional.of("old-value"));
+        Mockito.when(configService.set(Mockito.any()))
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(new ConfigKeyValue("key", "old-value"))));
 
         final Set set = new Set(config, configService);
 
         final Request request = Mockito.mock(Request.class);
-        Mockito.when(request.params("key")).thenReturn("key");
-        Mockito.when(request.queryParams("value")).thenReturn("value");
+        Mockito.when(request.body()).thenReturn(new ConfigKeyValue("key", "value").toJson().toString());
         final Response response = Mockito.mock(Response.class);
 
         final Object obj = set.handle(request, response);

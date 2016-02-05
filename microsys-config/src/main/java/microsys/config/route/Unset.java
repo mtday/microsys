@@ -6,11 +6,14 @@ import com.typesafe.config.Config;
 
 import org.apache.commons.lang3.StringUtils;
 
+import microsys.config.model.ConfigKeyValue;
 import microsys.config.service.ConfigService;
 import spark.Request;
 import spark.Response;
 
 import java.util.Optional;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Unset and remove a configuration value based on the user-provided key.
@@ -36,19 +39,15 @@ public class Unset extends BaseConfigRoute {
             response.body("Invalid configuration key");
             return null;
         } else {
-            final Optional<String> oldValue = getConfigService().unset(key);
+            final Future<Optional<ConfigKeyValue>> future = getConfigService().unset(key);
+            final Optional<ConfigKeyValue> oldValue = future.get(10, TimeUnit.SECONDS);
 
             response.status(200);
             response.type(MediaType.JSON_UTF_8.type());
-
             if (oldValue.isPresent()) {
-                final JsonObject json = new JsonObject();
-                json.addProperty("key", key);
-                json.addProperty("value", oldValue.get());
-                return json;
-            } else {
-                return new JsonObject();
+                return oldValue.get().toJson();
             }
+            return new JsonObject();
         }
     }
 }

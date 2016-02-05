@@ -8,11 +8,16 @@ import org.apache.curator.framework.recipes.cache.TreeCacheListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import microsys.config.model.ConfigKeyValue;
+import microsys.config.model.ConfigKeyValueCollection;
+
 import java.nio.charset.StandardCharsets;
-import java.util.Map;
+import java.util.Collection;
+import java.util.LinkedList;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.TreeMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 
 /**
  * A {@link ConfigService} implementation that makes use of a {@link CuratorFramework} to
@@ -23,14 +28,17 @@ public class CuratorConfigService implements ConfigService, TreeCacheListener {
 
     private final static String PATH = "/dynamic-config";
 
+    private final ExecutorService executor;
     private final CuratorFramework curator;
     private final TreeCache treeCache;
 
     /**
+     * @param executor used to execute asynchronous processing of the configuration service
      * @param curator the {@link CuratorFramework} used to communicate configuration information with zookeeper
      * @throws Exception if there is a problem with zookeeper communications
      */
-    public CuratorConfigService(final CuratorFramework curator) throws Exception {
+    public CuratorConfigService(final ExecutorService executor, final CuratorFramework curator) throws Exception {
+        this.executor = Objects.requireNonNull(executor);
         this.curator = Objects.requireNonNull(curator);
 
         if (this.curator.checkExists().forPath(PATH) == null) {
@@ -42,6 +50,13 @@ public class CuratorConfigService implements ConfigService, TreeCacheListener {
 
         // Add this class as a listener.
         this.treeCache.getListenable().addListener(this);
+    }
+
+    /**
+     * @return the {@link ExecutorService} used to execute asynchronous processing of the configuration service
+     */
+    protected ExecutorService getExecutor() {
+        return this.executor;
     }
 
     /**
@@ -67,77 +82,97 @@ public class CuratorConfigService implements ConfigService, TreeCacheListener {
     }
 
     /**
-     * {@inheritDoc}
+     * @param bytes the configuration value as bytes as stored in zookeeper
+     * @return the String value of the bytes
      */
-    @Override
-    public Map<String, String> getAll() throws ConfigServiceException {
-        final Map<String, String> map = new TreeMap<>();
-        getTreeCache().getCurrentChildren(PATH).entrySet().stream()
-                .forEach(e -> map.put(e.getKey(), new String(e.getValue().getData(), StandardCharsets.UTF_8)));
-        return map;
+    protected String getValue(final byte[] bytes) {
+        return new String(bytes, StandardCharsets.UTF_8);
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public Optional<String> get(final String key) throws ConfigServiceException {
-        Objects.requireNonNull(key);
-        final Optional<ChildData> existing = Optional.ofNullable(getTreeCache().getCurrentData(getPath(key)));
-        if (existing.isPresent()) {
-            return Optional.of(new String(existing.get().getData(), StandardCharsets.UTF_8));
-        }
-        return Optional.empty();
+    public Future<ConfigKeyValueCollection> getAll() {
+        return getExecutor().submit(() -> {
+            final Collection<ConfigKeyValue> coll = new LinkedList<>();
+            getTreeCache().getCurrentChildren(PATH).entrySet().stream()
+                    .forEach(e -> coll.add(new ConfigKeyValue(e.getKey(), getValue(e.getValue().getData()))));
+            return new ConfigKeyValueCollection(coll);
+        });
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public Optional<String> set(final String key, final String value) throws ConfigServiceException {
+    public Future<Optional<ConfigKeyValue>> get(final String key) {
         Objects.requireNonNull(key);
-        Objects.requireNonNull(value);
 
-        final Optional<ChildData> existing = Optional.ofNullable(getTreeCache().getCurrentData(getPath(key)));
-        try {
+        return getExecutor().submit(() -> {
+            final Optional<ChildData> existing = Optional.ofNullable(getTreeCache().getCurrentData(getPath(key)));
             if (existing.isPresent()) {
-                getCurator().setData().forPath(getPath(key), value.getBytes(StandardCharsets.UTF_8));
-            } else {
-                getCurator().create().creatingParentsIfNeeded()
-                        .forPath(getPath(key), value.getBytes(StandardCharsets.UTF_8));
+                return Optional.of(new ConfigKeyValue(key, getValue(existing.get().getData())));
             }
-        } catch (final Exception setException) {
-            LOG.error("Failed to set configuration value for key: {}", key);
-            throw new ConfigServiceException("Failed to set configuration value for key: " + key, setException);
-        }
-
-        if (existing.isPresent()) {
-            return Optional.of(new String(existing.get().getData(), StandardCharsets.UTF_8));
-        }
-        return Optional.empty();
+            return Optional.empty();
+        });
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public Optional<String> unset(final String key) throws ConfigServiceException {
+    public Future<Optional<ConfigKeyValue>> set(final ConfigKeyValue kv) {
+        Objects.requireNonNull(kv);
+
+        return getExecutor().submit(() -> {
+            final Optional<ChildData> existing =
+                    Optional.ofNullable(getTreeCache().getCurrentData(getPath(kv.getKey())));
+            try {
+                final String path = getPath(kv.getKey());
+                final byte[] value = kv.getValue().getBytes(StandardCharsets.UTF_8);
+                if (existing.isPresent()) {
+                    getCurator().setData().forPath(path, value);
+                } else {
+                    getCurator().create().creatingParentsIfNeeded().forPath(path, value);
+                }
+            } catch (final Exception setException) {
+                LOG.error("Failed to set configuration value for key: {}", kv.getKey());
+                throw new ConfigServiceException(
+                        "Failed to set configuration value for key: " + kv.getKey(), setException);
+            }
+
+            if (existing.isPresent()) {
+                return Optional.of(new ConfigKeyValue(kv.getKey(), getValue(existing.get().getData())));
+            }
+            return Optional.empty();
+        });
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Future<Optional<ConfigKeyValue>> unset(final String key) {
         Objects.requireNonNull(key);
 
-        final Optional<ChildData> existing = Optional.ofNullable(getTreeCache().getCurrentData(getPath(key)));
-        try {
-            if (existing.isPresent()) {
-                getCurator().delete().forPath(getPath(key));
+        return getExecutor().submit(() -> {
+            final Optional<ChildData> existing = Optional.ofNullable(getTreeCache().getCurrentData(getPath(key)));
+            try {
+                if (existing.isPresent()) {
+                    getCurator().delete().forPath(getPath(key));
+                }
+            } catch (final Exception unsetException) {
+                LOG.error("Failed to remove configuration value with key: {}", key);
+                throw new ConfigServiceException(
+                        "Failed to remove configuration value with key: " + key, unsetException);
             }
-        } catch (final Exception unsetException) {
-            LOG.error("Failed to remove configuration value with key: {}", key);
-            throw new ConfigServiceException("Failed to remove configuration value with key: " + key, unsetException);
-        }
 
-        if (existing.isPresent()) {
-            return Optional.of(new String(existing.get().getData(), StandardCharsets.UTF_8));
-        }
-        return Optional.empty();
+            if (existing.isPresent()) {
+                return Optional.of(new ConfigKeyValue(key, getValue(existing.get().getData())));
+            }
+            return Optional.empty();
+        });
     }
 
     /**

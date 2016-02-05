@@ -18,6 +18,8 @@ import spark.Spark;
 
 import java.util.Arrays;
 import java.util.Objects;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -28,6 +30,7 @@ public abstract class BaseService {
     private final static Logger LOG = LoggerFactory.getLogger(BaseService.class);
 
     private final Config config;
+    private final ExecutorService executor;
     private final CuratorFramework curator;
     private final DiscoveryManager discoveryManager;
 
@@ -37,6 +40,7 @@ public abstract class BaseService {
      */
     public BaseService(final Config config, final ServiceType type) throws Exception {
         this.config = Objects.requireNonNull(config);
+        this.executor = Executors.newFixedThreadPool(this.config.getInt(CommonConfig.EXECUTOR_THREADS.getKey()));
         this.curator = createCurator();
 
         // Configure the service.
@@ -78,6 +82,13 @@ public abstract class BaseService {
      */
     public Config getConfig() {
         return this.config;
+    }
+
+    /**
+     * @return the {@link ExecutorService} used to perform asynchronous task processing
+     */
+    public ExecutorService getExecutor() {
+        return this.executor;
     }
 
     /**

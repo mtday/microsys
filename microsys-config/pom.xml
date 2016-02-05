@@ -26,6 +26,12 @@
             <artifactId>microsys-service</artifactId>
         </dependency>
 
+        <!-- OkHttp used as a REST client library -->
+        <dependency>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>okhttp</artifactId>
+        </dependency>
+
         <!-- Used to perform testing with curator and zookeeper -->
         <dependency>
             <groupId>org.apache.curator</groupId>

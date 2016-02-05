@@ -12,11 +12,13 @@ import com.typesafe.config.Config;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import microsys.config.model.ConfigKeyValue;
 import microsys.config.service.ConfigService;
 import spark.Request;
 import spark.Response;
 
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Perform testing on the {@link Get} class.
@@ -43,7 +45,8 @@ public class GetTest {
     public void testMissingKey() throws Exception {
         final Config config = Mockito.mock(Config.class);
         final ConfigService configService = Mockito.mock(ConfigService.class);
-        Mockito.when(configService.get(Mockito.anyString())).thenReturn(Optional.empty());
+        Mockito.when(configService.get(Mockito.anyString()))
+                .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
 
         final Get get = new Get(config, configService);
 
@@ -62,7 +65,8 @@ public class GetTest {
     public void testWithResponse() throws Exception {
         final Config config = Mockito.mock(Config.class);
         final ConfigService configService = Mockito.mock(ConfigService.class);
-        Mockito.when(configService.get("key")).thenReturn(Optional.of("value"));
+        Mockito.when(configService.get(Mockito.anyString()))
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(new ConfigKeyValue("key", "value"))));
 
         final Get get = new Get(config, configService);
 

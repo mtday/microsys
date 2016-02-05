@@ -1,16 +1,18 @@
 package microsys.config.route;
 
 import com.google.common.net.MediaType;
-import com.google.gson.JsonObject;
 import com.typesafe.config.Config;
 
 import org.apache.commons.lang3.StringUtils;
 
+import microsys.config.model.ConfigKeyValue;
 import microsys.config.service.ConfigService;
 import spark.Request;
 import spark.Response;
 
 import java.util.Optional;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Retrieves the configuration value for the provided key.
@@ -36,16 +38,13 @@ public class Get extends BaseConfigRoute {
             response.body("Invalid configuration key");
             return null;
         } else {
-            final Optional<String> value = getConfigService().get(key);
+            final Future<Optional<ConfigKeyValue>> future = getConfigService().get(key);
+            final Optional<ConfigKeyValue> value = future.get(10, TimeUnit.SECONDS);
 
             if (value.isPresent()) {
                 response.status(200);
                 response.type(MediaType.JSON_UTF_8.type());
-
-                final JsonObject json = new JsonObject();
-                json.addProperty("key", key);
-                json.addProperty("value", value.get());
-                return json;
+                return value.get().toJson();
             } else {
                 response.status(404);
                 response.body(String.format("Configuration key not found: %s", key));

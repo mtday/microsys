@@ -11,12 +11,13 @@ import com.typesafe.config.Config;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import microsys.config.model.ConfigKeyValue;
+import microsys.config.model.ConfigKeyValueCollection;
 import microsys.config.service.ConfigService;
 import spark.Request;
 import spark.Response;
 
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Perform testing on the {@link GetAll} class.
@@ -24,13 +25,13 @@ import java.util.TreeMap;
 public class GetAllTest {
     @Test
     public void testWithResponse() throws Exception {
-        final Map<String, String> data = new TreeMap<>();
-        data.put("key1", "value1");
-        data.put("key2", "value2");
+        final ConfigKeyValue kv1 = new ConfigKeyValue("key1", "value1");
+        final ConfigKeyValue kv2 = new ConfigKeyValue("key2", "value2");
+        final ConfigKeyValueCollection coll = new ConfigKeyValueCollection(kv1, kv2);
 
         final Config config = Mockito.mock(Config.class);
         final ConfigService configService = Mockito.mock(ConfigService.class);
-        Mockito.when(configService.getAll()).thenReturn(data);
+        Mockito.when(configService.getAll()).thenReturn(CompletableFuture.completedFuture(coll));
 
         final GetAll getAll = new GetAll(config, configService);
 

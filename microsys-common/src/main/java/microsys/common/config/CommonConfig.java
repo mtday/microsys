@@ -22,6 +22,8 @@ public enum CommonConfig {
 
     ZOOKEEPER_HOSTS,
 
+    EXECUTOR_THREADS,
+
     SHELL_HISTORY_FILE;
 
     /**

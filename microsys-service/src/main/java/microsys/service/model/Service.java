@@ -73,6 +73,10 @@ public class Service implements Model, Comparable<Service> {
         return this.secure;
     }
 
+    public String asUrl() {
+        return String.format("%s://%s:%d/", isSecure() ? "https" : "http", getHost(), getPort());
+    }
+
     public ServiceInstance<String> asServiceInstance() {
         return new ServiceInstance<>(getType().name(), getId(), getHost(), getPort(), null, toJson().toString(),
                 new Date().getTime(), org.apache.curator.x.discovery.ServiceType.DYNAMIC, null);
