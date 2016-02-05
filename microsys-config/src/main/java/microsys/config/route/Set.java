@@ -2,7 +2,6 @@ package microsys.config.route;
 
 import com.google.common.base.Preconditions;
 import com.google.common.net.MediaType;
-import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.typesafe.config.Config;
 
@@ -14,6 +13,8 @@ import spark.Response;
 import java.util.Optional;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * Update (or create) a configuration value based on the user-provided data.
@@ -40,16 +41,17 @@ public class Set extends BaseConfigRoute {
             final Future<Optional<ConfigKeyValue>> future = getConfigService().set(kv);
             final Optional<ConfigKeyValue> oldValue = future.get(10, TimeUnit.SECONDS);
 
-            response.status(200);
-            response.type(MediaType.JSON_UTF_8.type());
             if (oldValue.isPresent()) {
+                response.status(HttpServletResponse.SC_OK);
+                response.type(MediaType.JSON_UTF_8.type());
                 return oldValue.get().toJson();
+            } else {
+                response.status(HttpServletResponse.SC_NO_CONTENT);
+                return NO_CONTENT;
             }
-            return new JsonObject();
         } catch (final IllegalArgumentException badInput) {
-            response.status(400);
-            response.body(badInput.getMessage());
-            return null;
+            response.status(HttpServletResponse.SC_BAD_REQUEST);
+            return badInput.getMessage();
         }
     }
 }

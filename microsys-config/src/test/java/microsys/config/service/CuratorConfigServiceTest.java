@@ -17,6 +17,7 @@ import ch.qos.logback.classic.Level;
 import microsys.config.model.ConfigKeyValue;
 import microsys.config.model.ConfigKeyValueCollection;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -32,6 +33,9 @@ public class CuratorConfigServiceTest {
 
     @Before
     public void before() throws Exception {
+        // Don't want to see too much logging.
+        ((ch.qos.logback.classic.Logger) LoggerFactory.getLogger(CuratorConfigService.class)).setLevel(Level.OFF);
+
         this.testingServer = new TestingServer();
         this.executor = Executors.newSingleThreadExecutor();
         this.curator = CuratorFrameworkFactory.builder().namespace("namespace")
@@ -53,9 +57,6 @@ public class CuratorConfigServiceTest {
 
     @Test
     public void test() throws Exception {
-        // Don't want to see stack traces in the output when attempting to create invalid commands during testing.
-        ((ch.qos.logback.classic.Logger) LoggerFactory.getLogger(CuratorConfigService.class)).setLevel(Level.OFF);
-
         final CuratorConfigService svc = new CuratorConfigService(this.executor, this.curator);
 
         final ConfigKeyValueCollection coll = svc.getAll().get();
@@ -90,5 +91,26 @@ public class CuratorConfigServiceTest {
 
         final Optional<ConfigKeyValue> unsetMissing = svc.unset("missing").get();
         assertFalse(unsetMissing.isPresent());
+    }
+
+    @Test
+    public void testExistingData() throws Exception {
+        final TestingServer testingServer = new TestingServer();
+        final CuratorFramework curator = CuratorFrameworkFactory.builder().namespace("namespace-test")
+                .connectString(testingServer.getConnectString()).defaultData(new byte[0])
+                .retryPolicy(new ExponentialBackoffRetry(1000, 3)).build();
+        curator.start();
+
+        curator.create().forPath("/dynamic-config");
+        curator.create().forPath("/dynamic-config/key", "value".getBytes(StandardCharsets.UTF_8));
+
+        final CuratorConfigService svc = new CuratorConfigService(this.executor, curator);
+
+        // Wait a little to allow the value to be stored.
+        TimeUnit.MILLISECONDS.sleep(300);
+
+        final Optional<ConfigKeyValue> get = svc.get("key").get();
+        assertTrue(get.isPresent());
+        assertEquals(new ConfigKeyValue("key", "value"), get.get());
     }
 }

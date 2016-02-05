@@ -19,6 +19,8 @@ import spark.Response;
 
 import java.util.concurrent.CompletableFuture;
 
+import javax.servlet.http.HttpServletResponse;
+
 /**
  * Perform testing on the {@link GetAll} class.
  */
@@ -40,7 +42,7 @@ public class GetAllTest {
 
         final Object obj = getAll.handle(request, response);
 
-        Mockito.verify(response).status(200);
+        Mockito.verify(response).status(HttpServletResponse.SC_OK);
         Mockito.verify(response).type(MediaType.JSON_UTF_8.type());
         assertNotNull(obj);
         assertTrue(obj instanceof JsonObject);

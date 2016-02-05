@@ -14,6 +14,8 @@ import java.util.Optional;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import javax.servlet.http.HttpServletResponse;
+
 /**
  * Retrieves the configuration value for the provided key.
  */
@@ -34,21 +36,19 @@ public class Get extends BaseConfigRoute {
         final String key = request.params("key");
 
         if (StringUtils.isEmpty(key)) {
-            response.status(400);
-            response.body("Invalid configuration key");
-            return null;
+            response.status(HttpServletResponse.SC_BAD_REQUEST);
+            return "Invalid configuration key";
         } else {
             final Future<Optional<ConfigKeyValue>> future = getConfigService().get(key);
             final Optional<ConfigKeyValue> value = future.get(10, TimeUnit.SECONDS);
 
             if (value.isPresent()) {
-                response.status(200);
+                response.status(HttpServletResponse.SC_OK);
                 response.type(MediaType.JSON_UTF_8.type());
                 return value.get().toJson();
             } else {
-                response.status(404);
-                response.body(String.format("Configuration key not found: %s", key));
-                return null;
+                response.status(HttpServletResponse.SC_NOT_FOUND);
+                return String.format("Configuration key not found: %s", key);
             }
         }
     }

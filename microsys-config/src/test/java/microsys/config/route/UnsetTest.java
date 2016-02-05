@@ -2,7 +2,6 @@ package microsys.config.route;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import com.google.common.net.MediaType;
@@ -20,6 +19,8 @@ import spark.Response;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
+import javax.servlet.http.HttpServletResponse;
+
 /**
  * Perform testing on the {@link Unset} class.
  */
@@ -36,9 +37,8 @@ public class UnsetTest {
 
         final Object obj = unset.handle(request, response);
 
-        Mockito.verify(response).status(400);
-        Mockito.verify(response).body("Invalid configuration key");
-        assertNull(obj);
+        Mockito.verify(response).status(HttpServletResponse.SC_BAD_REQUEST);
+        assertEquals("Invalid configuration key", obj);
     }
 
     @Test
@@ -56,11 +56,8 @@ public class UnsetTest {
 
         final Object obj = unset.handle(request, response);
 
-        Mockito.verify(response).status(200);
-        Mockito.verify(response).type(MediaType.JSON_UTF_8.type());
-        assertNotNull(obj);
-        assertTrue(obj instanceof JsonObject);
-        assertEquals("{}", obj.toString());
+        Mockito.verify(response).status(HttpServletResponse.SC_NO_CONTENT);
+        assertEquals("", obj);
     }
 
     @Test
@@ -78,7 +75,7 @@ public class UnsetTest {
 
         final Object obj = unset.handle(request, response);
 
-        Mockito.verify(response).status(200);
+        Mockito.verify(response).status(HttpServletResponse.SC_OK);
         Mockito.verify(response).type(MediaType.JSON_UTF_8.type());
         assertNotNull(obj);
         assertTrue(obj instanceof JsonObject);

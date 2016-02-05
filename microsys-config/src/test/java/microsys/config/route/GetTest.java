@@ -2,7 +2,6 @@ package microsys.config.route;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import com.google.common.net.MediaType;
@@ -20,6 +19,8 @@ import spark.Response;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
+import javax.servlet.http.HttpServletResponse;
+
 /**
  * Perform testing on the {@link Get} class.
  */
@@ -36,9 +37,8 @@ public class GetTest {
 
         final Object obj = get.handle(request, response);
 
-        Mockito.verify(response).status(400);
-        Mockito.verify(response).body("Invalid configuration key");
-        assertNull(obj);
+        Mockito.verify(response).status(HttpServletResponse.SC_BAD_REQUEST);
+        assertEquals("Invalid configuration key", obj);
     }
 
     @Test
@@ -56,9 +56,8 @@ public class GetTest {
 
         final Object obj = get.handle(request, response);
 
-        Mockito.verify(response).status(404);
-        Mockito.verify(response).body("Configuration key not found: missing");
-        assertNull(obj);
+        Mockito.verify(response).status(HttpServletResponse.SC_NOT_FOUND);
+        assertEquals("Configuration key not found: missing", obj);
     }
 
     @Test
@@ -76,7 +75,7 @@ public class GetTest {
 
         final Object obj = get.handle(request, response);
 
-        Mockito.verify(response).status(200);
+        Mockito.verify(response).status(HttpServletResponse.SC_OK);
         Mockito.verify(response).type(MediaType.JSON_UTF_8.type());
         assertNotNull(obj);
         assertTrue(obj instanceof JsonObject);

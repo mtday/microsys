@@ -14,6 +14,7 @@ import microsys.config.model.ConfigKeyValueCollection;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
@@ -96,8 +97,11 @@ public class CuratorConfigService implements ConfigService, TreeCacheListener {
     public Future<ConfigKeyValueCollection> getAll() {
         return getExecutor().submit(() -> {
             final Collection<ConfigKeyValue> coll = new LinkedList<>();
-            getTreeCache().getCurrentChildren(PATH).entrySet().stream()
-                    .forEach(e -> coll.add(new ConfigKeyValue(e.getKey(), getValue(e.getValue().getData()))));
+            final Map<String, ChildData> data = getTreeCache().getCurrentChildren(PATH);
+            if (data != null) {
+                data.entrySet().stream()
+                        .forEach(e -> coll.add(new ConfigKeyValue(e.getKey(), getValue(e.getValue().getData()))));
+            }
             return new ConfigKeyValueCollection(coll);
         });
     }

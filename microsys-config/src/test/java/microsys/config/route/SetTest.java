@@ -2,7 +2,6 @@ package microsys.config.route;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import com.google.common.net.MediaType;
@@ -20,6 +19,8 @@ import spark.Response;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
+import javax.servlet.http.HttpServletResponse;
+
 /**
  * Perform testing on the {@link Set} class.
  */
@@ -36,9 +37,8 @@ public class SetTest {
 
         final Object obj = set.handle(request, response);
 
-        Mockito.verify(response).status(400);
-        Mockito.verify(response).body("Configuration key and value must be provided");
-        assertNull(obj);
+        Mockito.verify(response).status(HttpServletResponse.SC_BAD_REQUEST);
+        assertEquals("Configuration key and value must be provided", obj);
     }
 
     @Test
@@ -54,9 +54,8 @@ public class SetTest {
 
         final Object obj = set.handle(request, response);
 
-        Mockito.verify(response).status(400);
-        Mockito.verify(response).body("Key field required");
-        assertNull(obj);
+        Mockito.verify(response).status(HttpServletResponse.SC_BAD_REQUEST);
+        assertEquals("Key field required", obj);
     }
 
     @Test
@@ -72,9 +71,8 @@ public class SetTest {
 
         final Object obj = set.handle(request, response);
 
-        Mockito.verify(response).status(400);
-        Mockito.verify(response).body("Value field required");
-        assertNull(obj);
+        Mockito.verify(response).status(HttpServletResponse.SC_BAD_REQUEST);
+        assertEquals("Value field required", obj);
     }
 
     @Test
@@ -91,11 +89,8 @@ public class SetTest {
 
         final Object obj = set.handle(request, response);
 
-        Mockito.verify(response).status(200);
-        Mockito.verify(response).type(MediaType.JSON_UTF_8.type());
-        assertNotNull(obj);
-        assertTrue(obj instanceof JsonObject);
-        assertEquals("{}", obj.toString());
+        Mockito.verify(response).status(HttpServletResponse.SC_NO_CONTENT);
+        assertEquals("", obj);
     }
 
     @Test
@@ -113,7 +108,7 @@ public class SetTest {
 
         final Object obj = set.handle(request, response);
 
-        Mockito.verify(response).status(200);
+        Mockito.verify(response).status(HttpServletResponse.SC_OK);
         Mockito.verify(response).type(MediaType.JSON_UTF_8.type());
         assertNotNull(obj);
         assertTrue(obj instanceof JsonObject);

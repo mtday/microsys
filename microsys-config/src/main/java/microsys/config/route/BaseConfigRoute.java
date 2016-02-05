@@ -11,6 +11,8 @@ import java.util.Objects;
  * The base class for config routes, provides easy access to a {@link ConfigService} object.
  */
 public abstract class BaseConfigRoute extends BaseRoute {
+    protected final static Object NO_CONTENT = "";
+
     private final ConfigService configService;
 
     /**

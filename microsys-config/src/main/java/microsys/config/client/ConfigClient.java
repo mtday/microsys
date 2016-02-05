@@ -1,6 +1,5 @@
 package microsys.config.client;
 
-import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
 import microsys.common.model.ServiceType;
@@ -18,23 +17,36 @@ import okhttp3.Response;
 
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
-import java.util.concurrent.FutureTask;
+
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * Provides remote access over REST to the configuration service.
  */
 public class ConfigClient implements ConfigService {
+    private final ExecutorService executor;
     private final DiscoveryManager discoveryManager;
     private final OkHttpClient httpClient;
 
     /**
+     * @param executor used to execute asynchronous processing of the configuration client
      * @param discoveryManager the service discovery manager used to find configuration service end-points
      * @param httpClient the HTTP client used to perform REST communication
      */
-    public ConfigClient(final DiscoveryManager discoveryManager, final OkHttpClient httpClient) {
+    public ConfigClient(
+            final ExecutorService executor, final DiscoveryManager discoveryManager, final OkHttpClient httpClient) {
+        this.executor = Objects.requireNonNull(executor);
         this.discoveryManager = Objects.requireNonNull(discoveryManager);
         this.httpClient = Objects.requireNonNull(httpClient);
+    }
+
+    /**
+     * @return the {@link ExecutorService} used to execute asynchronous processing of the configuration client
+     */
+    protected ExecutorService getExecutor() {
+        return this.executor;
     }
 
     /**
@@ -56,7 +68,7 @@ public class ConfigClient implements ConfigService {
      */
     @Override
     public Future<ConfigKeyValueCollection> getAll() {
-        return new FutureTask<>(() -> {
+        return getExecutor().submit(() -> {
             final Optional<Service> random = getDiscoveryManager().getRandom(ServiceType.CONFIG);
             if (!random.isPresent()) {
                 throw new ConfigServiceException("Unable to find a running configuration service");
@@ -64,7 +76,13 @@ public class ConfigClient implements ConfigService {
 
             final Request request = new Request.Builder().url(random.get().asUrl()).get().build();
             final Response response = getHttpClient().newCall(request).execute();
-            return new ConfigKeyValueCollection(new JsonParser().parse(response.body().string()).getAsJsonObject());
+            switch (response.code()) {
+                case HttpServletResponse.SC_OK:
+                    return new ConfigKeyValueCollection(
+                            new JsonParser().parse(response.body().string()).getAsJsonObject());
+                default:
+                    throw new ConfigServiceException(response.body().string());
+            }
         });
     }
 
@@ -75,7 +93,7 @@ public class ConfigClient implements ConfigService {
     public Future<Optional<ConfigKeyValue>> get(final String key) {
         Objects.requireNonNull(key);
 
-        return new FutureTask<>(() -> {
+        return getExecutor().submit(() -> {
             final Optional<Service> random = getDiscoveryManager().getRandom(ServiceType.CONFIG);
             if (!random.isPresent()) {
                 throw new ConfigServiceException("Unable to find a running configuration service");
@@ -83,11 +101,15 @@ public class ConfigClient implements ConfigService {
 
             final Request request = new Request.Builder().url(random.get().asUrl() + key).get().build();
             final Response response = getHttpClient().newCall(request).execute();
-            final JsonObject json = new JsonParser().parse(response.body().string()).getAsJsonObject();
-            if (json.has("key")) {
-                return Optional.of(new ConfigKeyValue(json));
+            switch (response.code()) {
+                case HttpServletResponse.SC_NOT_FOUND:
+                    return Optional.empty();
+                case HttpServletResponse.SC_OK:
+                    return Optional
+                            .of(new ConfigKeyValue(new JsonParser().parse(response.body().string()).getAsJsonObject()));
+                default:
+                    throw new ConfigServiceException(response.body().string());
             }
-            return Optional.empty();
         });
     }
 
@@ -98,7 +120,7 @@ public class ConfigClient implements ConfigService {
     public Future<Optional<ConfigKeyValue>> set(final ConfigKeyValue kv) {
         Objects.requireNonNull(kv);
 
-        return new FutureTask<>(() -> {
+        return getExecutor().submit(() -> {
             final Optional<Service> random = getDiscoveryManager().getRandom(ServiceType.CONFIG);
             if (!random.isPresent()) {
                 throw new ConfigServiceException("Unable to find a running configuration service");
@@ -108,11 +130,15 @@ public class ConfigClient implements ConfigService {
                     RequestBody.create(MediaType.parse("application/json; charset=utf-8"), kv.toJson().toString());
             final Request request = new Request.Builder().url(random.get().asUrl()).post(body).build();
             final Response response = getHttpClient().newCall(request).execute();
-            final JsonObject json = new JsonParser().parse(response.body().string()).getAsJsonObject();
-            if (json.has("key")) {
-                return Optional.of(new ConfigKeyValue(json));
+            switch (response.code()) {
+                case HttpServletResponse.SC_NO_CONTENT:
+                    return Optional.empty();
+                case HttpServletResponse.SC_OK:
+                    return Optional
+                            .of(new ConfigKeyValue(new JsonParser().parse(response.body().string()).getAsJsonObject()));
+                default:
+                    throw new ConfigServiceException(response.body().string());
             }
-            return Optional.empty();
         });
     }
 
@@ -123,7 +149,7 @@ public class ConfigClient implements ConfigService {
     public Future<Optional<ConfigKeyValue>> unset(final String key) {
         Objects.requireNonNull(key);
 
-        return new FutureTask<>(() -> {
+        return getExecutor().submit(() -> {
             final Optional<Service> random = getDiscoveryManager().getRandom(ServiceType.CONFIG);
             if (!random.isPresent()) {
                 throw new ConfigServiceException("Unable to find a running configuration service");
@@ -131,11 +157,15 @@ public class ConfigClient implements ConfigService {
 
             final Request request = new Request.Builder().url(random.get().asUrl() + key).delete().build();
             final Response response = getHttpClient().newCall(request).execute();
-            final JsonObject json = new JsonParser().parse(response.body().string()).getAsJsonObject();
-            if (json.has("key")) {
-                return Optional.of(new ConfigKeyValue(json));
+            switch (response.code()) {
+                case HttpServletResponse.SC_NO_CONTENT:
+                    return Optional.empty();
+                case HttpServletResponse.SC_OK:
+                    return Optional
+                            .of(new ConfigKeyValue(new JsonParser().parse(response.body().string()).getAsJsonObject()));
+                default:
+                    throw new ConfigServiceException(response.body().string());
             }
-            return Optional.empty();
         });
     }
 }

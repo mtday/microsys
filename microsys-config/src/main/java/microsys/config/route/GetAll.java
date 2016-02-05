@@ -9,6 +9,8 @@ import spark.Response;
 
 import java.util.concurrent.TimeUnit;
 
+import javax.servlet.http.HttpServletResponse;
+
 /**
  * Retrieve all of the dynamic system configuration properties managed in this system.
  */
@@ -26,7 +28,7 @@ public class GetAll extends BaseConfigRoute {
      */
     @Override
     public Object handle(final Request request, final Response response) throws Exception {
-        response.status(200);
+        response.status(HttpServletResponse.SC_OK);
         response.type(MediaType.JSON_UTF_8.type());
 
         return getConfigService().getAll().get(10, TimeUnit.SECONDS).toJson();

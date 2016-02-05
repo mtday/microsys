@@ -18,6 +18,7 @@ import spark.Spark;
 
 import java.util.Arrays;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -33,48 +34,41 @@ public abstract class BaseService {
     private final ExecutorService executor;
     private final CuratorFramework curator;
     private final DiscoveryManager discoveryManager;
+    private final ServiceType serviceType;
+
+    private Optional<Service> service;
 
     /**
      * @param config the static system configuration information
-     * @param type the type of this service
+     * @param serviceType the type of this service
      */
-    public BaseService(final Config config, final ServiceType type) throws Exception {
+    public BaseService(final Config config, final ServiceType serviceType) throws Exception {
         this.config = Objects.requireNonNull(config);
         this.executor = Executors.newFixedThreadPool(this.config.getInt(CommonConfig.EXECUTOR_THREADS.getKey()));
         this.curator = createCurator();
+        this.discoveryManager = new DiscoveryManager(this.config, this.curator);
+        this.serviceType = Objects.requireNonNull(serviceType);
 
-        // Configure the service.
-        final Reservation reservation = new PortManager(getConfig(), curator).reserveServicePort(type, getHostName());
-        configurePort(reservation);
-        configureThreading();
-        configureSecurity();
-        configureRequestLogger();
-        configureCompression();
+        start();
+    }
 
-        this.discoveryManager = new DiscoveryManager(getConfig(), curator);
-        final boolean ssl = getConfig().getBoolean(CommonConfig.SSL_ENABLED.getKey());
-        final Service service = new Service(type, reservation.getHost(), reservation.getPort(), ssl);
+    /**
+     * @param config the static system configuration information
+     * @param executor the {@link ExecutorService} used to perform asynchronous task processing
+     * @param curator the {@link CuratorFramework} used to perform communication with zookeeper
+     * @param discoveryManager the {@link DiscoveryManager} used to manage available services
+     * @param serviceType the type of this service
+     */
+    public BaseService(
+            final Config config, final ExecutorService executor, final CuratorFramework curator,
+            final DiscoveryManager discoveryManager, final ServiceType serviceType) throws Exception {
+        this.config = Objects.requireNonNull(config);
+        this.executor = Objects.requireNonNull(executor);
+        this.curator = Objects.requireNonNull(curator);
+        this.discoveryManager = Objects.requireNonNull(discoveryManager);
+        this.serviceType = Objects.requireNonNull(serviceType);
 
-        // Register with service discovery once the server has started.
-        new Thread(() -> {
-            Spark.awaitInitialization();
-            LOG.info("Service {} started on {}:{}", type, reservation.getHost(), reservation.getPort());
-
-            try {
-                getDiscoveryManager().register(service);
-            } catch (final Exception registerFailed) {
-                LOG.error("Failed to register with service discovery", registerFailed);
-                Spark.stop();
-            }
-        }).start();
-
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            try {
-                getDiscoveryManager().unregister(service);
-            } catch (final Exception unregisterFailed) {
-                LOG.error("Failed to unregister with service discovery", unregisterFailed);
-            }
-        }));
+        start();
     }
 
     /**
@@ -103,6 +97,20 @@ public abstract class BaseService {
      */
     public DiscoveryManager getDiscoveryManager() {
         return this.discoveryManager;
+    }
+
+    /**
+     * @return the type of service being hosted
+     */
+    public ServiceType getServiceType() {
+        return this.serviceType;
+    }
+
+    /**
+     * @return the {@link Service} describing this running service, possibly not present if not running
+     */
+    public Optional<Service> getService() {
+        return this.service;
     }
 
     protected String getHostName() {
@@ -146,10 +154,6 @@ public abstract class BaseService {
         }
     }
 
-    protected void configureCompression() {
-        Spark.after((request, response) -> response.header("Content-Encoding", "gzip"));
-    }
-
     protected void configureRequestLogger() {
         Spark.before((request, response) -> {
             final String params = String.join(
@@ -162,11 +166,53 @@ public abstract class BaseService {
     }
 
     /**
+     * Start the service.
+     *
+     * @throws Exception if there is a problem starting the service
+     */
+    public void start() throws Exception {
+        // Configure the service.
+        final Reservation reservation =
+                new PortManager(getConfig(), getCurator()).reserveServicePort(getServiceType(), getHostName());
+        configurePort(reservation);
+        configureThreading();
+        configureSecurity();
+        configureRequestLogger();
+
+        final boolean ssl = getConfig().getBoolean(CommonConfig.SSL_ENABLED.getKey());
+        this.service = Optional.of(new Service(getServiceType(), reservation.getHost(), reservation.getPort(), ssl));
+
+        // Register with service discovery once the server has started.
+        this.executor.submit(() -> {
+            Spark.awaitInitialization();
+            LOG.info("Service {} started on {}:{}", getServiceType(), reservation.getHost(), reservation.getPort());
+
+            try {
+                if (getService().isPresent()) {
+                    getDiscoveryManager().register(getService().get());
+                }
+            } catch (final Exception registerFailed) {
+                LOG.error("Failed to register with service discovery", registerFailed);
+                Spark.stop();
+            }
+        });
+    }
+
+    /**
      * Stop the service.
      */
     public void stop() {
+        try {
+            if (getService().isPresent()) {
+                getDiscoveryManager().unregister(getService().get());
+                this.service = Optional.empty();
+            }
+        } catch (final Exception unregisterFailed) {
+            LOG.error("Failed to unregister with service discovery", unregisterFailed);
+        }
+
         Spark.stop();
-        this.discoveryManager.close();
-        this.curator.close();
+        getDiscoveryManager().close();
+        getCurator().close();
     }
 }
