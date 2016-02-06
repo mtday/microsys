@@ -69,6 +69,13 @@
                             </sources>
                         </mapping>
                         <mapping>
+                            <directory>/opt/${project.groupId}/${project.version}/config</directory>
+                            <filemode>750</filemode>
+                            <username>${project.user}</username>
+                            <groupname>${project.group}</groupname>
+                            <!-- No sources, just defining the directory permissions and owner -->
+                        </mapping>
+                        <mapping>
                             <directory>/opt/${project.groupId}/${project.version}/home</directory>
                             <!-- Treat this directory as configuration so modified files do not get overwritten -->
                             <configuration>true</configuration>
@@ -82,11 +89,25 @@
                             </sources>
                         </mapping>
                         <mapping>
+                            <directory>/opt/${project.groupId}/${project.version}/home</directory>
+                            <filemode>750</filemode>
+                            <username>${project.user}</username>
+                            <groupname>${project.group}</groupname>
+                            <!-- No sources, just defining the directory permissions and owner -->
+                        </mapping>
+                        <mapping>
                             <directory>/opt/${project.groupId}/${project.version}/lib</directory>
                             <filemode>640</filemode>
                             <username>${project.user}</username>
                             <groupname>${project.group}</groupname>
                             <dependency/>
+                        </mapping>
+                        <mapping>
+                            <directory>/opt/${project.groupId}/${project.version}/lib</directory>
+                            <filemode>750</filemode>
+                            <username>${project.user}</username>
+                            <groupname>${project.group}</groupname>
+                            <!-- No sources, just defining the directory permissions and owner -->
                         </mapping>
                     </mappings>
                     <preinstallScriptlet>
@@ -97,6 +118,10 @@
                         <scriptFile>${project.build.directory}/classes/scripts/postinstall.sh</scriptFile>
                         <fileEncoding>${project.build.sourceEncoding}</fileEncoding>
                     </postinstallScriptlet>
+                    <postremoveScriptlet>
+                        <scriptFile>${project.build.directory}/classes/scripts/postremove.sh</scriptFile>
+                        <fileEncoding>${project.build.sourceEncoding}</fileEncoding>
+                    </postremoveScriptlet>
                     <requires>
                         <!-- Needed for the user and group creation during preinstall. -->
                         <require>shadow-utils</require>
