@@ -28,9 +28,13 @@ public class ServicePortCompleter implements Completer {
      */
     @Override
     public int complete(final String buffer, final int cursor, final List<CharSequence> candidates) {
-        final List<String> ports =
-                this.shellEnvironment.getDiscoveryManager().getAll().stream().map(Service::getPort).map(String::valueOf)
-                        .collect(Collectors.toList());
-        return new StringsCompleter(ports).complete(buffer, cursor, candidates);
+        try {
+            final List<String> ports =
+                    this.shellEnvironment.getDiscoveryManager().getAll().stream().map(Service::getPort).map(String
+                            ::valueOf).collect(Collectors.toList());
+            return new StringsCompleter(ports).complete(buffer, cursor, candidates);
+        } catch (final Exception exception) {
+            return -1;
+        }
     }
 }

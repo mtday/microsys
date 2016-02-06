@@ -19,7 +19,7 @@ import java.util.TreeSet;
  * Perform testing on the {@link ServiceHostCompleter} class.
  */
 public class ServiceHostCompleterTest {
-    protected ShellEnvironment getShellEnvironment() {
+    protected ShellEnvironment getShellEnvironment() throws Exception {
         final SortedSet<Service> services = new TreeSet<>();
         services.add(new Service(ServiceType.CONFIG, "host1", 1234, false));
         services.add(new Service(ServiceType.HEALTH, "host1", 1235, false));
@@ -33,7 +33,7 @@ public class ServiceHostCompleterTest {
     }
 
     @Test
-    public void testEmpty() {
+    public void testEmpty() throws Exception {
         final ServiceHostCompleter completer = new ServiceHostCompleter(getShellEnvironment());
         final List<CharSequence> candidates = new LinkedList<>();
         final int position = completer.complete("", 0, candidates);
@@ -44,7 +44,7 @@ public class ServiceHostCompleterTest {
     }
 
     @Test
-    public void testWhiteSpace() {
+    public void testWhiteSpace() throws Exception {
         final ServiceHostCompleter completer = new ServiceHostCompleter(getShellEnvironment());
         final List<CharSequence> candidates = new LinkedList<>();
         final int position = completer.complete(" ", 1, candidates);
@@ -56,7 +56,7 @@ public class ServiceHostCompleterTest {
     }
 
     @Test
-    public void testPartial() {
+    public void testPartial() throws Exception {
         final ServiceHostCompleter completer = new ServiceHostCompleter(getShellEnvironment());
         final List<CharSequence> candidates = new LinkedList<>();
         final int position = completer.complete("ho", 2, candidates);
@@ -67,7 +67,7 @@ public class ServiceHostCompleterTest {
     }
 
     @Test
-    public void testComplete() {
+    public void testComplete() throws Exception {
         final ServiceHostCompleter completer = new ServiceHostCompleter(getShellEnvironment());
         final List<CharSequence> candidates = new LinkedList<>();
         final int position = completer.complete("host1", 4, candidates);
@@ -78,7 +78,7 @@ public class ServiceHostCompleterTest {
     }
 
     @Test
-    public void testCompleteMiddle() {
+    public void testCompleteMiddle() throws Exception {
         final ServiceHostCompleter completer = new ServiceHostCompleter(getShellEnvironment());
         final List<CharSequence> candidates = new LinkedList<>();
         final int position = completer.complete("host1", 2, candidates);

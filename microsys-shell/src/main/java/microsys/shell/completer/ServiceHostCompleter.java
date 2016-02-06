@@ -29,8 +29,13 @@ public class ServiceHostCompleter implements Completer {
      */
     @Override
     public int complete(final String buffer, final int cursor, final List<CharSequence> candidates) {
-        final List<String> hosts = this.shellEnvironment.getDiscoveryManager().getAll().stream().map(Service::getHost)
-                .collect(Collectors.toList());
-        return new StringsCompleter(hosts).complete(buffer, cursor, candidates);
+        try {
+            final List<String> hosts =
+                    this.shellEnvironment.getDiscoveryManager().getAll().stream().map(Service::getHost)
+                            .collect(Collectors.toList());
+            return new StringsCompleter(hosts).complete(buffer, cursor, candidates);
+        } catch (final Exception exception) {
+            return -1;
+        }
     }
 }

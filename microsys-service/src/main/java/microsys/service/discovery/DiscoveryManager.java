@@ -6,15 +6,12 @@ import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.x.discovery.ServiceDiscovery;
 import org.apache.curator.x.discovery.ServiceDiscoveryBuilder;
 import org.apache.curator.x.discovery.ServiceInstance;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import microsys.common.model.ServiceType;
 import microsys.service.model.Service;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -23,11 +20,10 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 
 /**
- *
+ * The class is used to manage the system service discovery activity and is responsible for registering and
+ * unregistering services, and retrieving available services.
  */
 public class DiscoveryManager {
-    private final static Logger LOG = LoggerFactory.getLogger(DiscoveryManager.class);
-
     private final Config config;
     private final ServiceDiscovery<String> discovery;
 
@@ -40,23 +36,34 @@ public class DiscoveryManager {
      */
     public DiscoveryManager(final Config config, final CuratorFramework curator) throws Exception {
         this.config = Objects.requireNonNull(config);
-
         this.discovery = ServiceDiscoveryBuilder.builder(String.class).client(curator).basePath("/discovery").build();
         this.discovery.start();
     }
 
+    /**
+     * @return the static system configuration information
+     */
     protected Config getConfig() {
         return this.config;
     }
 
+    /**
+     * @return the internal curator {@link ServiceDiscovery} object that manages the interaction with zookeeper
+     */
     protected ServiceDiscovery<String> getDiscovery() {
         return this.discovery;
     }
 
+    /**
+     * @return whether this manager has been closed or not
+     */
     public boolean isClosed() {
         return this.isClosed;
     }
 
+    /**
+     * Shutdown the resources associated with this service discovery manager.
+     */
     public void close() {
         try {
             this.isClosed = true;
@@ -66,60 +73,67 @@ public class DiscoveryManager {
         }
     }
 
+    /**
+     * @param service the {@link Service} to register
+     * @throws Exception if there is a problem registering the service
+     */
     public void register(final Service service) throws Exception {
-        final ServiceInstance<String> serviceInstance = service.asServiceInstance();
-        try {
-            if (!isClosed()) {
-                getDiscovery().registerService(serviceInstance);
-            }
-        } catch (final Exception exception) {
-            LOG.error("Failed to register service", exception);
+        final ServiceInstance<String> serviceInstance = Objects.requireNonNull(service).asServiceInstance();
+        if (!isClosed()) {
+            getDiscovery().registerService(serviceInstance);
         }
     }
 
+    /**
+     * @param service the {@link Service} to unregister
+     * @throws Exception if there is a problem unregistering the service
+     */
     public void unregister(final Service service) throws Exception {
         final ServiceInstance<String> serviceInstance = service.asServiceInstance();
-        try {
-            if (!isClosed()) {
-                getDiscovery().unregisterService(serviceInstance);
-            }
-        } catch (final Exception exception) {
-            LOG.error("Failed to unregister service", exception);
+        if (!isClosed()) {
+            getDiscovery().unregisterService(serviceInstance);
         }
     }
 
-    public SortedSet<Service> getAll() {
+    /**
+     * @return all of the available {@link Service} objects that have registered with service discovery
+     */
+    public SortedSet<Service> getAll() throws Exception {
         final SortedSet<Service> services = new TreeSet<>();
-        Arrays.asList(ServiceType.values()).forEach(t -> services.addAll(getAll(t)));
-        return services;
-    }
-
-    public SortedSet<Service> getAll(final ServiceType serviceType) {
-        final SortedSet<Service> services = new TreeSet<>();
-        try {
-            if (!isClosed()) {
-                final List<ServiceInstance<String>> list =
-                        new ArrayList<>(getDiscovery().queryForInstances(Objects.requireNonNull(serviceType).name()));
-                list.stream().map(Service::new).forEach(services::add);
-            }
-        } catch (final Exception exception) {
-            LOG.error("Failed to query for services", exception);
+        for (final ServiceType serviceType : ServiceType.values()) {
+            services.addAll(getAll(serviceType));
         }
         return services;
     }
 
-    public Optional<Service> getRandom(final ServiceType serviceType) {
-        try {
-            if (!isClosed()) {
-                final List<ServiceInstance<String>> services =
-                        new ArrayList<>(getDiscovery().queryForInstances(Objects.requireNonNull(serviceType).name()));
-                if (!services.isEmpty()) {
-                    // Return a random service instance from the list.
-                    return Optional.of(new Service(services.get(new Random().nextInt(services.size()))));
-                }
+    /**
+     * @param serviceType the {@link ServiceType} indicating the type of services to retrieve
+     * @return all of the available {@link Service} objects of the specified type that have registered with service
+     * discovery
+     */
+    public SortedSet<Service> getAll(final ServiceType serviceType) throws Exception {
+        final SortedSet<Service> services = new TreeSet<>();
+        if (!isClosed()) {
+            final List<ServiceInstance<String>> list =
+                    new ArrayList<>(getDiscovery().queryForInstances(Objects.requireNonNull(serviceType).name()));
+            list.stream().map(Service::new).forEach(services::add);
+        }
+        return services;
+    }
+
+    /**
+     * @param serviceType the {@link ServiceType} indicating the type of service to retrieve
+     * @return a randomly chosen {@link Service} of the specified type that has registered with service discovery,
+     * possibly empty if there are no registered services of the specified type
+     */
+    public Optional<Service> getRandom(final ServiceType serviceType) throws Exception {
+        if (!isClosed()) {
+            final List<ServiceInstance<String>> services =
+                    new ArrayList<>(getDiscovery().queryForInstances(Objects.requireNonNull(serviceType).name()));
+            if (!services.isEmpty()) {
+                // Return a random service instance from the list.
+                return Optional.of(new Service(services.get(new Random().nextInt(services.size()))));
             }
-        } catch (final Exception exception) {
-            LOG.error("Failed to query for services", exception);
         }
         return Optional.empty();
     }

@@ -11,9 +11,12 @@ import org.slf4j.LoggerFactory;
 import microsys.common.config.CommonConfig;
 import microsys.common.model.ServiceType;
 import microsys.service.discovery.DiscoveryManager;
-import microsys.service.discovery.PortManager;
+import microsys.service.discovery.port.PortManager;
 import microsys.service.model.Reservation;
 import microsys.service.model.Service;
+import spark.Filter;
+import spark.Request;
+import spark.Response;
 import spark.Spark;
 
 import java.util.Arrays;
@@ -44,10 +47,11 @@ public abstract class BaseService {
      */
     public BaseService(final Config config, final ServiceType serviceType) throws Exception {
         this.config = Objects.requireNonNull(config);
-        this.executor = Executors.newFixedThreadPool(this.config.getInt(CommonConfig.EXECUTOR_THREADS.getKey()));
-        this.curator = createCurator();
-        this.discoveryManager = new DiscoveryManager(this.config, this.curator);
         this.serviceType = Objects.requireNonNull(serviceType);
+
+        this.executor = createExecutor(config);
+        this.curator = createCurator(config);
+        this.discoveryManager = createDiscoveryManager(this.config, this.curator);
 
         start();
     }
@@ -117,14 +121,23 @@ public abstract class BaseService {
         return getConfig().getString(CommonConfig.SERVER_HOSTNAME.getKey());
     }
 
-    protected CuratorFramework createCurator() throws Exception {
-        final String zookeepers = getConfig().getString(CommonConfig.ZOOKEEPER_HOSTS.getKey());
-        final String namespace = getConfig().getString(CommonConfig.SYSTEM_NAME.getKey());
+    protected static DiscoveryManager createDiscoveryManager(final Config config, final CuratorFramework curator)
+            throws Exception {
+        return new DiscoveryManager(Objects.requireNonNull(config), Objects.requireNonNull(curator));
+    }
+
+    protected static ExecutorService createExecutor(final Config config) {
+        return Executors.newFixedThreadPool(config.getInt(CommonConfig.EXECUTOR_THREADS.getKey()));
+    }
+
+    protected static CuratorFramework createCurator(final Config config) throws Exception {
+        final String zookeepers = config.getString(CommonConfig.ZOOKEEPER_HOSTS.getKey());
+        final String namespace = config.getString(CommonConfig.SYSTEM_NAME.getKey());
         final CuratorFramework curator =
                 CuratorFrameworkFactory.builder().connectString(zookeepers).namespace(namespace)
                         .defaultData(new byte[0]).retryPolicy(new ExponentialBackoffRetry(1000, 3)).build();
         curator.start();
-        if (!curator.blockUntilConnected(5, TimeUnit.SECONDS)) {
+        if (!curator.blockUntilConnected(1500, TimeUnit.MILLISECONDS)) {
             throw new Exception("Failed to connect to zookeeper");
         }
         return curator;
@@ -155,14 +168,27 @@ public abstract class BaseService {
     }
 
     protected void configureRequestLogger() {
-        Spark.before((request, response) -> {
-            final String params = String.join(
+        Spark.before(new RequestLoggingFilter());
+    }
+
+    protected static class RequestLoggingFilter implements Filter {
+        private final static Logger LOG = LoggerFactory.getLogger(RequestLoggingFilter.class);
+
+        @Override
+        public void handle(final Request request, final Response response) throws Exception {
+            LOG.info(getMessage(request));
+        }
+
+        public String getMessage(final Request request) {
+            return String.format("%-6s %s  %s", request.requestMethod(), request.uri(), getParams(request));
+        }
+
+        public String getParams(final Request request) {
+            return String.join(
                     ", ", request.queryMap().toMap().entrySet().stream()
                             .map(e -> String.format("%s => %s", e.getKey(), Arrays.asList(e.getValue()).toString()))
                             .collect(Collectors.toList()));
-
-            LOG.info(String.format("%-6s %s  %s", request.requestMethod(), request.uri(), params));
-        });
+        }
     }
 
     /**
@@ -172,8 +198,10 @@ public abstract class BaseService {
      */
     public void start() throws Exception {
         // Configure the service.
-        final Reservation reservation =
-                new PortManager(getConfig(), getCurator()).reserveServicePort(getServiceType(), getHostName());
+        final PortManager portManager = new PortManager(getConfig(), getCurator());
+        final Reservation reservation = portManager.getReservation(getServiceType(), getHostName());
+        portManager.close();
+
         configurePort(reservation);
         configureThreading();
         configureSecurity();
@@ -193,7 +221,7 @@ public abstract class BaseService {
                 }
             } catch (final Exception registerFailed) {
                 LOG.error("Failed to register with service discovery", registerFailed);
-                Spark.stop();
+                stop();
             }
         });
     }
@@ -208,7 +236,8 @@ public abstract class BaseService {
                 this.service = Optional.empty();
             }
         } catch (final Exception unregisterFailed) {
-            LOG.error("Failed to unregister with service discovery", unregisterFailed);
+            // Not really an issue because the ephemeral registration will disappear automatically soon.
+            LOG.warn("Failed to unregister with service discovery", unregisterFailed);
         }
 
         Spark.stop();

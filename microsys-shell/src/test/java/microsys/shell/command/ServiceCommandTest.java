@@ -28,7 +28,7 @@ import java.util.TreeSet;
  * Perform testing of the {@link ServiceCommand} class.
  */
 public class ServiceCommandTest {
-    protected ShellEnvironment getShellEnvironment() {
+    protected ShellEnvironment getShellEnvironment() throws Exception {
         final SortedSet<Service> services = new TreeSet<>();
         services.add(new Service(ServiceType.CONFIG, "host1", 1234, false));
         services.add(new Service(ServiceType.HEALTH, "host1", 1235, false));
@@ -67,7 +67,7 @@ public class ServiceCommandTest {
     }
 
     @Test
-    public void testProcessList() {
+    public void testProcessList() throws Exception {
         final ServiceCommand serviceCommand = new ServiceCommand(getShellEnvironment());
 
         final CommandPath commandPath = new CommandPath("service", "list");
@@ -91,7 +91,7 @@ public class ServiceCommandTest {
     }
 
     @Test
-    public void testProcessListWithType() {
+    public void testProcessListWithType() throws Exception {
         final ServiceCommand serviceCommand = new ServiceCommand(getShellEnvironment());
 
         final List<String> input = Arrays.asList("service", "list", "-t", ServiceType.CONFIG.name());
@@ -113,7 +113,7 @@ public class ServiceCommandTest {
     }
 
     @Test
-    public void testProcessListWithHost() {
+    public void testProcessListWithHost() throws Exception {
         final ServiceCommand serviceCommand = new ServiceCommand(getShellEnvironment());
 
         final List<String> input = Arrays.asList("service", "list", "-h", "host1");
@@ -136,7 +136,7 @@ public class ServiceCommandTest {
     }
 
     @Test
-    public void testProcessListNoMatchingServices() {
+    public void testProcessListNoMatchingServices() throws Exception {
         final ServiceCommand serviceCommand = new ServiceCommand(getShellEnvironment());
 
         final List<String> input = Arrays.asList("service", "list", "-h", "missing");
@@ -155,7 +155,7 @@ public class ServiceCommandTest {
     }
 
     @Test
-    public void testProcessListNoServices() {
+    public void testProcessListNoServices() throws Exception {
         final DiscoveryManager discoveryManager = Mockito.mock(DiscoveryManager.class);
         Mockito.when(discoveryManager.getAll()).thenReturn(new TreeSet<>());
         final ShellEnvironment shellEnvironment = Mockito.mock(ShellEnvironment.class);
@@ -178,7 +178,7 @@ public class ServiceCommandTest {
     }
 
     @Test
-    public void testProcessListOneService() {
+    public void testProcessListOneService() throws Exception {
         final SortedSet<Service> services = new TreeSet<>();
         services.add(new Service(ServiceType.CONFIG, "host1", 1234, false));
         final DiscoveryManager discoveryManager = Mockito.mock(DiscoveryManager.class);
@@ -204,7 +204,7 @@ public class ServiceCommandTest {
     }
 
     @Test
-    public void testProcessListTwoServices() {
+    public void testProcessListTwoServices() throws Exception {
         final SortedSet<Service> services = new TreeSet<>();
         services.add(new Service(ServiceType.CONFIG, "host1", 1234, false));
         services.add(new Service(ServiceType.HEALTH, "host1", 1235, false));
@@ -232,7 +232,7 @@ public class ServiceCommandTest {
     }
 
     @Test
-    public void testProcessRestart() {
+    public void testProcessRestart() throws Exception {
         final ServiceCommand serviceCommand = new ServiceCommand(getShellEnvironment());
 
         final List<String> input = Arrays.asList("service", "restart");

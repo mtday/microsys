@@ -84,15 +84,18 @@ public class ServiceCommand extends Command {
     }
 
     protected CommandStatus handleList(final UserCommand userCommand, final PrintWriter writer) {
-        final SortedSet<Service> services = getShellEnvironment().getDiscoveryManager().getAll();
-        final Filter filter = new Filter(userCommand.getCommandLine());
-        final Stringer stringer = new Stringer(services);
+        try {
+            final SortedSet<Service> services = getShellEnvironment().getDiscoveryManager().getAll();
+            final Filter filter = new Filter(userCommand.getCommandLine());
+            final Stringer stringer = new Stringer(services);
 
-        final List<String> output =
-                services.stream().filter(filter::matches).map(stringer::toString).collect(Collectors.toList());
+            final List<String> output = services.stream().filter(filter::matches).map(stringer::toString).collect(Collectors.toList());
 
-        writer.println(new Summary(services.size(), output.size()));
-        output.forEach(writer::println);
+            writer.println(new Summary(services.size(), output.size()));
+            output.forEach(writer::println);
+        } catch (final Exception exception) {
+            writer.println("Failed to retrieve available services: " + exception.getMessage());
+        }
 
         return CommandStatus.SUCCESS;
     }
