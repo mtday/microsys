@@ -10,6 +10,10 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+        <!-- The user and group that will own the files deployed by the RPM. -->
+        <project.user>microsys</project.user>
+        <project.group>microsys</project.group>
     </properties>
 
     <modules>
@@ -17,6 +21,7 @@
         <module>microsys-config</module>
         <module>microsys-service</module>
         <module>microsys-shell</module>
+        <module>microsys-dist</module>
     </modules>
 
     <build>
@@ -104,6 +109,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>2.15</version>
                 <configuration>
+                    <!-- Specified as part of the jacoco code coverage plugin -->
                     <argLine>${surefireArgLine}</argLine>
                     <skipTests>${skip.unit.tests}</skipTests>
                     <includes>
@@ -111,6 +117,14 @@
                         <include>**/*IT.java</include>
                     </includes>
                 </configuration>
+            </plugin>
+
+            <!-- For building RPMs. -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>rpm-maven-plugin</artifactId>
+                <version>2.1.4</version>
+                <extensions>true</extensions>
             </plugin>
         </plugins>
     </build>
@@ -147,6 +161,11 @@
             <dependency>
                 <groupId>${project.groupId}</groupId>
                 <artifactId>microsys-shell</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>microsys-dist</artifactId>
                 <version>${project.version}</version>
             </dependency>
 

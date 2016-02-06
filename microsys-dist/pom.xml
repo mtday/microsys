@@ -1,0 +1,128 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>microsys</groupId>
+        <artifactId>microsys</artifactId>
+        <version>0.0.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>microsys-dist</artifactId>
+    <packaging>rpm</packaging>
+
+    <build>
+        <resources>
+            <resource>
+                <directory>src/rpm</directory>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
+
+        <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>rpm-maven-plugin</artifactId>
+                <configuration>
+                    <!-- We want microsys instead of microsys-dist. -->
+                    <name>${project.groupId}</name>
+                    <!-- From https://fedoraproject.org/wiki/RPMGroups. -->
+                    <group>Applications/System</group>
+
+                    <mappings>
+                        <mapping>
+                            <directory>/opt/${project.groupId}</directory>
+                            <filemode>750</filemode>
+                            <username>${project.user}</username>
+                            <groupname>${project.group}</groupname>
+                            <!-- No sources, just defining the directory permissions and owner -->
+                        </mapping>
+                        <mapping>
+                            <directory>/opt/${project.groupId}/${project.version}</directory>
+                            <filemode>750</filemode>
+                            <username>${project.user}</username>
+                            <groupname>${project.group}</groupname>
+                            <!-- No sources, just defining the directory permissions and owner -->
+                        </mapping>
+                        <mapping>
+                            <directory>/opt/${project.groupId}/${project.version}/bin</directory>
+                            <filemode>750</filemode>
+                            <username>${project.user}</username>
+                            <groupname>${project.group}</groupname>
+                            <sources>
+                                <source>
+                                    <location>${project.build.directory}/classes/bin</location>
+                                </source>
+                            </sources>
+                        </mapping>
+                        <mapping>
+                            <directory>/opt/${project.groupId}/${project.version}/config</directory>
+                            <!-- Treat this directory as configuration so modified files do not get overwritten -->
+                            <configuration>true</configuration>
+                            <filemode>640</filemode>
+                            <username>${project.user}</username>
+                            <groupname>${project.group}</groupname>
+                            <sources>
+                                <source>
+                                    <location>${project.build.directory}/classes/config</location>
+                                </source>
+                            </sources>
+                        </mapping>
+                        <mapping>
+                            <directory>/opt/${project.groupId}/${project.version}/home</directory>
+                            <!-- Treat this directory as configuration so modified files do not get overwritten -->
+                            <configuration>true</configuration>
+                            <filemode>640</filemode>
+                            <username>${project.user}</username>
+                            <groupname>${project.group}</groupname>
+                            <sources>
+                                <source>
+                                    <location>${project.build.directory}/classes/home</location>
+                                </source>
+                            </sources>
+                        </mapping>
+                        <mapping>
+                            <directory>/opt/${project.groupId}/${project.version}/lib</directory>
+                            <filemode>640</filemode>
+                            <username>${project.user}</username>
+                            <groupname>${project.group}</groupname>
+                            <dependency/>
+                        </mapping>
+                    </mappings>
+                    <preinstallScriptlet>
+                        <scriptFile>${project.build.directory}/classes/scripts/preinstall.sh</scriptFile>
+                        <fileEncoding>${project.build.sourceEncoding}</fileEncoding>
+                    </preinstallScriptlet>
+                    <postinstallScriptlet>
+                        <scriptFile>${project.build.directory}/classes/scripts/postinstall.sh</scriptFile>
+                        <fileEncoding>${project.build.sourceEncoding}</fileEncoding>
+                    </postinstallScriptlet>
+                    <requires>
+                        <!-- Needed for the user and group creation during preinstall. -->
+                        <require>shadow-utils</require>
+                    </requires>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+    <dependencies>
+        <!-- Project modules -->
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>microsys-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>microsys-service</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>microsys-config</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>microsys-shell</artifactId>
+        </dependency>
+    </dependencies>
+</project>
