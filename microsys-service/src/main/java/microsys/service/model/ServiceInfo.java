@@ -1,0 +1,132 @@
+package microsys.service.model;
+
+import com.google.common.base.Preconditions;
+import com.google.gson.JsonObject;
+
+import org.apache.commons.lang3.builder.CompareToBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
+
+import microsys.common.model.Model;
+import microsys.common.model.ServiceType;
+
+import java.util.Objects;
+
+/**
+ * An immutable class representing the registration of a service for automatic discovery.
+ */
+public class ServiceInfo implements Model, Comparable<ServiceInfo> {
+    private final ServiceType type;
+    private final String systemName;
+    private final String systemVersion;
+
+    /**
+     * @param type the type of service represented
+     * @param systemName the name of the system in which this service is running
+     * @param systemVersion the version of the service
+     */
+    public ServiceInfo(final ServiceType type, final String systemName, final String systemVersion) {
+        this.type = Objects.requireNonNull(type);
+        this.systemName = Objects.requireNonNull(systemName);
+        this.systemVersion = Objects.requireNonNull(systemVersion);
+    }
+
+    /**
+     * @param json the JSON representation of a {@link ServiceInfo} object
+     */
+    public ServiceInfo(final JsonObject json) {
+        Objects.requireNonNull(json);
+        Preconditions.checkArgument(json.has("type"), "Type field required");
+        Preconditions.checkArgument(json.get("type").isJsonPrimitive(), "Type field must be a primitive");
+        Preconditions.checkArgument(json.has("systemName"), "System Name field required");
+        Preconditions.checkArgument(json.get("systemName").isJsonPrimitive(), "System Name field must be a primitive");
+        Preconditions.checkArgument(json.has("systemVersion"), "System Version field required");
+        Preconditions.checkArgument(json.get("systemVersion").isJsonPrimitive(), "System Version field must be a primitive");
+
+        this.type = ServiceType.valueOf(json.get("type").getAsString());
+        this.systemName = json.get("systemName").getAsString();
+        this.systemVersion = json.get("systemVersion").getAsString();
+    }
+
+    /**
+     * @return the type of service represented
+     */
+    public ServiceType getType() {
+        return this.type;
+    }
+
+    /**
+     * @return the name of the system in which this service is running
+     */
+    public String getSystemName() {
+        return this.systemName;
+    }
+
+    /**
+     * @return the version of the service
+     */
+    public String getSystemVersion() {
+        return this.systemVersion;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int compareTo(final ServiceInfo other) {
+        if (other == null) {
+            return 1;
+        }
+
+        final CompareToBuilder cmp = new CompareToBuilder();
+        cmp.append(getType(), other.getType());
+        cmp.append(getSystemName(), other.getSystemName());
+        cmp.append(getSystemVersion(), other.getSystemVersion());
+        return cmp.toComparison();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean equals(final Object other) {
+        return (other instanceof ServiceInfo) && compareTo((ServiceInfo) other) == 0;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int hashCode() {
+        final HashCodeBuilder hash = new HashCodeBuilder();
+        hash.append(getType().name());
+        hash.append(getSystemName());
+        hash.append(getSystemVersion());
+        return hash.toHashCode();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String toString() {
+        final ToStringBuilder str = new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE);
+        str.append("type", getType());
+        str.append("systemName", getSystemName());
+        str.append("systemVersion", getSystemVersion());
+        return str.build();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public JsonObject toJson() {
+        final JsonObject json = new JsonObject();
+        json.addProperty("type", getType().name());
+        json.addProperty("systemName", getSystemName());
+        json.addProperty("systemVersion", getSystemVersion());
+        return json;
+    }
+}

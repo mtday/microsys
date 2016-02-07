@@ -20,20 +20,14 @@ import ch.qos.logback.classic.Level;
 import microsys.common.config.CommonConfig;
 import microsys.common.model.ServiceType;
 import microsys.service.discovery.DiscoveryManager;
-import spark.QueryParamsMap;
-import spark.Request;
-import spark.Response;
 import spark.webserver.JettySparkServer;
 
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.TreeMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-
-import javax.servlet.http.HttpServletRequest;
 
 /**
  * Perform testing of the {@link BaseService} class.
@@ -175,26 +169,5 @@ public class BaseServiceIT {
 
             baseService.stop();
         }
-    }
-
-    @Test
-    public void testRequestLoggingFilter() throws Exception {
-        final Map<String, String[]> parameterMap = new TreeMap<>();
-        parameterMap.put("param1", new String[] {"val1", "val2"});
-        parameterMap.put("param2", new String[] {"val3"});
-        final HttpServletRequest servletRequest = Mockito.mock(HttpServletRequest.class);
-        Mockito.when(servletRequest.getParameterMap()).thenReturn(parameterMap);
-        final QueryParamsMap queryParamsMap = new QueryParamsMap(servletRequest);
-        final Request request = Mockito.mock(Request.class);
-        Mockito.when(request.requestMethod()).thenReturn("GET");
-        Mockito.when(request.uri()).thenReturn("/uri");
-        Mockito.when(request.queryMap()).thenReturn(queryParamsMap);
-
-        final Response response = Mockito.mock(Response.class);
-        final BaseService.RequestLoggingFilter filter = new BaseService.RequestLoggingFilter();
-
-        filter.handle(request, response);
-        assertEquals("param1 => [val1, val2], param2 => [val3]", filter.getParams(request));
-        assertEquals("GET    /uri  param1 => [val1, val2], param2 => [val3]", filter.getMessage(request));
     }
 }

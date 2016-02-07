@@ -12,20 +12,18 @@ import microsys.common.config.CommonConfig;
 import microsys.common.model.ServiceType;
 import microsys.service.discovery.DiscoveryManager;
 import microsys.service.discovery.port.PortManager;
+import microsys.service.filter.RequestLoggingFilter;
 import microsys.service.model.Reservation;
 import microsys.service.model.Service;
-import spark.Filter;
-import spark.Request;
-import spark.Response;
+import microsys.service.route.ServiceInfoRoute;
+import microsys.service.route.ServiceMemoryRoute;
 import spark.Spark;
 
-import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 /**
  * The base class for a micro service in this system.
@@ -171,24 +169,9 @@ public abstract class BaseService {
         Spark.before(new RequestLoggingFilter());
     }
 
-    protected static class RequestLoggingFilter implements Filter {
-        private final static Logger LOG = LoggerFactory.getLogger(RequestLoggingFilter.class);
-
-        @Override
-        public void handle(final Request request, final Response response) throws Exception {
-            LOG.info(getMessage(request));
-        }
-
-        public String getMessage(final Request request) {
-            return String.format("%-6s %s  %s", request.requestMethod(), request.uri(), getParams(request));
-        }
-
-        public String getParams(final Request request) {
-            return String.join(
-                    ", ", request.queryMap().toMap().entrySet().stream()
-                            .map(e -> String.format("%s => %s", e.getKey(), Arrays.asList(e.getValue()).toString()))
-                            .collect(Collectors.toList()));
-        }
+    protected void configureRoutes() {
+        Spark.get("/service/info", new ServiceInfoRoute(getConfig(), getServiceType()));
+        Spark.get("/service/memory", new ServiceMemoryRoute(getConfig()));
     }
 
     /**
@@ -206,6 +189,7 @@ public abstract class BaseService {
         configureThreading();
         configureSecurity();
         configureRequestLogger();
+        configureRoutes();
 
         final boolean ssl = getConfig().getBoolean(CommonConfig.SSL_ENABLED.getKey());
         final String version = getConfig().getString(CommonConfig.SYSTEM_VERSION.getKey());
