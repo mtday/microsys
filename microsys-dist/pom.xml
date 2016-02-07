@@ -31,6 +31,7 @@
 
                     <mappings>
                         <mapping>
+                            <!-- Holds the service installation files for all versions. -->
                             <directory>/opt/${project.groupId}</directory>
                             <filemode>750</filemode>
                             <username>${project.user}</username>
@@ -38,6 +39,7 @@
                             <!-- No sources, just defining the directory permissions and owner -->
                         </mapping>
                         <mapping>
+                            <!-- Holds the service installation files for this specific version. -->
                             <directory>/opt/${project.groupId}/${project.version}</directory>
                             <filemode>750</filemode>
                             <username>${project.user}</username>
@@ -45,6 +47,7 @@
                             <!-- No sources, just defining the directory permissions and owner -->
                         </mapping>
                         <mapping>
+                            <!-- Holds the service execution scripts. -->
                             <directory>/opt/${project.groupId}/${project.version}/bin</directory>
                             <filemode>750</filemode>
                             <username>${project.user}</username>
@@ -56,7 +59,8 @@
                             </sources>
                         </mapping>
                         <mapping>
-                            <directory>/opt/${project.groupId}/${project.version}/config</directory>
+                            <!-- Holds the service configuration files. -->
+                            <directory>/etc/sysconfig/${project.groupId}</directory>
                             <!-- Treat this directory as configuration so modified files do not get overwritten -->
                             <configuration>true</configuration>
                             <filemode>640</filemode>
@@ -69,14 +73,32 @@
                             </sources>
                         </mapping>
                         <mapping>
-                            <directory>/opt/${project.groupId}/${project.version}/config</directory>
+                            <!-- Used to store service configuration files. -->
+                            <directory>/etc/sysconfig/${project.groupId}</directory>
                             <filemode>750</filemode>
                             <username>${project.user}</username>
                             <groupname>${project.group}</groupname>
                             <!-- No sources, just defining the directory permissions and owner -->
                         </mapping>
                         <mapping>
-                            <directory>/opt/${project.groupId}/${project.version}/home</directory>
+                            <!-- Used to store service log files. -->
+                            <directory>/var/log/${project.groupId}</directory>
+                            <filemode>750</filemode>
+                            <username>${project.user}</username>
+                            <groupname>${project.group}</groupname>
+                            <!-- No sources, just defining the directory permissions and owner -->
+                        </mapping>
+                        <mapping>
+                            <!-- Used to store running service process id files. -->
+                            <directory>/var/run/${project.groupId}</directory>
+                            <filemode>750</filemode>
+                            <username>${project.user}</username>
+                            <groupname>${project.group}</groupname>
+                            <!-- No sources, just defining the directory permissions and owner -->
+                        </mapping>
+                        <mapping>
+                            <!-- Stores the user files for the service user. -->
+                            <directory>/home/${project.groupId}</directory>
                             <!-- Treat this directory as configuration so modified files do not get overwritten -->
                             <configuration>true</configuration>
                             <filemode>640</filemode>
@@ -89,13 +111,15 @@
                             </sources>
                         </mapping>
                         <mapping>
-                            <directory>/opt/${project.groupId}/${project.version}/home</directory>
+                            <!-- Stores the user files for the service user. -->
+                            <directory>/home/${project.groupId}</directory>
                             <filemode>750</filemode>
                             <username>${project.user}</username>
                             <groupname>${project.group}</groupname>
                             <!-- No sources, just defining the directory permissions and owner -->
                         </mapping>
                         <mapping>
+                            <!-- Stores the service dependency jar files. -->
                             <directory>/opt/${project.groupId}/${project.version}/lib</directory>
                             <filemode>640</filemode>
                             <username>${project.user}</username>
@@ -103,6 +127,7 @@
                             <dependency/>
                         </mapping>
                         <mapping>
+                            <!-- Stores the service dependency jar files. -->
                             <directory>/opt/${project.groupId}/${project.version}/lib</directory>
                             <filemode>750</filemode>
                             <username>${project.user}</username>

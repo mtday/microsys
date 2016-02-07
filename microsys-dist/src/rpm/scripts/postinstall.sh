@@ -11,11 +11,12 @@ ln -sf /opt/${project.groupId}/${project.version} /opt/${project.groupId}/curren
 # Create a symlink for the /etc/init.d service script.
 ln -sf /opt/${project.groupId}/current/bin/service.sh /etc/init.d/${project.groupId}
 
+# Symlink the config directory.
+ln -sf /etc/sysconfig/${project.groupId} /opt/${project.groupId}/current/config
+
+# Symlink the home directory.
+ln -sf /home/${project.groupId} /opt/${project.groupId}/current/home
 
 # Symlink the logs directory.
-if [[ ! -d /var/log/${project.groupId} ]]; then
-    mkdir /var/log/${project.groupId}
-    chown ${project.user}:${project.group} /var/log/${project.groupId}
-fi
 ln -sf /var/log/${project.groupId} /opt/${project.groupId}/current/logs
 

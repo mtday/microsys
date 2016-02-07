@@ -12,8 +12,8 @@ getent group ${GROUPNAME} >/dev/null || groupadd -r ${GROUPNAME}
 
 # Verify the existence of the user, creating it if it does not exist.
 getent passwd ${USERNAME} >/dev/null || \
-    useradd -r -g ${GROUPNAME} -d /opt/${project.groupId}/current/home \
-    -s /bin/bash -c "User account for the ${project.groupId} system" ${USERNAME}
+    useradd -r -g ${GROUPNAME} -M -d /home/${project.groupId} -s /bin/bash \
+    -c "User account for the ${project.groupId} system" ${USERNAME}
 
 # Successful exit.
 exit 0

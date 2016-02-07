@@ -1,27 +1,25 @@
 package microsys.shell.completer;
 
-import static org.junit.Assert.assertEquals;
-
+import ch.qos.logback.classic.Level;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
-
+import microsys.common.model.ServiceType;
+import microsys.service.discovery.DiscoveryManager;
+import microsys.service.model.Service;
+import microsys.shell.RegistrationManager;
+import microsys.shell.model.ShellEnvironment;
 import org.apache.curator.framework.CuratorFramework;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.slf4j.LoggerFactory;
 
-import ch.qos.logback.classic.Level;
-import microsys.common.model.ServiceType;
-import microsys.service.discovery.DiscoveryManager;
-import microsys.service.model.Service;
-import microsys.shell.RegistrationManager;
-import microsys.shell.model.ShellEnvironment;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * Perform testing on the {@link ShellCompleter} class.
@@ -214,15 +212,14 @@ public class ShellCompleterTest {
         final List<CharSequence> candidates = new ArrayList<>();
         final int position = shellCompleter.complete("service list --type ", 20, candidates);
 
-        assertEquals(3, candidates.size());
+        assertEquals(ServiceType.values().length, candidates.size());
         assertEquals(20, position);
-        assertEquals("[config, health, web]", candidates.toString());
     }
 
     @Test
     public void testCompleteCommandSingleAvailableWithParamCompleteAndPartialValue() {
         final List<CharSequence> candidates = new ArrayList<>();
-        final int position = shellCompleter.complete("service list --type c", 21, candidates);
+        final int position = shellCompleter.complete("service list --type con", 23, candidates);
 
         assertEquals(1, candidates.size());
         assertEquals(20, position);

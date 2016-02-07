@@ -23,9 +23,11 @@ sudo mv /tmp/java.sh /etc/profile.d/java.sh
 
 
 echo "Starting zookeeper"
-sudo mkdir /var/lib/zookeeper
-sudo chown zookeeper:zookeeper /var/lib/zookeeper
-sudo -u zookeeper zookeeper-server-initialize
+if [[ ! -d /var/lib/zookeeper/data ]]; then
+    sudo mkdir /var/lib/zookeeper
+    sudo chown zookeeper:zookeeper /var/lib/zookeeper
+    sudo -u zookeeper zookeeper-server-initialize
+fi
 sudo service zookeeper-server start
 
 
@@ -42,6 +44,13 @@ export M2_HOME="/opt/apache-maven/current"
 export PATH="\${M2_HOME}/bin:\${PATH}"
 EOF
 sudo mv /tmp/maven.sh /etc/profile.d/maven.sh
+sudo chmod 444 /etc/profile.d/maven.sh
 
+
+cat <<EOF > /tmp/sudoers
+%microsys ALL=(ALL) NOPASSWD: ALL
+EOF
+sudo mv /tmp/sudoers /etc/sudoers.d/microsys
+sudo chown root:root /etc/sudoers.d/microsys
 
 
