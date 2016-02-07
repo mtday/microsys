@@ -67,7 +67,7 @@ public class DiscoveryManager {
     public void close() {
         try {
             this.isClosed = true;
-            this.discovery.close();
+            getDiscovery().close();
         } catch (final IOException ignored) {
             // Ignored.
         }

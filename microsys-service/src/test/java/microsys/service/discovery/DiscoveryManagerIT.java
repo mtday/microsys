@@ -11,10 +11,13 @@ import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.curator.test.TestingServer;
+import org.apache.curator.x.discovery.ServiceDiscovery;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.mockito.Mockito;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -105,5 +108,15 @@ public class DiscoveryManagerIT {
         assertEquals(0, discovery.getAll().size());
         assertEquals(0, discovery.getAll(ServiceType.CONFIG).size());
         assertFalse(discovery.getRandom(ServiceType.CONFIG).isPresent());
+    }
+
+    @Test
+    public void testCloseWithException() throws Exception {
+        final ServiceDiscovery<String> serviceDiscovery = Mockito.mock(ServiceDiscovery.class);
+        Mockito.doThrow(new IOException("Fake")).when(serviceDiscovery).close();
+        final DiscoveryManager discovery = Mockito.mock(DiscoveryManager.class);
+        Mockito.when(discovery.getDiscovery()).thenReturn(serviceDiscovery);
+        Mockito.doCallRealMethod().when(discovery).close();
+        discovery.close();
     }
 }
