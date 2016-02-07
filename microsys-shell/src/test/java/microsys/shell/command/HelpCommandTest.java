@@ -1,18 +1,8 @@
 package microsys.shell.command;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
+import ch.qos.logback.classic.Level;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
-
-import org.apache.curator.framework.CuratorFramework;
-import org.junit.Test;
-import org.mockito.Mockito;
-import org.slf4j.LoggerFactory;
-
-import ch.qos.logback.classic.Level;
 import microsys.service.discovery.DiscoveryManager;
 import microsys.shell.RegistrationManager;
 import microsys.shell.model.CommandPath;
@@ -22,6 +12,10 @@ import microsys.shell.model.Options;
 import microsys.shell.model.Registration;
 import microsys.shell.model.ShellEnvironment;
 import microsys.shell.model.UserCommand;
+import org.apache.curator.framework.CuratorFramework;
+import org.junit.Test;
+import org.mockito.Mockito;
+import org.slf4j.LoggerFactory;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -29,6 +23,10 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Perform testing of the {@link HelpCommand} class.
@@ -109,13 +107,15 @@ public class HelpCommandTest {
         assertEquals(CommandStatus.SUCCESS, status);
 
         final List<String> output = Arrays.asList(stringWriter.getBuffer().toString().split(System.lineSeparator()));
-        assertEquals(4, output.size());
+        assertEquals(6, output.size());
 
         int line = 0;
         assertEquals("Showing help for commands that begin with: service list", output.get(line++));
         assertEquals("  service list  provides information about the available services", output.get(line++));
         assertEquals("    -h  --host <host>  the host to list", output.get(line++));
-        assertEquals("    -t  --type <type>  the service type to list", output.get(line));
+        assertEquals("    -p  --port <port>  the port to list", output.get(line++));
+        assertEquals("    -t  --type <type>  the service type to list", output.get(line++));
+        assertEquals("    -v  --version <version>  the version to list", output.get(line));
     }
 
     @Test

@@ -1,13 +1,11 @@
 package microsys.shell.command;
 
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.lang3.StringUtils;
-
 import microsys.common.model.ServiceType;
 import microsys.service.model.Service;
 import microsys.shell.completer.ServiceHostCompleter;
 import microsys.shell.completer.ServicePortCompleter;
 import microsys.shell.completer.ServiceTypeCompleter;
+import microsys.shell.completer.ServiceVersionCompleter;
 import microsys.shell.model.Command;
 import microsys.shell.model.CommandPath;
 import microsys.shell.model.CommandStatus;
@@ -16,6 +14,8 @@ import microsys.shell.model.Options;
 import microsys.shell.model.Registration;
 import microsys.shell.model.ShellEnvironment;
 import microsys.shell.model.UserCommand;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.PrintWriter;
 import java.util.Arrays;
@@ -47,7 +47,13 @@ public class ServiceCommand extends Command {
         final Option listHost =
                 new Option("the host to list", "h", Optional.of("host"), Optional.of("host"), 1, false, false,
                         Optional.of(new ServiceHostCompleter(getShellEnvironment())));
-        final Optional<Options> listOptions = Optional.of(new Options(listType, listHost));
+        final Option listPort =
+                new Option("the port to list", "p", Optional.of("port"), Optional.of("port"), 1,
+                        false, false, Optional.of(new ServicePortCompleter(getShellEnvironment())));
+        final Option listVersion =
+                new Option("the version to list", "v", Optional.of("version"), Optional.of("version"), 1, false, false,
+                        Optional.of(new ServiceVersionCompleter(getShellEnvironment())));
+        final Optional<Options> listOptions = Optional.of(new Options(listType, listHost, listPort, listVersion));
 
         final Optional<String> listDescription = Optional.of("provides information about the available services");
         final CommandPath serviceListPath = new CommandPath("service", "list");
@@ -62,7 +68,11 @@ public class ServiceCommand extends Command {
         final Option restartPort =
                 new Option("the port of the service to restart", "p", Optional.of("port"), Optional.of("port"), 1,
                         false, false, Optional.of(new ServicePortCompleter(getShellEnvironment())));
-        final Optional<Options> restartOptions = Optional.of(new Options(restartType, restartHost, restartPort));
+        final Option restartVersion =
+                new Option("the version of the service to restart", "v", Optional.of("version"), Optional.of("version"),
+                        1, false, false, Optional.of(new ServiceVersionCompleter(getShellEnvironment())));
+        final Optional<Options> restartOptions = Optional.of(new Options(restartType, restartHost, restartPort,
+                restartVersion));
 
         final Optional<String> restartDescription = Optional.of("request the restart of a service");
         final CommandPath serviceRestartPath = new CommandPath("service", "restart");
@@ -89,7 +99,8 @@ public class ServiceCommand extends Command {
             final Filter filter = new Filter(userCommand.getCommandLine());
             final Stringer stringer = new Stringer(services);
 
-            final List<String> output = services.stream().filter(filter::matches).map(stringer::toString).collect(Collectors.toList());
+            final List<String> output = services.stream().filter(filter::matches).map(stringer::toString)
+                    .collect(Collectors.toList());
 
             writer.println(new Summary(services.size(), output.size()));
             output.forEach(writer::println);
@@ -152,14 +163,17 @@ public class ServiceCommand extends Command {
             final String type = StringUtils.rightPad(service.getType().name(), longestType.getAsInt());
             final String host = StringUtils.rightPad(service.getHost(), longestHost.getAsInt());
             final String port = StringUtils.rightPad(String.valueOf(service.getPort()), longestPort.getAsInt());
-            final String secure = service.isSecure() ? "secure" : "insecure";
-            return String.format("    %s  %s  %s  (%s)", type, host, port, secure);
+            final String secure = service.isSecure() ? "secure  " : "insecure";
+            final String version = service.getVersion();
+            return String.format("    %s  %s  %s  %s  %s", type, host, port, secure, version);
         }
     }
 
     protected static class Filter {
         private final Optional<ServiceType> type;
         private final Optional<String> host;
+        private final Optional<Integer> port;
+        private final Optional<String> version;
 
         public Filter(final Optional<CommandLine> commandLine) {
             if (commandLine.isPresent()) {
@@ -169,13 +183,25 @@ public class ServiceCommand extends Command {
                     this.type = Optional.empty();
                 }
                 if (commandLine.get().hasOption('h')) {
-                    this.host = Optional.of(commandLine.get().getOptionValue('h').toUpperCase());
+                    this.host = Optional.of(commandLine.get().getOptionValue('h'));
                 } else {
                     this.host = Optional.empty();
+                }
+                if (commandLine.get().hasOption('p') && StringUtils.isNumeric(commandLine.get().getOptionValue('p'))) {
+                    this.port = Optional.of(Integer.parseInt(commandLine.get().getOptionValue('p'), 10));
+                } else {
+                    this.port = Optional.empty();
+                }
+                if (commandLine.get().hasOption('v')) {
+                    this.version = Optional.of(commandLine.get().getOptionValue('v'));
+                } else {
+                    this.version = Optional.empty();
                 }
             } else {
                 this.type = Optional.empty();
                 this.host = Optional.empty();
+                this.port = Optional.empty();
+                this.version = Optional.empty();
             }
         }
 
@@ -185,6 +211,12 @@ public class ServiceCommand extends Command {
                 matches = false;
             }
             if (this.host.isPresent() && !StringUtils.equalsIgnoreCase(this.host.get(), service.getHost())) {
+                matches = false;
+            }
+            if (this.port.isPresent() && this.port.get() != service.getPort()) {
+                matches = false;
+            }
+            if (this.version.isPresent() && !StringUtils.equalsIgnoreCase(this.version.get(), service.getVersion())) {
                 matches = false;
             }
             return matches;

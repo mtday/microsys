@@ -33,10 +33,10 @@ public class ShellCompleterTest {
         ((ch.qos.logback.classic.Logger) LoggerFactory.getLogger(RegistrationManager.class)).setLevel(Level.OFF);
 
         final SortedSet<Service> services = new TreeSet<>();
-        services.add(new Service(ServiceType.CONFIG, "host1", 1234, false));
-        services.add(new Service(ServiceType.HEALTH, "host1", 1235, false));
-        services.add(new Service(ServiceType.WEB, "host2", 1236, true));
-        services.add(new Service(ServiceType.WEB, "host2", 1237, true));
+        services.add(new Service(ServiceType.CONFIG, "host1", 1234, false, "1.2.3"));
+        services.add(new Service(ServiceType.HEALTH, "host1", 1235, false, "1.2.3"));
+        services.add(new Service(ServiceType.WEB, "host2", 1236, true, "1.2.4"));
+        services.add(new Service(ServiceType.WEB, "host2", 1237, true, "1.2.4"));
         final DiscoveryManager discovery = Mockito.mock(DiscoveryManager.class);
         Mockito.when(discovery.getAll()).thenReturn(services);
 
@@ -155,12 +155,18 @@ public class ShellCompleterTest {
         final List<CharSequence> candidates = new ArrayList<>();
         final int position = shellCompleter.complete("service list ", 13, candidates);
 
-        assertEquals(4, candidates.size());
+        assertEquals(8, candidates.size());
         assertEquals(13, position);
-        assertEquals("--host", candidates.get(0).toString());
-        assertEquals("--type", candidates.get(1).toString());
-        assertEquals("-h", candidates.get(2).toString());
-        assertEquals("-t", candidates.get(3).toString());
+
+        int index = 0;
+        assertEquals("--host", candidates.get(index++).toString());
+        assertEquals("--port", candidates.get(index++).toString());
+        assertEquals("--type", candidates.get(index++).toString());
+        assertEquals("--version", candidates.get(index++).toString());
+        assertEquals("-h", candidates.get(index++).toString());
+        assertEquals("-p", candidates.get(index++).toString());
+        assertEquals("-t", candidates.get(index++).toString());
+        assertEquals("-v", candidates.get(index).toString());
     }
 
     @Test
@@ -168,12 +174,18 @@ public class ShellCompleterTest {
         final List<CharSequence> candidates = new ArrayList<>();
         final int position = shellCompleter.complete("service list -", 14, candidates);
 
-        assertEquals(4, candidates.size());
+        assertEquals(8, candidates.size());
         assertEquals(13, position);
-        assertEquals("--host", candidates.get(0).toString());
-        assertEquals("--type", candidates.get(1).toString());
-        assertEquals("-h", candidates.get(2).toString());
-        assertEquals("-t", candidates.get(3).toString());
+
+        int index = 0;
+        assertEquals("--host", candidates.get(index++).toString());
+        assertEquals("--port", candidates.get(index++).toString());
+        assertEquals("--type", candidates.get(index++).toString());
+        assertEquals("--version", candidates.get(index++).toString());
+        assertEquals("-h", candidates.get(index++).toString());
+        assertEquals("-p", candidates.get(index++).toString());
+        assertEquals("-t", candidates.get(index++).toString());
+        assertEquals("-v", candidates.get(index).toString());
     }
 
     @Test
@@ -181,10 +193,14 @@ public class ShellCompleterTest {
         final List<CharSequence> candidates = new ArrayList<>();
         final int position = shellCompleter.complete("service list --", 15, candidates);
 
-        assertEquals(2, candidates.size());
+        assertEquals(4, candidates.size());
         assertEquals(13, position);
-        assertEquals("--host", candidates.get(0).toString());
-        assertEquals("--type", candidates.get(1).toString());
+
+        int index = 0;
+        assertEquals("--host", candidates.get(index++).toString());
+        assertEquals("--port", candidates.get(index++).toString());
+        assertEquals("--type", candidates.get(index++).toString());
+        assertEquals("--version", candidates.get(index).toString());
     }
 
     @Test

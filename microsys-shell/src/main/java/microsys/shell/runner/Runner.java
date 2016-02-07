@@ -44,17 +44,21 @@ public class Runner {
         this.consoleManager = Objects.requireNonNull(consoleManager);
     }
 
+    protected ConsoleManager getConsoleManager() {
+        return this.consoleManager;
+    }
+
     protected void run(final File file) throws Exception {
-        this.consoleManager.run(Objects.requireNonNull(file));
+        getConsoleManager().run(Objects.requireNonNull(file));
     }
 
     protected void run(final String command) throws Exception {
-        this.consoleManager.run(Objects.requireNonNull(command));
+        getConsoleManager().run(Objects.requireNonNull(command));
     }
 
     protected void run() throws Exception {
         // Blocks until the shell is finished.
-        this.consoleManager.run();
+        getConsoleManager().run();
     }
 
     protected void shutdown() {

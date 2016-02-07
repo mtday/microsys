@@ -1,13 +1,16 @@
 package microsys.shell.runner;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
+import ch.qos.logback.classic.Level;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigValue;
 import com.typesafe.config.ConfigValueFactory;
-
+import microsys.common.config.CommonConfig;
+import microsys.service.discovery.DiscoveryManager;
+import microsys.shell.CapturingConsoleReader;
+import microsys.shell.ConsoleManager;
+import microsys.shell.RegistrationManager;
+import microsys.shell.model.ShellEnvironment;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.retry.ExponentialBackoffRetry;
@@ -17,20 +20,15 @@ import org.junit.rules.TemporaryFolder;
 import org.mockito.Mockito;
 import org.slf4j.LoggerFactory;
 
-import ch.qos.logback.classic.Level;
-import microsys.common.config.CommonConfig;
-import microsys.service.discovery.DiscoveryManager;
-import microsys.shell.CapturingConsoleReader;
-import microsys.shell.ConsoleManager;
-import microsys.shell.RegistrationManager;
-import microsys.shell.model.ShellEnvironment;
-
 import java.io.File;
 import java.io.FileWriter;
 import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Perform testing on the {@link Runner} class.
@@ -98,7 +96,10 @@ public class RunnerTest {
 
     @Test
     public void testProcessCommandLineWithCommand() throws Exception {
+        final ConsoleManager consoleManager = Mockito.mock(ConsoleManager.class);
         final Runner runner = Mockito.mock(Runner.class);
+        Mockito.when(runner.getConsoleManager()).thenReturn(consoleManager);
+        Mockito.doCallRealMethod().when(runner).run(Mockito.anyString());
         Runner.processCommandLine(runner, new String[] {"shell", "-c", "help"});
         Mockito.verify(runner).run(Mockito.anyString());
         Mockito.verify(runner).shutdown();

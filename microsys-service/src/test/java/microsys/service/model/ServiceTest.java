@@ -1,16 +1,14 @@
 package microsys.service.model;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNull;
-
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-
+import microsys.common.model.ServiceType;
 import org.apache.curator.x.discovery.ServiceInstance;
 import org.junit.Test;
 
-import microsys.common.model.ServiceType;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNull;
 
 /**
  * Perform testing on the {@link Service} class.
@@ -18,11 +16,11 @@ import microsys.common.model.ServiceType;
 public class ServiceTest {
     @Test
     public void testCompareTo() {
-        final Service a = new Service(ServiceType.CONFIG, "host", 1234, true);
-        final Service b = new Service(ServiceType.CONFIG, "host", 1234, false);
-        final Service c = new Service(ServiceType.CONFIG, "host", 1235, false);
-        final Service d = new Service(ServiceType.CONFIG, "host2", 1235, false);
-        final Service e = new Service(ServiceType.WEB, "host2", 1235, false);
+        final Service a = new Service(ServiceType.CONFIG, "host", 1234, true, "1.2.3");
+        final Service b = new Service(ServiceType.CONFIG, "host", 1234, false, "1.2.3");
+        final Service c = new Service(ServiceType.CONFIG, "host", 1235, false, "1.2.3");
+        final Service d = new Service(ServiceType.CONFIG, "host2", 1235, false, "1.2.3");
+        final Service e = new Service(ServiceType.WEB, "host2", 1235, false, "1.2.3");
 
         assertEquals(1, a.compareTo(null));
 
@@ -59,11 +57,11 @@ public class ServiceTest {
 
     @Test
     public void testEquals() {
-        final Service a = new Service(ServiceType.CONFIG, "host", 1234, true);
-        final Service b = new Service(ServiceType.CONFIG, "host", 1234, false);
-        final Service c = new Service(ServiceType.CONFIG, "host", 1235, false);
-        final Service d = new Service(ServiceType.CONFIG, "host2", 1235, false);
-        final Service e = new Service(ServiceType.WEB, "host2", 1235, false);
+        final Service a = new Service(ServiceType.CONFIG, "host", 1234, true, "1.2.3");
+        final Service b = new Service(ServiceType.CONFIG, "host", 1234, false, "1.2.3");
+        final Service c = new Service(ServiceType.CONFIG, "host", 1235, false, "1.2.3");
+        final Service d = new Service(ServiceType.CONFIG, "host2", 1235, false, "1.2.3");
+        final Service e = new Service(ServiceType.WEB, "host2", 1235, false, "1.2.3");
 
         assertNotEquals(a, null);
 
@@ -100,128 +98,147 @@ public class ServiceTest {
 
     @Test
     public void testHashCode() {
-        final Service a = new Service(ServiceType.CONFIG, "host", 1234, true);
-        final Service b = new Service(ServiceType.CONFIG, "host", 1234, false);
-        final Service c = new Service(ServiceType.CONFIG, "host", 1235, false);
-        final Service d = new Service(ServiceType.CONFIG, "host2", 1235, false);
-        final Service e = new Service(ServiceType.WEB, "host2", 1235, false);
+        final Service a = new Service(ServiceType.CONFIG, "host", 1234, true, "1.2.3");
+        final Service b = new Service(ServiceType.CONFIG, "host", 1234, false, "1.2.3");
+        final Service c = new Service(ServiceType.CONFIG, "host", 1235, false, "1.2.3");
+        final Service d = new Service(ServiceType.CONFIG, "host2", 1235, false, "1.2.3");
+        final Service e = new Service(ServiceType.WEB, "host2", 1235, false, "1.2.3");
 
-        assertEquals(-1859172419, a.hashCode());
-        assertEquals(-1859172418, b.hashCode());
-        assertEquals(-1859172381, c.hashCode());
-        assertEquals(1069736309, d.hashCode());
-        assertEquals(-1184856225, e.hashCode());
+        assertEquals(-23230325, a.hashCode());
+        assertEquals(-23230288, b.hashCode());
+        assertEquals(-23228919, c.hashCode());
+        assertEquals(972210211, d.hashCode());
+        assertEquals(-843334923, e.hashCode());
     }
 
     @Test
     public void testToString() {
-        final Service svc = new Service(ServiceType.CONFIG, "host", 1234, true);
-        assertEquals("Service[type=CONFIG,host=host,port=1234,secure=true]", svc.toString());
+        final Service svc = new Service(ServiceType.CONFIG, "host", 1234, true, "1.2.3");
+        assertEquals("Service[type=CONFIG,host=host,port=1234,secure=true,version=1.2.3]", svc.toString());
     }
 
     @Test
     public void testToJson() {
-        final Service svc = new Service(ServiceType.CONFIG, "host", 1234, true);
-        assertEquals("{\"type\":\"CONFIG\",\"host\":\"host\",\"port\":1234,\"secure\":true}", svc.toJson().toString());
+        final Service svc = new Service(ServiceType.CONFIG, "host", 1234, true, "1.2.3");
+        assertEquals("{\"type\":\"CONFIG\",\"host\":\"host\",\"port\":1234,\"secure\":true,\"version\":\"1.2.3\"}",
+                svc.toJson().toString());
     }
 
     @Test
     public void testAsUrl() {
-        final Service secure = new Service(ServiceType.CONFIG, "host", 1234, true);
-        final Service insecure = new Service(ServiceType.CONFIG, "host", 1234, false);
+        final Service secure = new Service(ServiceType.CONFIG, "host", 1234, true, "1.2.3");
+        final Service insecure = new Service(ServiceType.CONFIG, "host", 1234, false, "1.2.3");
         assertEquals("https://host:1234/", secure.asUrl());
         assertEquals("http://host:1234/", insecure.asUrl());
     }
 
     @Test
     public void testJsonConstructor() {
-        final Service original = new Service(ServiceType.CONFIG, "host", 1234, true);
+        final Service original = new Service(ServiceType.CONFIG, "host", 1234, true, "1.2.3");
         final Service copy = new Service(original.toJson());
         assertEquals(original, copy);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testJsonConstructorNoType() {
-        final String jsonStr = "{\"host\":\"host\",\"port\":1234,\"secure\":true}";
+        final String jsonStr = "{\"host\":\"host\",\"port\":1234,\"secure\":true,\"version\":\"1.2.3\"}";
         final JsonObject json = new JsonParser().parse(jsonStr).getAsJsonObject();
         new Service(json);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testJsonConstructorTypeWrongType() {
-        final String jsonStr = "{\"type\":[],\"host\":\"host\",\"port\":1234,\"secure\":true}";
+        final String jsonStr = "{\"type\":[],\"host\":\"host\",\"port\":1234,\"secure\":true,\"version\":\"1.2.3\"}";
         final JsonObject json = new JsonParser().parse(jsonStr).getAsJsonObject();
         new Service(json);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testJsonConstructorNoHost() {
-        final String jsonStr = "{\"type\":\"CONFIG\",\"port\":1234,\"secure\":true}";
+        final String jsonStr = "{\"type\":\"CONFIG\",\"port\":1234,\"secure\":true,\"version\":\"1.2.3\"}";
         final JsonObject json = new JsonParser().parse(jsonStr).getAsJsonObject();
         new Service(json);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testJsonConstructorHostWrongType() {
-        final String jsonStr = "{\"type\":\"CONFIG\",\"host\":[],\"port\":1234,\"secure\":true}";
+        final String jsonStr = "{\"type\":\"CONFIG\",\"host\":[],\"port\":1234,\"secure\":true,\"version\":\"1.2.3\"}";
         final JsonObject json = new JsonParser().parse(jsonStr).getAsJsonObject();
         new Service(json);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testJsonConstructorNoPort() {
-        final String jsonStr = "{\"type\":\"CONFIG\",\"host\":\"host\",\"secure\":true}";
+        final String jsonStr = "{\"type\":\"CONFIG\",\"host\":\"host\",\"secure\":true,\"version\":\"1.2.3\"}";
         final JsonObject json = new JsonParser().parse(jsonStr).getAsJsonObject();
         new Service(json);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testJsonConstructorPortWrongType() {
-        final String jsonStr = "{\"type\":\"CONFIG\",\"host\":\"host\",\"port\":[],\"secure\":true}";
+        final String jsonStr =
+                "{\"type\":\"CONFIG\",\"host\":\"host\",\"port\":[],\"secure\":true,\"version\":\"1.2.3\"}";
         final JsonObject json = new JsonParser().parse(jsonStr).getAsJsonObject();
         new Service(json);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testJsonConstructorPortNotInt() {
-        final String jsonStr = "{\"type\":\"CONFIG\",\"host\":\"host\",\"port\":\"a\",\"secure\":true}";
+        final String jsonStr =
+                "{\"type\":\"CONFIG\",\"host\":\"host\",\"port\":\"a\",\"secure\":true,\"version\":\"1.2.3\"}";
         final JsonObject json = new JsonParser().parse(jsonStr).getAsJsonObject();
         new Service(json);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testJsonConstructorNoSecure() {
-        final String jsonStr = "{\"type\":\"CONFIG\",\"host\":\"host\",\"port\":1234}";
+        final String jsonStr = "{\"type\":\"CONFIG\",\"host\":\"host\",\"port\":1234,\"version\":\"1.2.3\"}";
         final JsonObject json = new JsonParser().parse(jsonStr).getAsJsonObject();
         new Service(json);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testJsonConstructorSecureWrongType() {
-        final String jsonStr = "{\"type\":\"CONFIG\",\"host\":\"host\",\"port\":1234,\"secure\":[]}";
+        final String jsonStr =
+                "{\"type\":\"CONFIG\",\"host\":\"host\",\"port\":1234,\"secure\":[],\"version\":\"1.2.3\"}";
         final JsonObject json = new JsonParser().parse(jsonStr).getAsJsonObject();
         new Service(json);
     }
 
     @Test
     public void testJsonConstructorSecureNotBoolean() {
-        final String jsonStr = "{\"type\":\"CONFIG\",\"host\":\"host\",\"port\":1234,\"secure\":5}";
+        final String jsonStr =
+                "{\"type\":\"CONFIG\",\"host\":\"host\",\"port\":1234,\"secure\":5,\"version\":\"1.2.3\"}";
         final JsonObject json = new JsonParser().parse(jsonStr).getAsJsonObject();
         final Service created = new Service(json);
         // anything other than "true" is assumed to be false.
-        final Service expected = new Service(ServiceType.CONFIG, "host", 1234, false);
+        final Service expected = new Service(ServiceType.CONFIG, "host", 1234, false, "1.2.3");
         assertEquals(expected, created);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testJsonConstructorNoVersion() {
+        final String jsonStr = "{\"type\":\"CONFIG\",\"host\":\"host\",\"port\":1234,\"secure\":true}";
+        final JsonObject json = new JsonParser().parse(jsonStr).getAsJsonObject();
+        new Service(json);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testJsonConstructorVersionWrongType() {
+        final String jsonStr = "{\"type\":\"CONFIG\",\"host\":\"host\",\"port\":1234,\"secure\":true,\"version\":[]}";
+        final JsonObject json = new JsonParser().parse(jsonStr).getAsJsonObject();
+        new Service(json);
     }
 
     @Test
     public void testGetId() {
-        final Service service = new Service(ServiceType.CONFIG, "host", 1234, false);
+        final Service service = new Service(ServiceType.CONFIG, "host", 1234, false, "1.2.3");
         assertEquals("host:1234", service.getId());
     }
 
     @Test
     public void testServiceInstance() {
-        final Service service = new Service(ServiceType.CONFIG, "host", 1234, false);
+        final Service service = new Service(ServiceType.CONFIG, "host", 1234, false, "1.2.3");
         final ServiceInstance<String> si = service.asServiceInstance();
 
         assertEquals("CONFIG", si.getName());
@@ -229,7 +246,8 @@ public class ServiceTest {
         assertEquals("host", si.getAddress());
         assertEquals(new Integer(1234), si.getPort());
         assertNull(si.getSslPort());
-        assertEquals("{\"type\":\"CONFIG\",\"host\":\"host\",\"port\":1234,\"secure\":false}", si.getPayload());
+        assertEquals("{\"type\":\"CONFIG\",\"host\":\"host\",\"port\":1234,\"secure\":false,\"version\":\"1.2.3\"}",
+                si.getPayload());
         assertEquals("DYNAMIC", si.getServiceType().name());
 
         final Service copy = new Service(si);

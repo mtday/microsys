@@ -1,25 +1,10 @@
 package microsys.config.client;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
+import ch.qos.logback.classic.Level;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigValue;
 import com.typesafe.config.ConfigValueFactory;
-
-import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.framework.CuratorFrameworkFactory;
-import org.apache.curator.retry.ExponentialBackoffRetry;
-import org.apache.curator.test.TestingServer;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.mockito.Mockito;
-import org.slf4j.LoggerFactory;
-
-import ch.qos.logback.classic.Level;
 import microsys.common.config.CommonConfig;
 import microsys.common.model.ServiceType;
 import microsys.config.model.ConfigKeyValue;
@@ -32,8 +17,18 @@ import microsys.service.model.Service;
 import okhttp3.OkHttpClient;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.CuratorFrameworkFactory;
+import org.apache.curator.retry.ExponentialBackoffRetry;
+import org.apache.curator.test.TestingServer;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.mockito.Mockito;
+import org.slf4j.LoggerFactory;
 import spark.webserver.JettySparkServer;
 
+import javax.servlet.http.HttpServletResponse;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -42,7 +37,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import javax.servlet.http.HttpServletResponse;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Perform testing of the {@link ConfigClient} class.
@@ -191,7 +188,8 @@ public class ConfigClientIT {
 
         final DiscoveryManager mockDiscovery = Mockito.mock(DiscoveryManager.class);
         Mockito.when(mockDiscovery.getRandom(ServiceType.CONFIG)).thenReturn(
-                Optional.of(new Service(ServiceType.CONFIG, mockServer.getHostName(), mockServer.getPort(), false)));
+                Optional.of(new Service(ServiceType.CONFIG, mockServer.getHostName(), mockServer.getPort(), false,
+                        "1.2.3")));
 
         final ConfigClient client = new ConfigClient(executor, mockDiscovery, httpClient);
         client.getAll().get();
@@ -205,7 +203,8 @@ public class ConfigClientIT {
 
         final DiscoveryManager mockDiscovery = Mockito.mock(DiscoveryManager.class);
         Mockito.when(mockDiscovery.getRandom(ServiceType.CONFIG)).thenReturn(
-                Optional.of(new Service(ServiceType.CONFIG, mockServer.getHostName(), mockServer.getPort(), false)));
+                Optional.of(new Service(ServiceType.CONFIG, mockServer.getHostName(), mockServer.getPort(), false,
+                        "1.2.3")));
 
         final ConfigClient client = new ConfigClient(executor, mockDiscovery, httpClient);
         client.get("key").get();
@@ -219,7 +218,8 @@ public class ConfigClientIT {
 
         final DiscoveryManager mockDiscovery = Mockito.mock(DiscoveryManager.class);
         Mockito.when(mockDiscovery.getRandom(ServiceType.CONFIG)).thenReturn(
-                Optional.of(new Service(ServiceType.CONFIG, mockServer.getHostName(), mockServer.getPort(), false)));
+                Optional.of(new Service(ServiceType.CONFIG, mockServer.getHostName(), mockServer.getPort(), false,
+                        "1.2.3")));
 
         final ConfigClient client = new ConfigClient(executor, mockDiscovery, httpClient);
         client.set(new ConfigKeyValue("key", "value")).get();
@@ -233,7 +233,8 @@ public class ConfigClientIT {
 
         final DiscoveryManager mockDiscovery = Mockito.mock(DiscoveryManager.class);
         Mockito.when(mockDiscovery.getRandom(ServiceType.CONFIG)).thenReturn(
-                Optional.of(new Service(ServiceType.CONFIG, mockServer.getHostName(), mockServer.getPort(), false)));
+                Optional.of(new Service(ServiceType.CONFIG, mockServer.getHostName(), mockServer.getPort(), false,
+                        "1.2.3")));
 
         final ConfigClient client = new ConfigClient(executor, mockDiscovery, httpClient);
         client.unset("key").get();

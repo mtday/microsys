@@ -1,11 +1,5 @@
 package microsys.shell.command;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
-import org.junit.Test;
-import org.mockito.Mockito;
-
 import microsys.common.model.ServiceType;
 import microsys.service.discovery.DiscoveryManager;
 import microsys.service.model.Service;
@@ -15,6 +9,8 @@ import microsys.shell.model.Option;
 import microsys.shell.model.Registration;
 import microsys.shell.model.ShellEnvironment;
 import microsys.shell.model.UserCommand;
+import org.junit.Test;
+import org.mockito.Mockito;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -24,16 +20,19 @@ import java.util.Optional;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 /**
  * Perform testing of the {@link ServiceCommand} class.
  */
 public class ServiceCommandTest {
     protected ShellEnvironment getShellEnvironment() throws Exception {
         final SortedSet<Service> services = new TreeSet<>();
-        services.add(new Service(ServiceType.CONFIG, "host1", 1234, false));
-        services.add(new Service(ServiceType.HEALTH, "host1", 1235, false));
-        services.add(new Service(ServiceType.WEB, "host2", 1236, true));
-        services.add(new Service(ServiceType.WEB, "host2", 1237, true));
+        services.add(new Service(ServiceType.CONFIG, "host1", 1234, false, "1.2.3"));
+        services.add(new Service(ServiceType.HEALTH, "host1", 1235, false, "1.2.3"));
+        services.add(new Service(ServiceType.WEB, "host2", 1236, true, "1.2.4"));
+        services.add(new Service(ServiceType.WEB, "host2", 1237, true, "1.2.4"));
         final DiscoveryManager discoveryManager = Mockito.mock(DiscoveryManager.class);
         Mockito.when(discoveryManager.getAll()).thenReturn(services);
         final ShellEnvironment shellEnvironment = Mockito.mock(ShellEnvironment.class);
@@ -55,7 +54,7 @@ public class ServiceCommandTest {
         assertEquals("provides information about the available services", list.getDescription().get());
         assertTrue(list.getOptions().isPresent());
         final SortedSet<Option> listOptions = list.getOptions().get().getOptions();
-        assertEquals(2, listOptions.size());
+        assertEquals(4, listOptions.size());
 
         final Registration restart = registrations.get(1);
         assertEquals(new CommandPath("service", "restart"), restart.getPath());
@@ -63,7 +62,7 @@ public class ServiceCommandTest {
         assertEquals("request the restart of a service", restart.getDescription().get());
         assertTrue(restart.getOptions().isPresent());
         final SortedSet<Option> restartOptions = restart.getOptions().get().getOptions();
-        assertEquals(3, restartOptions.size());
+        assertEquals(4, restartOptions.size());
     }
 
     @Test
@@ -84,10 +83,10 @@ public class ServiceCommandTest {
 
         int line = 0;
         assertEquals("Displaying all 4 services:", output.get(line++));
-        assertEquals("    CONFIG  host1  1234  (insecure)", output.get(line++));
-        assertEquals("    HEALTH  host1  1235  (insecure)", output.get(line++));
-        assertEquals("    WEB     host2  1236  (secure)", output.get(line++));
-        assertEquals("    WEB     host2  1237  (secure)", output.get(line));
+        assertEquals("    CONFIG  host1  1234  insecure  1.2.3", output.get(line++));
+        assertEquals("    HEALTH  host1  1235  insecure  1.2.3", output.get(line++));
+        assertEquals("    WEB     host2  1236  secure    1.2.4", output.get(line++));
+        assertEquals("    WEB     host2  1237  secure    1.2.4", output.get(line));
     }
 
     @Test
@@ -109,7 +108,7 @@ public class ServiceCommandTest {
 
         int line = 0;
         assertEquals("Displaying the matching service (of 4 total):", output.get(line++));
-        assertEquals("    CONFIG  host1  1234  (insecure)", output.get(line));
+        assertEquals("    CONFIG  host1  1234  insecure  1.2.3", output.get(line));
     }
 
     @Test
@@ -131,8 +130,78 @@ public class ServiceCommandTest {
 
         int line = 0;
         assertEquals("Displaying 2 matching services (of 4 total):", output.get(line++));
-        assertEquals("    CONFIG  host1  1234  (insecure)", output.get(line++));
-        assertEquals("    HEALTH  host1  1235  (insecure)", output.get(line));
+        assertEquals("    CONFIG  host1  1234  insecure  1.2.3", output.get(line++));
+        assertEquals("    HEALTH  host1  1235  insecure  1.2.3", output.get(line));
+    }
+
+    @Test
+    public void testProcessListWithPort() throws Exception {
+        final ServiceCommand serviceCommand = new ServiceCommand(getShellEnvironment());
+
+        final List<String> input = Arrays.asList("service", "list", "-p", "1234");
+        final CommandPath commandPath = new CommandPath("service", "list");
+        final Registration reg = serviceCommand.getRegistrations().get(0);
+        final UserCommand userCommand = new UserCommand(commandPath, reg, input);
+        final StringWriter stringWriter = new StringWriter();
+        final PrintWriter writer = new PrintWriter(stringWriter, true);
+
+        final CommandStatus status = serviceCommand.process(userCommand, writer);
+        assertEquals(CommandStatus.SUCCESS, status);
+
+        final List<String> output = Arrays.asList(stringWriter.getBuffer().toString().split(System.lineSeparator()));
+        assertEquals(2, output.size());
+
+        int line = 0;
+        assertEquals("Displaying the matching service (of 4 total):", output.get(line++));
+        assertEquals("    CONFIG  host1  1234  insecure  1.2.3", output.get(line));
+    }
+
+    @Test
+    public void testProcessListWithPortNotNumeric() throws Exception {
+        final ServiceCommand serviceCommand = new ServiceCommand(getShellEnvironment());
+
+        final List<String> input = Arrays.asList("service", "list", "-p", "abcd");
+        final CommandPath commandPath = new CommandPath("service", "list");
+        final Registration reg = serviceCommand.getRegistrations().get(0);
+        final UserCommand userCommand = new UserCommand(commandPath, reg, input);
+        final StringWriter stringWriter = new StringWriter();
+        final PrintWriter writer = new PrintWriter(stringWriter, true);
+
+        final CommandStatus status = serviceCommand.process(userCommand, writer);
+        assertEquals(CommandStatus.SUCCESS, status);
+
+        final List<String> output = Arrays.asList(stringWriter.getBuffer().toString().split(System.lineSeparator()));
+        assertEquals(5, output.size());
+
+        int line = 0;
+        assertEquals("Displaying all 4 services:", output.get(line++));
+        assertEquals("    CONFIG  host1  1234  insecure  1.2.3", output.get(line++));
+        assertEquals("    HEALTH  host1  1235  insecure  1.2.3", output.get(line++));
+        assertEquals("    WEB     host2  1236  secure    1.2.4", output.get(line++));
+        assertEquals("    WEB     host2  1237  secure    1.2.4", output.get(line));
+    }
+
+    @Test
+    public void testProcessListWithVersion() throws Exception {
+        final ServiceCommand serviceCommand = new ServiceCommand(getShellEnvironment());
+
+        final List<String> input = Arrays.asList("service", "list", "-v", "1.2.3");
+        final CommandPath commandPath = new CommandPath("service", "list");
+        final Registration reg = serviceCommand.getRegistrations().get(0);
+        final UserCommand userCommand = new UserCommand(commandPath, reg, input);
+        final StringWriter stringWriter = new StringWriter();
+        final PrintWriter writer = new PrintWriter(stringWriter, true);
+
+        final CommandStatus status = serviceCommand.process(userCommand, writer);
+        assertEquals(CommandStatus.SUCCESS, status);
+
+        final List<String> output = Arrays.asList(stringWriter.getBuffer().toString().split(System.lineSeparator()));
+        assertEquals(3, output.size());
+
+        int line = 0;
+        assertEquals("Displaying 2 matching services (of 4 total):", output.get(line++));
+        assertEquals("    CONFIG  host1  1234  insecure  1.2.3", output.get(line++));
+        assertEquals("    HEALTH  host1  1235  insecure  1.2.3", output.get(line));
     }
 
     @Test
@@ -180,7 +249,7 @@ public class ServiceCommandTest {
     @Test
     public void testProcessListOneService() throws Exception {
         final SortedSet<Service> services = new TreeSet<>();
-        services.add(new Service(ServiceType.CONFIG, "host1", 1234, false));
+        services.add(new Service(ServiceType.CONFIG, "host1", 1234, false, "1.2.3"));
         final DiscoveryManager discoveryManager = Mockito.mock(DiscoveryManager.class);
         Mockito.when(discoveryManager.getAll()).thenReturn(services);
         final ShellEnvironment shellEnvironment = Mockito.mock(ShellEnvironment.class);
@@ -200,14 +269,14 @@ public class ServiceCommandTest {
         final List<String> output = Arrays.asList(stringWriter.getBuffer().toString().split(System.lineSeparator()));
         assertEquals(2, output.size());
         assertEquals("Displaying the single available service:", output.get(0));
-        assertEquals("    CONFIG  host1  1234  (insecure)", output.get(1));
+        assertEquals("    CONFIG  host1  1234  insecure  1.2.3", output.get(1));
     }
 
     @Test
     public void testProcessListTwoServices() throws Exception {
         final SortedSet<Service> services = new TreeSet<>();
-        services.add(new Service(ServiceType.CONFIG, "host1", 1234, false));
-        services.add(new Service(ServiceType.HEALTH, "host1", 1235, false));
+        services.add(new Service(ServiceType.CONFIG, "host1", 1234, false, "1.2.3"));
+        services.add(new Service(ServiceType.HEALTH, "host1", 1235, false, "1.2.3"));
         final DiscoveryManager discoveryManager = Mockito.mock(DiscoveryManager.class);
         Mockito.when(discoveryManager.getAll()).thenReturn(services);
         final ShellEnvironment shellEnvironment = Mockito.mock(ShellEnvironment.class);
@@ -227,8 +296,8 @@ public class ServiceCommandTest {
         final List<String> output = Arrays.asList(stringWriter.getBuffer().toString().split(System.lineSeparator()));
         assertEquals(3, output.size());
         assertEquals("Displaying both available services:", output.get(0));
-        assertEquals("    CONFIG  host1  1234  (insecure)", output.get(1));
-        assertEquals("    HEALTH  host1  1235  (insecure)", output.get(2));
+        assertEquals("    CONFIG  host1  1234  insecure  1.2.3", output.get(1));
+        assertEquals("    HEALTH  host1  1235  insecure  1.2.3", output.get(2));
     }
 
     @Test
@@ -244,5 +313,24 @@ public class ServiceCommandTest {
 
         final CommandStatus status = serviceCommand.process(userCommand, writer);
         assertEquals(CommandStatus.SUCCESS, status);
+    }
+
+    @Test
+    public void testHandleListException() throws Exception {
+        final ServiceCommand serviceCommand = new ServiceCommand(getShellEnvironment());
+
+        final CommandPath commandPath = new CommandPath("service", "list");
+        final UserCommand userCommand = Mockito.mock(UserCommand.class);
+        Mockito.when(userCommand.getCommandPath()).thenReturn(commandPath);
+        Mockito.when(userCommand.getCommandLine()).thenThrow(new RuntimeException("Fake"));
+        final StringWriter stringWriter = new StringWriter();
+        final PrintWriter writer = new PrintWriter(stringWriter, true);
+
+        final CommandStatus status = serviceCommand.process(userCommand, writer);
+        assertEquals(CommandStatus.SUCCESS, status);
+
+        final List<String> output = Arrays.asList(stringWriter.getBuffer().toString().split(System.lineSeparator()));
+        assertEquals(1, output.size());
+        assertEquals("Failed to retrieve available services: Fake", output.get(0));
     }
 }

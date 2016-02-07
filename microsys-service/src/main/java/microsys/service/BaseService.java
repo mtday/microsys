@@ -208,7 +208,9 @@ public abstract class BaseService {
         configureRequestLogger();
 
         final boolean ssl = getConfig().getBoolean(CommonConfig.SSL_ENABLED.getKey());
-        this.service = Optional.of(new Service(getServiceType(), reservation.getHost(), reservation.getPort(), ssl));
+        final String version = getConfig().getString(CommonConfig.SYSTEM_VERSION.getKey());
+        this.service = Optional.of(new Service(getServiceType(), reservation.getHost(), reservation.getPort(), ssl,
+                version));
 
         // Register with service discovery once the server has started.
         this.executor.submit(() -> {

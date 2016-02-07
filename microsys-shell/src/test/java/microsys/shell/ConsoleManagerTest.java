@@ -1,25 +1,18 @@
 package microsys.shell;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
+import ch.qos.logback.classic.Level;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigValue;
 import com.typesafe.config.ConfigValueFactory;
-
+import microsys.common.config.CommonConfig;
+import microsys.service.discovery.DiscoveryManager;
+import microsys.shell.model.ShellEnvironment;
 import org.apache.curator.framework.CuratorFramework;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.mockito.Mockito;
 import org.slf4j.LoggerFactory;
-
-import ch.qos.logback.classic.Level;
-import jline.console.history.FileHistory;
-import microsys.common.config.CommonConfig;
-import microsys.service.discovery.DiscoveryManager;
-import microsys.shell.model.ShellEnvironment;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -28,7 +21,10 @@ import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Perform testing on the {@link ConsoleManager} class
@@ -340,7 +336,6 @@ public class ConsoleManagerTest {
         final CapturingConsoleReader consoleReader = new CapturingConsoleReader();
         final ConsoleManager cm = new ConsoleManager(config, registrationManager, consoleReader);
 
-        final Optional<FileHistory> fileHistory = cm.createHistory(config);
-        assertTrue(fileHistory.isPresent());
+        assertNotNull(cm.createHistory(config));
     }
 }

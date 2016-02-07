@@ -15,15 +15,15 @@ import java.util.TreeSet;
 import static org.junit.Assert.assertEquals;
 
 /**
- * Perform testing on the {@link ServiceHostCompleter} class.
+ * Perform testing on the {@link ServiceVersionCompleter} class.
  */
-public class ServiceHostCompleterTest {
+public class ServiceVersionCompleterTest {
     protected ShellEnvironment getShellEnvironment() throws Exception {
         final SortedSet<Service> services = new TreeSet<>();
-        services.add(new Service(ServiceType.CONFIG, "host1", 1234, false, "1.2.3"));
-        services.add(new Service(ServiceType.HEALTH, "host1", 1235, false, "1.2.3"));
-        services.add(new Service(ServiceType.WEB, "host2", 1236, true, "1.2.4"));
-        services.add(new Service(ServiceType.WEB, "host2", 1237, true, "1.2.4"));
+        services.add(new Service(ServiceType.CONFIG, "1.2.3", 1234, false, "1.2.3"));
+        services.add(new Service(ServiceType.HEALTH, "1.2.3", 1235, false, "1.2.3"));
+        services.add(new Service(ServiceType.WEB, "1.2.4", 1236, true, "1.2.4"));
+        services.add(new Service(ServiceType.WEB, "1.2.4", 1237, true, "1.2.4"));
         final DiscoveryManager discoveryManager = Mockito.mock(DiscoveryManager.class);
         Mockito.when(discoveryManager.getAll()).thenReturn(services);
         final ShellEnvironment shellEnvironment = Mockito.mock(ShellEnvironment.class);
@@ -33,18 +33,18 @@ public class ServiceHostCompleterTest {
 
     @Test
     public void testEmpty() throws Exception {
-        final ServiceHostCompleter completer = new ServiceHostCompleter(getShellEnvironment());
+        final ServiceVersionCompleter completer = new ServiceVersionCompleter(getShellEnvironment());
         final List<CharSequence> candidates = new LinkedList<>();
         final int position = completer.complete("", 0, candidates);
 
         assertEquals(2, candidates.size());
         assertEquals(0, position);
-        assertEquals("[host1, host2]", candidates.toString());
+        assertEquals("[1.2.3, 1.2.4]", candidates.toString());
     }
 
     @Test
     public void testWhiteSpace() throws Exception {
-        final ServiceHostCompleter completer = new ServiceHostCompleter(getShellEnvironment());
+        final ServiceVersionCompleter completer = new ServiceVersionCompleter(getShellEnvironment());
         final List<CharSequence> candidates = new LinkedList<>();
         final int position = completer.complete(" ", 1, candidates);
 
@@ -56,42 +56,42 @@ public class ServiceHostCompleterTest {
 
     @Test
     public void testPartial() throws Exception {
-        final ServiceHostCompleter completer = new ServiceHostCompleter(getShellEnvironment());
+        final ServiceVersionCompleter completer = new ServiceVersionCompleter(getShellEnvironment());
         final List<CharSequence> candidates = new LinkedList<>();
-        final int position = completer.complete("ho", 2, candidates);
+        final int position = completer.complete("1.2", 3, candidates);
 
         assertEquals(2, candidates.size());
         assertEquals(0, position);
-        assertEquals("[host1, host2]", candidates.toString());
+        assertEquals("[1.2.3, 1.2.4]", candidates.toString());
     }
 
     @Test
     public void testComplete() throws Exception {
-        final ServiceHostCompleter completer = new ServiceHostCompleter(getShellEnvironment());
+        final ServiceVersionCompleter completer = new ServiceVersionCompleter(getShellEnvironment());
         final List<CharSequence> candidates = new LinkedList<>();
-        final int position = completer.complete("host1", 4, candidates);
+        final int position = completer.complete("1.2.3", 4, candidates);
 
         assertEquals(1, candidates.size());
         assertEquals(0, position);
-        assertEquals("[host1]", candidates.toString());
+        assertEquals("[1.2.3]", candidates.toString());
     }
 
     @Test
     public void testCompleteMiddle() throws Exception {
-        final ServiceHostCompleter completer = new ServiceHostCompleter(getShellEnvironment());
+        final ServiceVersionCompleter completer = new ServiceVersionCompleter(getShellEnvironment());
         final List<CharSequence> candidates = new LinkedList<>();
-        final int position = completer.complete("host1", 2, candidates);
+        final int position = completer.complete("1.2.3", 2, candidates);
 
         assertEquals(1, candidates.size());
         assertEquals(0, position);
-        assertEquals("[host1]", candidates.toString());
+        assertEquals("[1.2.3]", candidates.toString());
     }
 
     @Test
     public void testException() throws Exception {
         final ShellEnvironment shellEnvironment = Mockito.mock(ShellEnvironment.class);
         Mockito.doThrow(new RuntimeException("Fake")).when(shellEnvironment).getDiscoveryManager();
-        final ServiceHostCompleter completer = new ServiceHostCompleter(shellEnvironment);
-        assertEquals(-1, completer.complete("host1", 2, new LinkedList<>()));
+        final ServiceVersionCompleter completer = new ServiceVersionCompleter(shellEnvironment);
+        assertEquals(-1, completer.complete("1.2.3", 2, new LinkedList<>()));
     }
 }

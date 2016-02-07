@@ -2,24 +2,20 @@ package microsys.shell;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.typesafe.config.Config;
-
-import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import jline.TerminalFactory;
 import jline.console.ConsoleReader;
 import jline.console.UserInterruptException;
 import jline.console.history.FileHistory;
 import microsys.common.config.CommonConfig;
+import microsys.shell.completer.ShellCompleter;
 import microsys.shell.model.Command;
 import microsys.shell.model.CommandPath;
 import microsys.shell.model.CommandStatus;
 import microsys.shell.model.Registration;
 import microsys.shell.model.Token;
 import microsys.shell.model.UserCommand;
-import microsys.shell.completer.ShellCompleter;
 import microsys.shell.util.Tokenizer;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -37,8 +33,6 @@ import java.util.SortedSet;
  * Responsible for managing the console reader, along with user input and console output.
  */
 public class ConsoleManager {
-    private final static Logger LOG = LoggerFactory.getLogger(ConsoleManager.class);
-
     private final static String PROMPT = "shell> ";
 
     private final Config config;
@@ -61,10 +55,8 @@ public class ConsoleManager {
         this.consoleReader.setPaginationEnabled(true);
         this.consoleReader.setPrompt(PROMPT);
 
-        this.fileHistory = createHistory(this.config);
-        if (this.fileHistory.isPresent()) {
-            this.consoleReader.setHistory(this.fileHistory.get());
-        }
+        this.fileHistory = Optional.of(createHistory(this.config));
+        this.consoleReader.setHistory(this.fileHistory.get());
 
         this.completer = Optional.of(new ShellCompleter(registrationManager));
         this.consoleReader.addCompleter(this.completer.get());
@@ -113,19 +105,11 @@ public class ConsoleManager {
         return this.fileHistory;
     }
 
-    protected Optional<FileHistory> createHistory(final Config config) {
+    protected FileHistory createHistory(final Config config) throws IOException {
         final String userHome = config.getString("user.home");
         final String systemName = config.getString(CommonConfig.SYSTEM_NAME.getKey());
         final String historyFileName = config.getString(CommonConfig.SHELL_HISTORY_FILE.getKey());
-
-        final File historyFile = new File(String.format("%s/.%s/%s", userHome, systemName, historyFileName));
-        try {
-            return Optional.of(new FileHistory(historyFile));
-        } catch (final IOException ioException) {
-            LOG.warn("Failed to load history file: " + historyFile.getAbsolutePath(), ioException);
-        }
-
-        return Optional.empty();
+        return new FileHistory(new File(String.format("%s/.%s/%s", userHome, systemName, historyFileName)));
     }
 
     protected void printStartupOutput() throws IOException {

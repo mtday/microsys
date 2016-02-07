@@ -1,15 +1,12 @@
 package microsys.service.discovery;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigValue;
 import com.typesafe.config.ConfigValueFactory;
-
+import microsys.common.config.CommonConfig;
+import microsys.common.model.ServiceType;
+import microsys.service.model.Service;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.retry.ExponentialBackoffRetry;
@@ -18,12 +15,13 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import microsys.common.config.CommonConfig;
-import microsys.common.model.ServiceType;
-import microsys.service.model.Service;
-
 import java.util.HashMap;
 import java.util.Map;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Perform testing on the {@link DiscoveryManager} class.
@@ -69,7 +67,7 @@ public class DiscoveryManagerIT {
             assertEquals(0, discovery.getAll(ServiceType.CONFIG).size());
             assertFalse(discovery.getRandom(ServiceType.CONFIG).isPresent());
 
-            final Service service = new Service(ServiceType.CONFIG, "host", 1234, false);
+            final Service service = new Service(ServiceType.CONFIG, "host", 1234, false, "1.2.3");
             discovery.register(service);
 
             // Should now have one registered service.
@@ -93,7 +91,7 @@ public class DiscoveryManagerIT {
         assertEquals(0, discovery.getAll(ServiceType.CONFIG).size());
         assertFalse(discovery.getRandom(ServiceType.CONFIG).isPresent());
 
-        final Service service = new Service(ServiceType.CONFIG, "host", 1234, false);
+        final Service service = new Service(ServiceType.CONFIG, "host", 1234, false, "1.2.3");
         discovery.register(service);
 
         // Still nothing registered.
