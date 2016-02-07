@@ -1,7 +1,9 @@
 package microsys.service;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
@@ -25,6 +27,7 @@ import spark.webserver.JettySparkServer;
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -44,7 +47,7 @@ public class BaseServiceIT {
             map.put(CommonConfig.ZOOKEEPER_HOSTS.getKey(), ConfigValueFactory.fromAnyRef(zookeeper.getConnectString()));
             final Config config = ConfigFactory.parseMap(map).withFallback(ConfigFactory.load());
 
-            final BaseService baseService = new BaseService(config, ServiceType.CONFIG) {
+            final BaseService baseService = new BaseService(config, ServiceType.CONFIG, new CountDownLatch(1)) {
             };
 
             assertEquals(config, baseService.getConfig());
@@ -57,6 +60,10 @@ public class BaseServiceIT {
 
             // Shouldn't cause a problem to call stop twice.
             baseService.stop();
+
+            assertFalse(baseService.getShouldRestart());
+            baseService.setShouldRestart(true);
+            assertTrue(baseService.getShouldRestart());
         }
     }
 
@@ -134,7 +141,7 @@ public class BaseServiceIT {
         final Config config = ConfigFactory.parseMap(map).withFallback(ConfigFactory.load());
 
         // This will fail to connect to zookeeper and result in an exception.
-        new BaseService(config, ServiceType.CONFIG) {
+        new BaseService(config, ServiceType.CONFIG, new CountDownLatch(1)) {
         };
     }
 
@@ -161,7 +168,7 @@ public class BaseServiceIT {
             map.put(CommonConfig.ZOOKEEPER_HOSTS.getKey(), ConfigValueFactory.fromAnyRef(zookeeper.getConnectString()));
             final Config config = ConfigFactory.parseMap(map).withFallback(ConfigFactory.load());
 
-            final BaseService baseService = new BaseService(config, ServiceType.CONFIG) {
+            final BaseService baseService = new BaseService(config, ServiceType.CONFIG, new CountDownLatch(1)) {
             };
 
             assertEquals(config, baseService.getConfig());

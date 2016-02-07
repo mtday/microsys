@@ -1,12 +1,15 @@
 package microsys.service.discovery;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigValue;
 import com.typesafe.config.ConfigValueFactory;
-import microsys.common.config.CommonConfig;
-import microsys.common.model.ServiceType;
-import microsys.service.model.Service;
+
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.retry.ExponentialBackoffRetry;
@@ -17,14 +20,13 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import microsys.common.config.CommonConfig;
+import microsys.common.model.ServiceType;
+import microsys.service.model.Service;
+
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 
 /**
  * Perform testing on the {@link DiscoveryManager} class.
@@ -110,6 +112,7 @@ public class DiscoveryManagerIT {
         assertFalse(discovery.getRandom(ServiceType.CONFIG).isPresent());
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     public void testCloseWithException() throws Exception {
         final ServiceDiscovery<String> serviceDiscovery = Mockito.mock(ServiceDiscovery.class);

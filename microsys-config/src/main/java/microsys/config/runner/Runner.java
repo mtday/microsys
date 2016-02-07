@@ -18,6 +18,7 @@ import microsys.service.discovery.DiscoveryManager;
 import spark.Spark;
 
 import java.util.Objects;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 
 /**
@@ -29,10 +30,11 @@ public class Runner extends BaseService {
      * micro service
      *
      * @param config the static system configuration information
+     * @param serverStopLatch the {@link CountDownLatch} used to manage the running server process
      * @throws Exception if there is a problem during service initialization
      */
-    public Runner(final Config config) throws Exception {
-        super(Objects.requireNonNull(config), ServiceType.CONFIG);
+    public Runner(final Config config, final CountDownLatch serverStopLatch) throws Exception {
+        super(Objects.requireNonNull(config), ServiceType.CONFIG, serverStopLatch);
         addRoutes(new CuratorConfigService(getExecutor(), getCurator()));
     }
 
@@ -65,6 +67,13 @@ public class Runner extends BaseService {
      * @throws Exception if there is a problem during service initialization
      */
     public static void main(final String... args) throws Exception {
-        new Runner(ConfigFactory.load());
+        boolean restart;
+        do {
+            final CountDownLatch serverStopLatch = new CountDownLatch(1);
+            final Runner runner = new Runner(ConfigFactory.load(), serverStopLatch);
+            serverStopLatch.await();
+
+            restart = runner.getShouldRestart();
+        } while (restart);
     }
 }

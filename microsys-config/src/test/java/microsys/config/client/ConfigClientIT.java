@@ -1,22 +1,14 @@
 package microsys.config.client;
 
-import ch.qos.logback.classic.Level;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigValue;
 import com.typesafe.config.ConfigValueFactory;
-import microsys.common.config.CommonConfig;
-import microsys.common.model.ServiceType;
-import microsys.config.model.ConfigKeyValue;
-import microsys.config.model.ConfigKeyValueCollection;
-import microsys.config.runner.Runner;
-import microsys.config.service.CuratorConfigService;
-import microsys.service.BaseService;
-import microsys.service.discovery.DiscoveryManager;
-import microsys.service.model.Service;
-import okhttp3.OkHttpClient;
-import okhttp3.mockwebserver.MockResponse;
-import okhttp3.mockwebserver.MockWebServer;
+
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.retry.ExponentialBackoffRetry;
@@ -26,9 +18,23 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.slf4j.LoggerFactory;
+
+import ch.qos.logback.classic.Level;
+import microsys.common.config.CommonConfig;
+import microsys.common.model.ServiceType;
+import microsys.config.model.ConfigKeyValue;
+import microsys.config.model.ConfigKeyValueCollection;
+import microsys.config.runner.Runner;
+import microsys.config.service.CuratorConfigService;
+import microsys.service.BaseService;
+import microsys.service.discovery.DiscoveryManager;
+import microsys.service.filter.RequestLoggingFilter;
+import microsys.service.model.Service;
+import okhttp3.OkHttpClient;
+import okhttp3.mockwebserver.MockResponse;
+import okhttp3.mockwebserver.MockWebServer;
 import spark.webserver.JettySparkServer;
 
-import javax.servlet.http.HttpServletResponse;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -36,10 +42,9 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.LogManager;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * Perform testing of the {@link ConfigClient} class.
@@ -59,6 +64,8 @@ public class ConfigClientIT {
         ((ch.qos.logback.classic.Logger) LoggerFactory.getLogger(CuratorConfigService.class)).setLevel(Level.OFF);
         ((ch.qos.logback.classic.Logger) LoggerFactory.getLogger(JettySparkServer.class)).setLevel(Level.OFF);
         ((ch.qos.logback.classic.Logger) LoggerFactory.getLogger(BaseService.class)).setLevel(Level.OFF);
+        ((ch.qos.logback.classic.Logger) LoggerFactory.getLogger(RequestLoggingFilter.class)).setLevel(Level.OFF);
+        LogManager.getLogManager().reset(); // Turn off logging from MockWebServer
 
         testingServer = new TestingServer();
 

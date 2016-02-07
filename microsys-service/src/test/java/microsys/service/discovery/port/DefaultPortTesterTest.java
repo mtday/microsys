@@ -19,7 +19,7 @@ public class DefaultPortTesterTest {
     @Test
     public void testIsAvailableWhenNotAvailable() throws Exception {
         try (@SuppressWarnings("unused") final ServerSocket listener = new ServerSocket(6001)) {
-            assertFalse(new DefaultPortTester().isAvailable("localhost", 6001));
+            assertFalse(new DefaultPortTester().isAvailable("localhost", listener.getLocalPort()));
         }
     }
 }

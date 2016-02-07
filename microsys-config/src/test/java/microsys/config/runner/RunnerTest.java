@@ -17,6 +17,7 @@ import spark.webserver.JettySparkServer;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 
 /**
  * Perform testing on the {@link Runner} class.
@@ -34,7 +35,7 @@ public class RunnerTest {
             map.put(CommonConfig.ZOOKEEPER_HOSTS.getKey(), ConfigValueFactory.fromAnyRef(zookeeper.getConnectString()));
             final Config config = ConfigFactory.parseMap(map).withFallback(ConfigFactory.load());
 
-            new Runner(config).stop();
+            new Runner(config, new CountDownLatch(1)).stop();
         }
     }
 }

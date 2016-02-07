@@ -15,12 +15,14 @@ import microsys.service.discovery.port.PortManager;
 import microsys.service.filter.RequestLoggingFilter;
 import microsys.service.model.Reservation;
 import microsys.service.model.Service;
+import microsys.service.route.ServiceControlRoute;
 import microsys.service.route.ServiceInfoRoute;
 import microsys.service.route.ServiceMemoryRoute;
 import spark.Spark;
 
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -32,20 +34,26 @@ public abstract class BaseService {
     private final static Logger LOG = LoggerFactory.getLogger(BaseService.class);
 
     private final Config config;
+    private final ServiceType serviceType;
+    private final Optional<CountDownLatch> serverStopLatch;
+
     private final ExecutorService executor;
     private final CuratorFramework curator;
     private final DiscoveryManager discoveryManager;
-    private final ServiceType serviceType;
 
     private Optional<Service> service;
+    private boolean shouldRestart = false;
 
     /**
      * @param config the static system configuration information
      * @param serviceType the type of this service
+     * @param serverStopLatch the {@link CountDownLatch} used to manage the running server process
      */
-    public BaseService(final Config config, final ServiceType serviceType) throws Exception {
+    public BaseService(final Config config, final ServiceType serviceType, final CountDownLatch serverStopLatch)
+            throws Exception {
         this.config = Objects.requireNonNull(config);
         this.serviceType = Objects.requireNonNull(serviceType);
+        this.serverStopLatch = Optional.of(Objects.requireNonNull(serverStopLatch));
 
         this.executor = createExecutor(config);
         this.curator = createCurator(config);
@@ -69,6 +77,7 @@ public abstract class BaseService {
         this.curator = Objects.requireNonNull(curator);
         this.discoveryManager = Objects.requireNonNull(discoveryManager);
         this.serviceType = Objects.requireNonNull(serviceType);
+        this.serverStopLatch = Optional.empty();
 
         start();
     }
@@ -109,10 +118,31 @@ public abstract class BaseService {
     }
 
     /**
+     * @return the {@link CountDownLatch} tracking the running server process
+     */
+    public Optional<CountDownLatch> getServerStopLatch() {
+        return this.serverStopLatch;
+    }
+
+    /**
      * @return the {@link Service} describing this running service, possibly not present if not running
      */
     public Optional<Service> getService() {
         return this.service;
+    }
+
+    /**
+     * @return whether the service should be restarted
+     */
+    public boolean getShouldRestart() {
+        return this.shouldRestart;
+    }
+
+    /**
+     * @param shouldRestart whether the service should be restarted
+     */
+    public void setShouldRestart(final boolean shouldRestart) {
+        this.shouldRestart = shouldRestart;
     }
 
     protected String getHostName() {
@@ -172,6 +202,7 @@ public abstract class BaseService {
     protected void configureRoutes() {
         Spark.get("/service/info", new ServiceInfoRoute(getConfig(), getServiceType()));
         Spark.get("/service/memory", new ServiceMemoryRoute(getConfig()));
+        Spark.get("/service/control/:action", new ServiceControlRoute(this));
     }
 
     /**
@@ -193,8 +224,8 @@ public abstract class BaseService {
 
         final boolean ssl = getConfig().getBoolean(CommonConfig.SSL_ENABLED.getKey());
         final String version = getConfig().getString(CommonConfig.SYSTEM_VERSION.getKey());
-        this.service = Optional.of(new Service(getServiceType(), reservation.getHost(), reservation.getPort(), ssl,
-                version));
+        this.service =
+                Optional.of(new Service(getServiceType(), reservation.getHost(), reservation.getPort(), ssl, version));
 
         // Register with service discovery once the server has started.
         this.executor.submit(() -> {
@@ -226,8 +257,13 @@ public abstract class BaseService {
             LOG.warn("Failed to unregister with service discovery", unregisterFailed);
         }
 
-        Spark.stop();
         getDiscoveryManager().close();
         getCurator().close();
+        getExecutor().shutdown();
+        Spark.stop();
+
+        if (getServerStopLatch().isPresent()) {
+            getServerStopLatch().get().countDown();
+        }
     }
 }
