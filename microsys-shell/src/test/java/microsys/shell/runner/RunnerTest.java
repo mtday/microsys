@@ -155,15 +155,19 @@ public class RunnerTest {
                 Runner.processCommandLine(runner, new String[] {"shell", "-f", file.getAbsolutePath()});
 
                 final List<String> o = consoleReader.getOutputLines();
-                assertEquals(11, o.size());
+                assertEquals(13, o.size());
 
                 int i = 0;
                 assertEquals("# help", o.get(i++));
-                assertEquals("  exit             exit the shell", o.get(i++));
-                assertEquals("  help             display usage information for available shell commands", o.get(i++));
-                assertEquals("  quit             exit the shell", o.get(i++));
-                assertEquals("  service list     provides information about the available services", o.get(i++));
-                assertEquals("  service restart  request the restart of a service", o.get(i++));
+                assertEquals("  exit                     exit the shell", o.get(i++));
+                assertEquals("  help                     display usage information for available shell commands",
+                        o.get(i++));
+                assertEquals("  quit                     exit the shell", o.get(i++));
+                assertEquals("  service control restart  request the restart of one or more services", o.get(i++));
+                assertEquals("  service control stop     request the stop of one or more services", o.get(i++));
+                assertEquals("  service list             provides information about the available services", o.get(i++));
+                assertEquals("  service memory           display memory usage information for one or more services",
+                        o.get(i++));
                 assertEquals("# service list -t CONFIG", o.get(i++));
                 assertEquals("No services are running", o.get(i++));
                 assertEquals("# quit", o.get(i++));

@@ -66,7 +66,7 @@ public class ConsoleManagerTest {
         assertTrue(consoleReader.isShutdown());
 
         final List<String> lines = consoleReader.getOutputLines();
-        assertEquals(19, lines.size());
+        assertEquals(23, lines.size());
 
         int line = 0;
         // Startup
@@ -82,16 +82,23 @@ public class ConsoleManagerTest {
         // blank and #comment
 
         // help
-        assertEquals("  exit             exit the shell", lines.get(line++));
-        assertEquals("  help             display usage information for available shell commands", lines.get(line++));
-        assertEquals("  quit             exit the shell", lines.get(line++));
-        assertEquals("  service list     provides information about the available services", lines.get(line++));
-        assertEquals("  service restart  request the restart of a service", lines.get(line++));
+        assertEquals("  exit                     exit the shell", lines.get(line++));
+        assertEquals("  help                     display usage information for available shell commands",
+                lines.get(line++));
+        assertEquals("  quit                     exit the shell", lines.get(line++));
+        assertEquals("  service control restart  request the restart of one or more services", lines.get(line++));
+        assertEquals("  service control stop     request the stop of one or more services", lines.get(line++));
+        assertEquals("  service list             provides information about the available services", lines.get(line++));
+        assertEquals("  service memory           display memory usage information for one or more services",
+                lines.get(line++));
 
         // s
         assertEquals("Showing help for commands that begin with: s", lines.get(line++));
-        assertEquals("  service list     provides information about the available services", lines.get(line++));
-        assertEquals("  service restart  request the restart of a service", lines.get(line++));
+        assertEquals("  service control restart  request the restart of one or more services", lines.get(line++));
+        assertEquals("  service control stop     request the stop of one or more services", lines.get(line++));
+        assertEquals("  service list             provides information about the available services", lines.get(line++));
+        assertEquals("  service memory           display memory usage information for one or more services",
+                lines.get(line++));
 
         // service li -t
         assertEquals("Assuming you mean: service list", lines.get(line++));
@@ -164,7 +171,7 @@ public class ConsoleManagerTest {
         assertTrue(consoleReader.isShutdown());
 
         final List<String> lines = consoleReader.getOutputLines();
-        assertEquals(10, lines.size());
+        assertEquals(12, lines.size());
 
         int line = 0;
         // Startup
@@ -174,11 +181,15 @@ public class ConsoleManagerTest {
         assertEquals("Type 'help' to list the available commands", lines.get(line++));
 
         // help
-        assertEquals("  exit             exit the shell", lines.get(line++));
-        assertEquals("  help             display usage information for available shell commands", lines.get(line++));
-        assertEquals("  quit             exit the shell", lines.get(line++));
-        assertEquals("  service list     provides information about the available services", lines.get(line++));
-        assertEquals("  service restart  request the restart of a service", lines.get(line++));
+        assertEquals("  exit                     exit the shell", lines.get(line++));
+        assertEquals("  help                     display usage information for available shell commands",
+                lines.get(line++));
+        assertEquals("  quit                     exit the shell", lines.get(line++));
+        assertEquals("  service control restart  request the restart of one or more services", lines.get(line++));
+        assertEquals("  service control stop     request the stop of one or more services", lines.get(line++));
+        assertEquals("  service list             provides information about the available services", lines.get(line++));
+        assertEquals("  service memory           display memory usage information for one or more services",
+                lines.get(line++));
 
         // no more input
         assertEquals("\n", lines.get(line));
@@ -250,17 +261,21 @@ public class ConsoleManagerTest {
             assertTrue(consoleReader.isShutdown());
 
             final List<String> lines = consoleReader.getOutputLines();
-            assertEquals(9, lines.size());
+            assertEquals(11, lines.size());
 
             int line = 0;
             // help
             assertEquals("# help", lines.get(line++));
-            assertEquals("  exit             exit the shell", lines.get(line++));
-            assertEquals(
-                    "  help             display usage information for available shell commands", lines.get(line++));
-            assertEquals("  quit             exit the shell", lines.get(line++));
-            assertEquals("  service list     provides information about the available services", lines.get(line++));
-            assertEquals("  service restart  request the restart of a service", lines.get(line++));
+            assertEquals("  exit                     exit the shell", lines.get(line++));
+            assertEquals("  help                     display usage information for available shell commands",
+                    lines.get(line++));
+            assertEquals("  quit                     exit the shell", lines.get(line++));
+            assertEquals("  service control restart  request the restart of one or more services", lines.get(line++));
+            assertEquals("  service control stop     request the stop of one or more services", lines.get(line++));
+            assertEquals("  service list             provides information about the available services",
+                    lines.get(line++));
+            assertEquals("  service memory           display memory usage information for one or more services",
+                    lines.get(line++));
             assertEquals("# service list -t CONFIG", lines.get(line++));
             assertEquals("No services are running", lines.get(line++));
 
@@ -293,16 +308,21 @@ public class ConsoleManagerTest {
         assertTrue(consoleReader.isShutdown());
 
         final List<String> lines = consoleReader.getOutputLines();
-        assertEquals(7, lines.size());
+        assertEquals(9, lines.size());
 
         int line = 0;
         // help
         assertEquals("# help", lines.get(line++));
-        assertEquals("  exit             exit the shell", lines.get(line++));
-        assertEquals("  help             display usage information for available shell commands", lines.get(line++));
-        assertEquals("  quit             exit the shell", lines.get(line++));
-        assertEquals("  service list     provides information about the available services", lines.get(line++));
-        assertEquals("  service restart  request the restart of a service", lines.get(line++));
+        assertEquals("  exit                     exit the shell", lines.get(line++));
+        assertEquals("  help                     display usage information for available shell commands",
+                lines.get(line++));
+        assertEquals("  quit                     exit the shell", lines.get(line++));
+        assertEquals("  service control restart  request the restart of one or more services", lines.get(line++));
+        assertEquals("  service control stop     request the stop of one or more services", lines.get(line++));
+        assertEquals("  service list             provides information about the available services",
+                lines.get(line++));
+        assertEquals("  service memory           display memory usage information for one or more services",
+                lines.get(line++));
 
         // no more input
         assertEquals("\n", lines.get(line));

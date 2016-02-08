@@ -73,12 +73,13 @@ public class HelpCommandTest {
         assertEquals(CommandStatus.SUCCESS, status);
 
         final List<String> output = Arrays.asList(stringWriter.getBuffer().toString().split(System.lineSeparator()));
-        assertEquals(3, output.size());
+        assertEquals(5, output.size());
 
         int line = 0;
         assertEquals("Showing help for commands that begin with: service", output.get(line++));
-        assertEquals("  service list     provides information about the available services", output.get(line++));
-        assertEquals("  service restart  request the restart of a service", output.get(line));
+        assertEquals("  service control restart  request the restart of one or more services", output.get(line++));
+        assertEquals("  service control stop     request the stop of one or more services", output.get(line++));
+        assertEquals("  service list             provides information about the available services", output.get(line));
     }
 
     @Test
@@ -144,14 +145,17 @@ public class HelpCommandTest {
         assertEquals(CommandStatus.SUCCESS, status);
 
         final List<String> output = Arrays.asList(stringWriter.getBuffer().toString().split(System.lineSeparator()));
-        assertEquals(5, output.size());
+        assertEquals(7, output.size());
 
         int line = 0;
-        assertEquals("  exit             exit the shell", output.get(line++));
-        assertEquals("  help             display usage information for available shell commands", output.get(line++));
-        assertEquals("  quit             exit the shell", output.get(line++));
-        assertEquals("  service list     provides information about the available services", output.get(line++));
-        assertEquals("  service restart  request the restart of a service", output.get(line));
+        assertEquals("  exit                     exit the shell", output.get(line++));
+        assertEquals("  help                     display usage information for available shell commands",
+                output.get(line++));
+        assertEquals("  quit                     exit the shell", output.get(line++));
+        assertEquals("  service control restart  request the restart of one or more services", output.get(line++));
+        assertEquals("  service control stop     request the stop of one or more services", output.get(line++));
+        assertEquals("  service list             provides information about the available services",
+                output.get(line));
     }
 
     @Test

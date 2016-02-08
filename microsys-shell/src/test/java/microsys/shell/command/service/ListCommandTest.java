@@ -1,4 +1,4 @@
-package microsys.shell.command;
+package microsys.shell.command.service;
 
 import microsys.common.model.ServiceType;
 import microsys.service.discovery.DiscoveryManager;
@@ -24,9 +24,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
- * Perform testing of the {@link ServiceCommand} class.
+ * Perform testing of the {@link ListCommand} class.
  */
-public class ServiceCommandTest {
+public class ListCommandTest {
     protected ShellEnvironment getShellEnvironment() throws Exception {
         final SortedSet<Service> services = new TreeSet<>();
         services.add(new Service(ServiceType.CONFIG, "host1", 1234, false, "1.2.3"));
@@ -43,10 +43,10 @@ public class ServiceCommandTest {
     @Test
     public void testGetRegistrations() {
         final ShellEnvironment shellEnvironment = Mockito.mock(ShellEnvironment.class);
-        final ServiceCommand serviceCommand = new ServiceCommand(shellEnvironment);
+        final ListCommand listCommand = new ListCommand(shellEnvironment);
 
-        final List<Registration> registrations = serviceCommand.getRegistrations();
-        assertEquals(2, registrations.size());
+        final List<Registration> registrations = listCommand.getRegistrations();
+        assertEquals(1, registrations.size());
 
         final Registration list = registrations.get(0);
         assertEquals(new CommandPath("service", "list"), list.getPath());
@@ -55,19 +55,11 @@ public class ServiceCommandTest {
         assertTrue(list.getOptions().isPresent());
         final SortedSet<Option> listOptions = list.getOptions().get().getOptions();
         assertEquals(4, listOptions.size());
-
-        final Registration restart = registrations.get(1);
-        assertEquals(new CommandPath("service", "restart"), restart.getPath());
-        assertTrue(restart.getDescription().isPresent());
-        assertEquals("request the restart of a service", restart.getDescription().get());
-        assertTrue(restart.getOptions().isPresent());
-        final SortedSet<Option> restartOptions = restart.getOptions().get().getOptions();
-        assertEquals(4, restartOptions.size());
     }
 
     @Test
     public void testProcessList() throws Exception {
-        final ServiceCommand serviceCommand = new ServiceCommand(getShellEnvironment());
+        final ListCommand listCommand = new ListCommand(getShellEnvironment());
 
         final CommandPath commandPath = new CommandPath("service", "list");
         final Registration reg = new Registration(commandPath, Optional.empty(), Optional.empty());
@@ -75,7 +67,7 @@ public class ServiceCommandTest {
         final StringWriter stringWriter = new StringWriter();
         final PrintWriter writer = new PrintWriter(stringWriter, true);
 
-        final CommandStatus status = serviceCommand.process(userCommand, writer);
+        final CommandStatus status = listCommand.process(userCommand, writer);
         assertEquals(CommandStatus.SUCCESS, status);
 
         final List<String> output = Arrays.asList(stringWriter.getBuffer().toString().split(System.lineSeparator()));
@@ -91,16 +83,16 @@ public class ServiceCommandTest {
 
     @Test
     public void testProcessListWithType() throws Exception {
-        final ServiceCommand serviceCommand = new ServiceCommand(getShellEnvironment());
+        final ListCommand listCommand = new ListCommand(getShellEnvironment());
 
         final List<String> input = Arrays.asList("service", "list", "-t", ServiceType.CONFIG.name());
         final CommandPath commandPath = new CommandPath("service", "list");
-        final Registration reg = serviceCommand.getRegistrations().get(0);
+        final Registration reg = listCommand.getRegistrations().get(0);
         final UserCommand userCommand = new UserCommand(commandPath, reg, input);
         final StringWriter stringWriter = new StringWriter();
         final PrintWriter writer = new PrintWriter(stringWriter, true);
 
-        final CommandStatus status = serviceCommand.process(userCommand, writer);
+        final CommandStatus status = listCommand.process(userCommand, writer);
         assertEquals(CommandStatus.SUCCESS, status);
 
         final List<String> output = Arrays.asList(stringWriter.getBuffer().toString().split(System.lineSeparator()));
@@ -113,16 +105,16 @@ public class ServiceCommandTest {
 
     @Test
     public void testProcessListWithHost() throws Exception {
-        final ServiceCommand serviceCommand = new ServiceCommand(getShellEnvironment());
+        final ListCommand listCommand = new ListCommand(getShellEnvironment());
 
         final List<String> input = Arrays.asList("service", "list", "-h", "host1");
         final CommandPath commandPath = new CommandPath("service", "list");
-        final Registration reg = serviceCommand.getRegistrations().get(0);
+        final Registration reg = listCommand.getRegistrations().get(0);
         final UserCommand userCommand = new UserCommand(commandPath, reg, input);
         final StringWriter stringWriter = new StringWriter();
         final PrintWriter writer = new PrintWriter(stringWriter, true);
 
-        final CommandStatus status = serviceCommand.process(userCommand, writer);
+        final CommandStatus status = listCommand.process(userCommand, writer);
         assertEquals(CommandStatus.SUCCESS, status);
 
         final List<String> output = Arrays.asList(stringWriter.getBuffer().toString().split(System.lineSeparator()));
@@ -136,16 +128,16 @@ public class ServiceCommandTest {
 
     @Test
     public void testProcessListWithPort() throws Exception {
-        final ServiceCommand serviceCommand = new ServiceCommand(getShellEnvironment());
+        final ListCommand listCommand = new ListCommand(getShellEnvironment());
 
         final List<String> input = Arrays.asList("service", "list", "-p", "1234");
         final CommandPath commandPath = new CommandPath("service", "list");
-        final Registration reg = serviceCommand.getRegistrations().get(0);
+        final Registration reg = listCommand.getRegistrations().get(0);
         final UserCommand userCommand = new UserCommand(commandPath, reg, input);
         final StringWriter stringWriter = new StringWriter();
         final PrintWriter writer = new PrintWriter(stringWriter, true);
 
-        final CommandStatus status = serviceCommand.process(userCommand, writer);
+        final CommandStatus status = listCommand.process(userCommand, writer);
         assertEquals(CommandStatus.SUCCESS, status);
 
         final List<String> output = Arrays.asList(stringWriter.getBuffer().toString().split(System.lineSeparator()));
@@ -158,16 +150,16 @@ public class ServiceCommandTest {
 
     @Test
     public void testProcessListWithPortNotNumeric() throws Exception {
-        final ServiceCommand serviceCommand = new ServiceCommand(getShellEnvironment());
+        final ListCommand listCommand = new ListCommand(getShellEnvironment());
 
         final List<String> input = Arrays.asList("service", "list", "-p", "abcd");
         final CommandPath commandPath = new CommandPath("service", "list");
-        final Registration reg = serviceCommand.getRegistrations().get(0);
+        final Registration reg = listCommand.getRegistrations().get(0);
         final UserCommand userCommand = new UserCommand(commandPath, reg, input);
         final StringWriter stringWriter = new StringWriter();
         final PrintWriter writer = new PrintWriter(stringWriter, true);
 
-        final CommandStatus status = serviceCommand.process(userCommand, writer);
+        final CommandStatus status = listCommand.process(userCommand, writer);
         assertEquals(CommandStatus.SUCCESS, status);
 
         final List<String> output = Arrays.asList(stringWriter.getBuffer().toString().split(System.lineSeparator()));
@@ -183,16 +175,16 @@ public class ServiceCommandTest {
 
     @Test
     public void testProcessListWithVersion() throws Exception {
-        final ServiceCommand serviceCommand = new ServiceCommand(getShellEnvironment());
+        final ListCommand listCommand = new ListCommand(getShellEnvironment());
 
         final List<String> input = Arrays.asList("service", "list", "-v", "1.2.3");
         final CommandPath commandPath = new CommandPath("service", "list");
-        final Registration reg = serviceCommand.getRegistrations().get(0);
+        final Registration reg = listCommand.getRegistrations().get(0);
         final UserCommand userCommand = new UserCommand(commandPath, reg, input);
         final StringWriter stringWriter = new StringWriter();
         final PrintWriter writer = new PrintWriter(stringWriter, true);
 
-        final CommandStatus status = serviceCommand.process(userCommand, writer);
+        final CommandStatus status = listCommand.process(userCommand, writer);
         assertEquals(CommandStatus.SUCCESS, status);
 
         final List<String> output = Arrays.asList(stringWriter.getBuffer().toString().split(System.lineSeparator()));
@@ -206,16 +198,16 @@ public class ServiceCommandTest {
 
     @Test
     public void testProcessListNoMatchingServices() throws Exception {
-        final ServiceCommand serviceCommand = new ServiceCommand(getShellEnvironment());
+        final ListCommand listCommand = new ListCommand(getShellEnvironment());
 
         final List<String> input = Arrays.asList("service", "list", "-h", "missing");
         final CommandPath commandPath = new CommandPath("service", "list");
-        final Registration reg = serviceCommand.getRegistrations().get(0);
+        final Registration reg = listCommand.getRegistrations().get(0);
         final UserCommand userCommand = new UserCommand(commandPath, reg, input);
         final StringWriter stringWriter = new StringWriter();
         final PrintWriter writer = new PrintWriter(stringWriter, true);
 
-        final CommandStatus status = serviceCommand.process(userCommand, writer);
+        final CommandStatus status = listCommand.process(userCommand, writer);
         assertEquals(CommandStatus.SUCCESS, status);
 
         final List<String> output = Arrays.asList(stringWriter.getBuffer().toString().split(System.lineSeparator()));
@@ -229,16 +221,16 @@ public class ServiceCommandTest {
         Mockito.when(discoveryManager.getAll()).thenReturn(new TreeSet<>());
         final ShellEnvironment shellEnvironment = Mockito.mock(ShellEnvironment.class);
         Mockito.when(shellEnvironment.getDiscoveryManager()).thenReturn(discoveryManager);
-        final ServiceCommand serviceCommand = new ServiceCommand(shellEnvironment);
+        final ListCommand listCommand = new ListCommand(shellEnvironment);
 
         final List<String> input = Arrays.asList("service", "list");
         final CommandPath commandPath = new CommandPath("service", "list");
-        final Registration reg = serviceCommand.getRegistrations().get(0);
+        final Registration reg = listCommand.getRegistrations().get(0);
         final UserCommand userCommand = new UserCommand(commandPath, reg, input);
         final StringWriter stringWriter = new StringWriter();
         final PrintWriter writer = new PrintWriter(stringWriter, true);
 
-        final CommandStatus status = serviceCommand.process(userCommand, writer);
+        final CommandStatus status = listCommand.process(userCommand, writer);
         assertEquals(CommandStatus.SUCCESS, status);
 
         final List<String> output = Arrays.asList(stringWriter.getBuffer().toString().split(System.lineSeparator()));
@@ -254,16 +246,16 @@ public class ServiceCommandTest {
         Mockito.when(discoveryManager.getAll()).thenReturn(services);
         final ShellEnvironment shellEnvironment = Mockito.mock(ShellEnvironment.class);
         Mockito.when(shellEnvironment.getDiscoveryManager()).thenReturn(discoveryManager);
-        final ServiceCommand serviceCommand = new ServiceCommand(shellEnvironment);
+        final ListCommand listCommand = new ListCommand(shellEnvironment);
 
         final List<String> input = Arrays.asList("service", "list");
         final CommandPath commandPath = new CommandPath("service", "list");
-        final Registration reg = serviceCommand.getRegistrations().get(0);
+        final Registration reg = listCommand.getRegistrations().get(0);
         final UserCommand userCommand = new UserCommand(commandPath, reg, input);
         final StringWriter stringWriter = new StringWriter();
         final PrintWriter writer = new PrintWriter(stringWriter, true);
 
-        final CommandStatus status = serviceCommand.process(userCommand, writer);
+        final CommandStatus status = listCommand.process(userCommand, writer);
         assertEquals(CommandStatus.SUCCESS, status);
 
         final List<String> output = Arrays.asList(stringWriter.getBuffer().toString().split(System.lineSeparator()));
@@ -281,16 +273,16 @@ public class ServiceCommandTest {
         Mockito.when(discoveryManager.getAll()).thenReturn(services);
         final ShellEnvironment shellEnvironment = Mockito.mock(ShellEnvironment.class);
         Mockito.when(shellEnvironment.getDiscoveryManager()).thenReturn(discoveryManager);
-        final ServiceCommand serviceCommand = new ServiceCommand(shellEnvironment);
+        final ListCommand listCommand = new ListCommand(shellEnvironment);
 
         final List<String> input = Arrays.asList("service", "list");
         final CommandPath commandPath = new CommandPath("service", "list");
-        final Registration reg = serviceCommand.getRegistrations().get(0);
+        final Registration reg = listCommand.getRegistrations().get(0);
         final UserCommand userCommand = new UserCommand(commandPath, reg, input);
         final StringWriter stringWriter = new StringWriter();
         final PrintWriter writer = new PrintWriter(stringWriter, true);
 
-        final CommandStatus status = serviceCommand.process(userCommand, writer);
+        final CommandStatus status = listCommand.process(userCommand, writer);
         assertEquals(CommandStatus.SUCCESS, status);
 
         final List<String> output = Arrays.asList(stringWriter.getBuffer().toString().split(System.lineSeparator()));
@@ -301,23 +293,8 @@ public class ServiceCommandTest {
     }
 
     @Test
-    public void testProcessRestart() throws Exception {
-        final ServiceCommand serviceCommand = new ServiceCommand(getShellEnvironment());
-
-        final List<String> input = Arrays.asList("service", "restart");
-        final CommandPath commandPath = new CommandPath("service", "restart");
-        final Registration reg = serviceCommand.getRegistrations().get(0);
-        final UserCommand userCommand = new UserCommand(commandPath, reg, input);
-        final StringWriter stringWriter = new StringWriter();
-        final PrintWriter writer = new PrintWriter(stringWriter, true);
-
-        final CommandStatus status = serviceCommand.process(userCommand, writer);
-        assertEquals(CommandStatus.SUCCESS, status);
-    }
-
-    @Test
     public void testHandleListException() throws Exception {
-        final ServiceCommand serviceCommand = new ServiceCommand(getShellEnvironment());
+        final ListCommand listCommand = new ListCommand(getShellEnvironment());
 
         final CommandPath commandPath = new CommandPath("service", "list");
         final UserCommand userCommand = Mockito.mock(UserCommand.class);
@@ -326,7 +303,7 @@ public class ServiceCommandTest {
         final StringWriter stringWriter = new StringWriter();
         final PrintWriter writer = new PrintWriter(stringWriter, true);
 
-        final CommandStatus status = serviceCommand.process(userCommand, writer);
+        final CommandStatus status = listCommand.process(userCommand, writer);
         assertEquals(CommandStatus.SUCCESS, status);
 
         final List<String> output = Arrays.asList(stringWriter.getBuffer().toString().split(System.lineSeparator()));

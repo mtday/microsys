@@ -190,6 +190,8 @@
                 <artifactId>okhttp</artifactId>
                 <version>3.0.1</version>
             </dependency>
+
+            <!-- Used to perform testing on REST client libraries -->
             <dependency>
                 <groupId>com.squareup.okhttp3</groupId>
                 <artifactId>mockwebserver</artifactId>

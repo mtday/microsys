@@ -135,9 +135,9 @@ public class ShellCompleterTest {
         final List<CharSequence> candidates = new ArrayList<>();
         final int position = shellCompleter.complete("service ", 8, candidates);
 
-        assertEquals(2, candidates.size());
+        assertEquals(3, candidates.size());
         assertEquals(8, position);
-        assertEquals("[list, restart]", candidates.toString());
+        assertEquals("[control, list, memory]", candidates.toString());
     }
 
     @Test

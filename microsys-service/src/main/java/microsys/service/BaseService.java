@@ -45,8 +45,8 @@ public abstract class BaseService {
     private boolean shouldRestart = false;
 
     /**
-     * @param config the static system configuration information
-     * @param serviceType the type of this service
+     * @param config          the static system configuration information
+     * @param serviceType     the type of this service
      * @param serverStopLatch the {@link CountDownLatch} used to manage the running server process
      */
     public BaseService(final Config config, final ServiceType serviceType, final CountDownLatch serverStopLatch)
@@ -63,11 +63,11 @@ public abstract class BaseService {
     }
 
     /**
-     * @param config the static system configuration information
-     * @param executor the {@link ExecutorService} used to perform asynchronous task processing
-     * @param curator the {@link CuratorFramework} used to perform communication with zookeeper
+     * @param config           the static system configuration information
+     * @param executor         the {@link ExecutorService} used to perform asynchronous task processing
+     * @param curator          the {@link CuratorFramework} used to perform communication with zookeeper
      * @param discoveryManager the {@link DiscoveryManager} used to manage available services
-     * @param serviceType the type of this service
+     * @param serviceType      the type of this service
      */
     public BaseService(
             final Config config, final ExecutorService executor, final CuratorFramework curator,
@@ -149,16 +149,16 @@ public abstract class BaseService {
         return getConfig().getString(CommonConfig.SERVER_HOSTNAME.getKey());
     }
 
-    protected static DiscoveryManager createDiscoveryManager(final Config config, final CuratorFramework curator)
+    protected DiscoveryManager createDiscoveryManager(final Config config, final CuratorFramework curator)
             throws Exception {
         return new DiscoveryManager(Objects.requireNonNull(config), Objects.requireNonNull(curator));
     }
 
-    protected static ExecutorService createExecutor(final Config config) {
+    protected ExecutorService createExecutor(final Config config) {
         return Executors.newFixedThreadPool(config.getInt(CommonConfig.EXECUTOR_THREADS.getKey()));
     }
 
-    protected static CuratorFramework createCurator(final Config config) throws Exception {
+    protected CuratorFramework createCurator(final Config config) throws Exception {
         final String zookeepers = config.getString(CommonConfig.ZOOKEEPER_HOSTS.getKey());
         final String namespace = config.getString(CommonConfig.SYSTEM_NAME.getKey());
         final CuratorFramework curator =
@@ -190,7 +190,6 @@ public abstract class BaseService {
             final String keystorePass = getConfig().getString(CommonConfig.SSL_KEYSTORE_PASSWORD.getKey());
             final String truststoreFile = getConfig().getString(CommonConfig.SSL_TRUSTSTORE_FILE.getKey());
             final String truststorePass = getConfig().getString(CommonConfig.SSL_TRUSTSTORE_PASSWORD.getKey());
-
             Spark.secure(keystoreFile, keystorePass, truststoreFile, truststorePass);
         }
     }
