@@ -1,25 +1,30 @@
 package microsys.shell.completer;
 
-import ch.qos.logback.classic.Level;
+import static org.junit.Assert.assertEquals;
+
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
-import microsys.common.model.ServiceType;
-import microsys.service.discovery.DiscoveryManager;
-import microsys.service.model.Service;
-import microsys.shell.RegistrationManager;
-import microsys.shell.model.ShellEnvironment;
+
 import org.apache.curator.framework.CuratorFramework;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.slf4j.LoggerFactory;
 
+import ch.qos.logback.classic.Level;
+import microsys.common.model.ServiceType;
+import microsys.service.discovery.DiscoveryManager;
+import microsys.service.model.Service;
+import microsys.shell.RegistrationManager;
+import microsys.shell.model.ShellEnvironment;
+import okhttp3.OkHttpClient;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
-
-import static org.junit.Assert.assertEquals;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * Perform testing on the {@link ShellCompleter} class.
@@ -41,10 +46,12 @@ public class ShellCompleterTest {
         Mockito.when(discovery.getAll()).thenReturn(services);
 
         final Config config = ConfigFactory.load();
+        final ExecutorService executor = Executors.newFixedThreadPool(3);
         final CuratorFramework curator = Mockito.mock(CuratorFramework.class);
-
         final RegistrationManager regMgr = new RegistrationManager();
-        final ShellEnvironment shellEnvironment = new ShellEnvironment(config, discovery, curator, regMgr);
+        final OkHttpClient httpClient = new OkHttpClient.Builder().build();
+        final ShellEnvironment shellEnvironment =
+                new ShellEnvironment(config, executor, discovery, curator, regMgr, httpClient);
         regMgr.loadCommands(shellEnvironment);
 
         shellCompleter = new ShellCompleter(regMgr);

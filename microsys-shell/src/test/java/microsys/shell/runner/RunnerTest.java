@@ -1,16 +1,13 @@
 package microsys.shell.runner;
 
-import ch.qos.logback.classic.Level;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigValue;
 import com.typesafe.config.ConfigValueFactory;
-import microsys.common.config.CommonConfig;
-import microsys.service.discovery.DiscoveryManager;
-import microsys.shell.CapturingConsoleReader;
-import microsys.shell.ConsoleManager;
-import microsys.shell.RegistrationManager;
-import microsys.shell.model.ShellEnvironment;
+
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.retry.ExponentialBackoffRetry;
@@ -20,15 +17,23 @@ import org.junit.rules.TemporaryFolder;
 import org.mockito.Mockito;
 import org.slf4j.LoggerFactory;
 
+import ch.qos.logback.classic.Level;
+import microsys.common.config.CommonConfig;
+import microsys.service.discovery.DiscoveryManager;
+import microsys.shell.CapturingConsoleReader;
+import microsys.shell.ConsoleManager;
+import microsys.shell.RegistrationManager;
+import microsys.shell.model.ShellEnvironment;
+import okhttp3.OkHttpClient;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * Perform testing on the {@link Runner} class.
@@ -136,19 +141,20 @@ public class RunnerTest {
                 map.put(CommonConfig.ZOOKEEPER_HOSTS.getKey(),
                         ConfigValueFactory.fromAnyRef(testServer.getConnectString()));
                 final Config config = ConfigFactory.parseMap(map).withFallback(ConfigFactory.load());
-
+                final ExecutorService executor = Executors.newFixedThreadPool(3);
                 final CuratorFramework curator =
                         CuratorFrameworkFactory.builder().connectString(testServer.getConnectString()).namespace("test")
                                 .retryPolicy(new ExponentialBackoffRetry(1000, 3)).build();
                 curator.start();
                 final DiscoveryManager discovery = new DiscoveryManager(config, curator);
                 final RegistrationManager registrationManager = new RegistrationManager();
+                final OkHttpClient httpClient = new OkHttpClient.Builder().build();
                 final ShellEnvironment shellEnvironment =
-                        new ShellEnvironment(config, discovery, curator, registrationManager);
+                        new ShellEnvironment(config, executor, discovery, curator, registrationManager, httpClient);
                 registrationManager.loadCommands(shellEnvironment);
 
                 final CapturingConsoleReader consoleReader = new CapturingConsoleReader();
-                final ConsoleManager consoleManager = new ConsoleManager(config, registrationManager, consoleReader);
+                final ConsoleManager consoleManager = new ConsoleManager(config, shellEnvironment, consoleReader);
 
                 final Runner runner = new Runner(config);
                 runner.setConsoleManager(consoleManager);

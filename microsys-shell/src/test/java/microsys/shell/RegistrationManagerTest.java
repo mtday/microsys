@@ -17,9 +17,12 @@ import microsys.shell.model.Command;
 import microsys.shell.model.CommandPath;
 import microsys.shell.model.Registration;
 import microsys.shell.model.ShellEnvironment;
+import okhttp3.OkHttpClient;
 
 import java.util.Optional;
 import java.util.SortedSet;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * Perform testing on the {@link RegistrationManager} class.
@@ -31,10 +34,12 @@ public class RegistrationManagerTest {
         ((ch.qos.logback.classic.Logger) LoggerFactory.getLogger(RegistrationManager.class)).setLevel(Level.OFF);
 
         final Config config = Mockito.mock(Config.class);
+        final ExecutorService executor = Executors.newFixedThreadPool(3);
         final DiscoveryManager discovery = Mockito.mock(DiscoveryManager.class);
         final CuratorFramework curator = Mockito.mock(CuratorFramework.class);
         final RegistrationManager rm = new RegistrationManager();
-        final ShellEnvironment env = new ShellEnvironment(config, discovery, curator, rm);
+        final OkHttpClient httpClient = new OkHttpClient.Builder().build();
+        final ShellEnvironment env = new ShellEnvironment(config, executor, discovery, curator, rm, httpClient);
 
         rm.loadCommands(env);
 

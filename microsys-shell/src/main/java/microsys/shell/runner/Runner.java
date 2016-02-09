@@ -17,10 +17,13 @@ import microsys.shell.RegistrationManager;
 import microsys.shell.model.Option;
 import microsys.shell.model.Options;
 import microsys.shell.model.ShellEnvironment;
+import okhttp3.OkHttpClient;
 
 import java.io.File;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -29,6 +32,7 @@ import java.util.concurrent.TimeUnit;
 public class Runner {
     private CuratorFramework curator;
     private ConsoleManager consoleManager;
+    private ShellEnvironment shellEnvironment;
 
     /**
      * @throws Exception if there is a problem creating the curator framework
@@ -36,8 +40,8 @@ public class Runner {
     protected Runner(final Config config) throws Exception {
         this.curator = createCurator(config);
 
-        final ShellEnvironment shellEnvironment = getShellEnvironment(config, curator);
-        this.consoleManager = new ConsoleManager(config, shellEnvironment.getRegistrationManager());
+        this.shellEnvironment = getShellEnvironment(config, curator);
+        this.consoleManager = new ConsoleManager(config, shellEnvironment);
     }
 
     protected void setConsoleManager(final ConsoleManager consoleManager) {
@@ -46,6 +50,14 @@ public class Runner {
 
     protected ConsoleManager getConsoleManager() {
         return this.consoleManager;
+    }
+
+    protected void setShellEnvironment(final ShellEnvironment shellEnvironment) {
+        this.shellEnvironment = shellEnvironment;
+    }
+
+    protected ShellEnvironment getShellEnvironment() {
+        return this.shellEnvironment;
     }
 
     protected void run(final File file) throws Exception {
@@ -62,15 +74,18 @@ public class Runner {
     }
 
     protected void shutdown() {
-        this.curator.close();
+        this.shellEnvironment.close();
     }
 
     protected ShellEnvironment getShellEnvironment(final Config config, final CuratorFramework curator)
             throws Exception {
+        final ExecutorService executor =
+                Executors.newFixedThreadPool(config.getInt(CommonConfig.EXECUTOR_THREADS.getKey()));
         final DiscoveryManager discoveryManager = new DiscoveryManager(config, curator);
         final RegistrationManager registrationManager = new RegistrationManager();
+        final OkHttpClient httpClient = new OkHttpClient.Builder().build();
         final ShellEnvironment shellEnvironment =
-                new ShellEnvironment(config, discoveryManager, curator, registrationManager);
+                new ShellEnvironment(config, executor, discoveryManager, curator, registrationManager, httpClient);
         registrationManager.loadCommands(shellEnvironment);
         return shellEnvironment;
     }

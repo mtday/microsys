@@ -3,6 +3,7 @@ package microsys.service.client;
 import com.google.common.base.Converter;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+
 import microsys.service.model.Service;
 import microsys.service.model.ServiceControlStatus;
 import microsys.service.model.ServiceControlStatus.ServiceControlStatusConverter;
@@ -16,10 +17,18 @@ import okhttp3.Request.Builder;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
 
-import javax.servlet.http.HttpServletResponse;
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.*;
+import java.util.Objects;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * Provides remote access over REST to the base service routes.
@@ -82,20 +91,21 @@ public class ServiceClient {
      * @param converter the {@link Converter} object used to transform the {@link JsonObject} into the return object
      * @return the {@link JsonObject} returned from the service
      */
-    protected <T> Future<Map<Service, T>> getMap(final Collection<Service> services, final String url,
-                                                 final Converter<JsonObject, T> converter) {
+    protected <T> Future<Map<Service, T>> getMap(
+            final Collection<Service> services, final String url, final Converter<JsonObject, T> converter) {
         return getExecutor().submit(() -> {
             final Map<Service, Future<T>> futureMap = new HashMap<>();
-            services.forEach(service -> futureMap.put(service,
-                    getExecutor().submit(() -> get(service, url, converter))));
+            services.forEach(
+                    service -> futureMap.put(service, getExecutor().submit(() -> get(service, url, converter))));
 
             final Map<Service, T> map = new HashMap<>();
             for (final Entry<Service, Future<T>> entry : futureMap.entrySet()) {
                 try {
                     map.put(entry.getKey(), entry.getValue().get(10, TimeUnit.SECONDS));
                 } catch (final InterruptedException | TimeoutException | ExecutionException failed) {
-                    final String service = String.format("%s:%d (%s)",
-                            entry.getKey().getHost(), entry.getKey().getPort(), entry.getKey().getType().name());
+                    final String service =
+                            String.format("%s:%d (%s)", entry.getKey().getHost(), entry.getKey().getPort(),
+                                    entry.getKey().getType().name());
                     throw new Exception("Failed to retrieve response data for " + service, failed);
                 }
             }
@@ -120,8 +130,8 @@ public class ServiceClient {
      */
     public Future<Map<Service, ServiceInfo>> getInfo(final Collection<Service> services) {
         Objects.requireNonNull(services);
-        return getExecutor().submit(() ->
-                getMap(services, "service/info", new ServiceInfoConverter()).get(10, TimeUnit.SECONDS));
+        return getExecutor()
+                .submit(() -> getMap(services, "service/info", new ServiceInfoConverter()).get(10, TimeUnit.SECONDS));
     }
 
     /**
@@ -141,8 +151,8 @@ public class ServiceClient {
      */
     public Future<Map<Service, ServiceMemory>> getMemory(final Collection<Service> services) {
         Objects.requireNonNull(services);
-        return getExecutor().submit(() ->
-                getMap(services, "service/memory", new ServiceMemoryConverter()).get(10, TimeUnit.SECONDS));
+        return getExecutor().submit(() -> getMap(services, "service/memory", new ServiceMemoryConverter())
+                .get(10, TimeUnit.SECONDS));
     }
 
     /**
@@ -161,10 +171,10 @@ public class ServiceClient {
      * @return a {@link Map} of {@link Service} object mapping to the associated {@link ServiceControlStatus} returned
      * from the individual controlled services, wrapped in a {@link Future}
      */
-    public Future<Map<Service, ServiceControlStatus>> control(final Collection<Service> services, final String url) {
+    protected Future<Map<Service, ServiceControlStatus>> control(final Collection<Service> services, final String url) {
         Objects.requireNonNull(services);
-        return getExecutor().submit(() ->
-                getMap(services, url, new ServiceControlStatusConverter()).get(10, TimeUnit.SECONDS));
+        return getExecutor()
+                .submit(() -> getMap(services, url, new ServiceControlStatusConverter()).get(10, TimeUnit.SECONDS));
     }
 
     /**

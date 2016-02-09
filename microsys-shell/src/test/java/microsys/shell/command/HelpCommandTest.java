@@ -1,8 +1,18 @@
 package microsys.shell.command;
 
-import ch.qos.logback.classic.Level;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
+
+import org.apache.curator.framework.CuratorFramework;
+import org.junit.Test;
+import org.mockito.Mockito;
+import org.slf4j.LoggerFactory;
+
+import ch.qos.logback.classic.Level;
 import microsys.service.discovery.DiscoveryManager;
 import microsys.shell.RegistrationManager;
 import microsys.shell.model.CommandPath;
@@ -12,10 +22,7 @@ import microsys.shell.model.Options;
 import microsys.shell.model.Registration;
 import microsys.shell.model.ShellEnvironment;
 import microsys.shell.model.UserCommand;
-import org.apache.curator.framework.CuratorFramework;
-import org.junit.Test;
-import org.mockito.Mockito;
-import org.slf4j.LoggerFactory;
+import okhttp3.OkHttpClient;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -23,10 +30,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * Perform testing of the {@link HelpCommand} class.
@@ -53,11 +58,13 @@ public class HelpCommandTest {
         ((ch.qos.logback.classic.Logger) LoggerFactory.getLogger(RegistrationManager.class)).setLevel(Level.OFF);
 
         final Config config = ConfigFactory.load();
+        final ExecutorService executor = Executors.newFixedThreadPool(3);
         final DiscoveryManager discovery = Mockito.mock(DiscoveryManager.class);
         final CuratorFramework curator = Mockito.mock(CuratorFramework.class);
-
         final RegistrationManager registrationManager = new RegistrationManager();
-        final ShellEnvironment shellEnvironment = new ShellEnvironment(config, discovery, curator, registrationManager);
+        final OkHttpClient httpClient = new OkHttpClient.Builder().build();
+        final ShellEnvironment shellEnvironment =
+                new ShellEnvironment(config, executor, discovery, curator, registrationManager, httpClient);
         registrationManager.loadCommands(shellEnvironment);
         final HelpCommand helpCommand = new HelpCommand(shellEnvironment);
 
@@ -88,11 +95,13 @@ public class HelpCommandTest {
         ((ch.qos.logback.classic.Logger) LoggerFactory.getLogger(RegistrationManager.class)).setLevel(Level.OFF);
 
         final Config config = ConfigFactory.load();
+        final ExecutorService executor = Executors.newFixedThreadPool(3);
         final DiscoveryManager discovery = Mockito.mock(DiscoveryManager.class);
         final CuratorFramework curator = Mockito.mock(CuratorFramework.class);
-
         final RegistrationManager registrationManager = new RegistrationManager();
-        final ShellEnvironment shellEnvironment = new ShellEnvironment(config, discovery, curator, registrationManager);
+        final OkHttpClient httpClient = new OkHttpClient.Builder().build();
+        final ShellEnvironment shellEnvironment =
+                new ShellEnvironment(config, executor, discovery, curator, registrationManager, httpClient);
         registrationManager.loadCommands(shellEnvironment);
         final HelpCommand helpCommand = new HelpCommand(shellEnvironment);
 
@@ -125,11 +134,13 @@ public class HelpCommandTest {
         ((ch.qos.logback.classic.Logger) LoggerFactory.getLogger(RegistrationManager.class)).setLevel(Level.OFF);
 
         final Config config = ConfigFactory.load();
+        final ExecutorService executor = Executors.newFixedThreadPool(3);
         final DiscoveryManager discovery = Mockito.mock(DiscoveryManager.class);
         final CuratorFramework curator = Mockito.mock(CuratorFramework.class);
-
         final RegistrationManager registrationManager = new RegistrationManager();
-        final ShellEnvironment shellEnvironment = new ShellEnvironment(config, discovery, curator, registrationManager);
+        final OkHttpClient httpClient = new OkHttpClient.Builder().build();
+        final ShellEnvironment shellEnvironment =
+                new ShellEnvironment(config, executor, discovery, curator, registrationManager, httpClient);
         registrationManager.loadCommands(shellEnvironment);
         final HelpCommand helpCommand = new HelpCommand(shellEnvironment);
 
@@ -149,13 +160,13 @@ public class HelpCommandTest {
 
         int line = 0;
         assertEquals("  exit                     exit the shell", output.get(line++));
-        assertEquals("  help                     display usage information for available shell commands",
+        assertEquals(
+                "  help                     display usage information for available shell commands",
                 output.get(line++));
         assertEquals("  quit                     exit the shell", output.get(line++));
         assertEquals("  service control restart  request the restart of one or more services", output.get(line++));
         assertEquals("  service control stop     request the stop of one or more services", output.get(line++));
-        assertEquals("  service list             provides information about the available services",
-                output.get(line));
+        assertEquals("  service list             provides information about the available services", output.get(line));
     }
 
     @Test

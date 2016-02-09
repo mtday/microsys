@@ -1,5 +1,8 @@
 package microsys.shell.command.service;
 
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
+
 import microsys.service.model.Service;
 import microsys.shell.model.CommandPath;
 import microsys.shell.model.CommandStatus;
@@ -8,7 +11,6 @@ import microsys.shell.model.Options;
 import microsys.shell.model.Registration;
 import microsys.shell.model.ShellEnvironment;
 import microsys.shell.model.UserCommand;
-import org.apache.commons.lang3.StringUtils;
 
 import java.io.PrintWriter;
 import java.util.Collections;
@@ -53,15 +55,16 @@ public class ListCommand extends BaseServiceCommand {
         try {
             final SortedSet<Service> services = getShellEnvironment().getDiscoveryManager().getAll();
             final ServiceFilter filter = new ServiceFilter(userCommand.getCommandLine());
-            final Stringer stringer = new Stringer(services);
 
-            final List<String> output = services.stream().filter(filter::matches).map(stringer::toString)
-                    .collect(Collectors.toList());
+            final List<Service> filtered = services.stream().filter(filter::matches).collect(Collectors.toList());
+
+            final Stringer stringer = new Stringer(filtered);
+            final List<String> output = filtered.stream().map(stringer::toString).collect(Collectors.toList());
 
             writer.println(new ServiceSummary(services.size(), output.size()));
             output.forEach(writer::println);
         } catch (final Exception exception) {
-            writer.println("Failed to retrieve available services: " + exception.getMessage());
+            writer.println("Failed to retrieve available services: " + ExceptionUtils.getMessage(exception));
         }
 
         return CommandStatus.SUCCESS;
@@ -72,7 +75,7 @@ public class ListCommand extends BaseServiceCommand {
         private final OptionalInt longestHost;
         private final OptionalInt longestPort;
 
-        public Stringer(final SortedSet<Service> services) {
+        public Stringer(final List<Service> services) {
             this.longestType = services.stream().mapToInt(s -> s.getType().name().length()).max();
             this.longestHost = services.stream().mapToInt(s -> s.getHost().length()).max();
             this.longestPort = services.stream().mapToInt(s -> String.valueOf(s.getPort()).length()).max();

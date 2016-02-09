@@ -1,6 +1,10 @@
 package microsys.shell.command.service;
 
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
+
 import microsys.service.model.Service;
+import microsys.service.model.ServiceControlStatus;
 import microsys.shell.model.CommandPath;
 import microsys.shell.model.CommandStatus;
 import microsys.shell.model.Option;
@@ -12,8 +16,13 @@ import microsys.shell.model.UserCommand;
 import java.io.PrintWriter;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalInt;
+import java.util.Set;
 import java.util.SortedSet;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -60,25 +69,60 @@ public class ControlCommand extends BaseServiceCommand {
 
             final List<Service> filtered = services.stream().filter(filter::matches).collect(Collectors.toList());
 
-            if (userCommand.getCommandPath().equals(new CommandPath("service", "control", "stop"))) {
-                return handleStop(filtered, writer);
-            } else {
-                return handleRestart(filtered, writer);
+            writer.println(new ServiceSummary(services.size(), filtered.size()));
+            if (!filtered.isEmpty()) {
+                if (userCommand.getCommandPath().equals(new CommandPath("service", "control", "stop"))) {
+                    return handleStop(filtered, writer);
+                } else {
+                    return handleRestart(filtered, writer);
+                }
             }
         } catch (final Exception exception) {
-            writer.println("Failed to retrieve available services: " + exception.getMessage());
+            writer.println("Failed to retrieve available services: " + ExceptionUtils.getMessage(exception));
         }
 
         return CommandStatus.SUCCESS;
     }
 
-    protected CommandStatus handleStop(final List<Service> services, final PrintWriter writer) {
-        // TODO
+    protected CommandStatus handleStop(final List<Service> services, final PrintWriter writer) throws Exception {
+        return control(getShellEnvironment().getServiceClient().stop(services), writer);
+    }
+
+    protected CommandStatus handleRestart(final List<Service> services, final PrintWriter writer) throws Exception {
+        return control(getShellEnvironment().getServiceClient().restart(services), writer);
+    }
+
+    protected CommandStatus control(final Future<Map<Service, ServiceControlStatus>> future, final PrintWriter writer)
+            throws Exception {
+        final Map<Service, ServiceControlStatus> map = future.get(10, TimeUnit.SECONDS);
+        final Stringer stringer = new Stringer(map.keySet());
+        map.entrySet().stream().map(stringer::toString).forEach(writer::println);
         return CommandStatus.SUCCESS;
     }
 
-    protected CommandStatus handleRestart(final List<Service> services, final PrintWriter writer) {
-        // TODO
-        return CommandStatus.SUCCESS;
+    protected static class Stringer {
+        private final OptionalInt longestType;
+        private final OptionalInt longestHost;
+        private final OptionalInt longestPort;
+
+        public Stringer(final Set<Service> services) {
+            this.longestType = services.stream().mapToInt(s -> s.getType().name().length()).max();
+            this.longestHost = services.stream().mapToInt(s -> s.getHost().length()).max();
+            this.longestPort = services.stream().mapToInt(s -> String.valueOf(s.getPort()).length()).max();
+        }
+
+        public String toString(final Map.Entry<Service, ServiceControlStatus> entry) {
+            final Service service = entry.getKey();
+            final ServiceControlStatus status = entry.getValue();
+
+            final String type = StringUtils.rightPad(service.getType().name(), this.longestType.getAsInt());
+            final String host = StringUtils.rightPad(service.getHost(), this.longestHost.getAsInt());
+            final String port = StringUtils.rightPad(String.valueOf(service.getPort()), this.longestPort.getAsInt());
+
+            final String action = status.getAction();
+            final boolean success = status.isSuccess();
+
+            return String.format("    %s  %s  %s  - %s in progress: %s", type, host, port, action, success);
+        }
     }
 }

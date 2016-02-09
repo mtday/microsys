@@ -12,6 +12,7 @@ import microsys.shell.model.ShellEnvironment;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Modifier;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.SortedSet;
@@ -27,7 +28,7 @@ public class RegistrationManager {
     private final TreeMap<Registration, Command> registrations = new TreeMap<>();
 
     /**
-     * @param shellEnvironment
+     * @param shellEnvironment the {@link ShellEnvironment} providing the necessary objects used within the commands
      */
     public void loadCommands(final ShellEnvironment shellEnvironment) {
         final String packagePrefix = StringUtils.substringBeforeLast(getClass().getPackage().getName(), ".");
@@ -41,12 +42,16 @@ public class RegistrationManager {
     protected Optional<Command> createCommand(
             final Class<? extends Command> commandClass, final ShellEnvironment shellEnvironment) {
         try {
-            final Constructor<? extends Command> constructor =
-                    commandClass.getDeclaredConstructor(ShellEnvironment.class);
-            return Optional.of(constructor.newInstance(shellEnvironment));
+            if (Modifier.isAbstract(commandClass.getModifiers())) {
+                return Optional.empty();
+            } else {
+                final Constructor<? extends Command> constructor =
+                        commandClass.getDeclaredConstructor(ShellEnvironment.class);
+                return Optional.of(constructor.newInstance(shellEnvironment));
+            }
         } catch (final NoSuchMethodException | IllegalAccessException | InstantiationException |
                 InvocationTargetException failed) {
-            LOG.error("Shell command class cannot be created: " + commandClass.getName(), failed);
+            LOG.error("Shell command class cannot be created: " + commandClass.getName());
         }
         return Optional.empty();
     }

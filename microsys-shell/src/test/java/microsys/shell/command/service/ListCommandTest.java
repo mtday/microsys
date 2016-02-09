@@ -1,5 +1,11 @@
 package microsys.shell.command.service;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+import org.junit.Test;
+import org.mockito.Mockito;
+
 import microsys.common.model.ServiceType;
 import microsys.service.discovery.DiscoveryManager;
 import microsys.service.model.Service;
@@ -9,8 +15,6 @@ import microsys.shell.model.Option;
 import microsys.shell.model.Registration;
 import microsys.shell.model.ShellEnvironment;
 import microsys.shell.model.UserCommand;
-import org.junit.Test;
-import org.mockito.Mockito;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -19,9 +23,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.SortedSet;
 import java.util.TreeSet;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 /**
  * Perform testing of the {@link ListCommand} class.
@@ -308,6 +309,6 @@ public class ListCommandTest {
 
         final List<String> output = Arrays.asList(stringWriter.getBuffer().toString().split(System.lineSeparator()));
         assertEquals(1, output.size());
-        assertEquals("Failed to retrieve available services: Fake", output.get(0));
+        assertEquals("Failed to retrieve available services: RuntimeException: Fake", output.get(0));
     }
 }

@@ -2,6 +2,9 @@ package microsys.shell;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.typesafe.config.Config;
+
+import org.apache.commons.lang3.StringUtils;
+
 import jline.TerminalFactory;
 import jline.console.ConsoleReader;
 import jline.console.UserInterruptException;
@@ -12,10 +15,10 @@ import microsys.shell.model.Command;
 import microsys.shell.model.CommandPath;
 import microsys.shell.model.CommandStatus;
 import microsys.shell.model.Registration;
+import microsys.shell.model.ShellEnvironment;
 import microsys.shell.model.Token;
 import microsys.shell.model.UserCommand;
 import microsys.shell.util.Tokenizer;
-import org.apache.commons.lang3.StringUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -36,19 +39,19 @@ public class ConsoleManager {
     private final static String PROMPT = "shell> ";
 
     private final Config config;
-    private final RegistrationManager registrationManager;
+    private final ShellEnvironment shellEnvironment;
     private final ConsoleReader consoleReader;
     private final Optional<FileHistory> fileHistory;
     private final Optional<ShellCompleter> completer;
 
     /**
      * @param config the static system configuration information
-     * @param registrationManager the shell command registration manager
+     * @param shellEnvironment the shell environment
      * @throws IOException if there is a problem creating the console reader
      */
-    public ConsoleManager(final Config config, final RegistrationManager registrationManager) throws IOException {
+    public ConsoleManager(final Config config, final ShellEnvironment shellEnvironment) throws IOException {
         this.config = Objects.requireNonNull(config);
-        this.registrationManager = Objects.requireNonNull(registrationManager);
+        this.shellEnvironment = Objects.requireNonNull(shellEnvironment);
 
         this.consoleReader = new ConsoleReader();
         this.consoleReader.setHandleUserInterrupt(true);
@@ -58,20 +61,20 @@ public class ConsoleManager {
         this.fileHistory = Optional.of(createHistory(this.config));
         this.consoleReader.setHistory(this.fileHistory.get());
 
-        this.completer = Optional.of(new ShellCompleter(registrationManager));
+        this.completer = Optional.of(new ShellCompleter(shellEnvironment.getRegistrationManager()));
         this.consoleReader.addCompleter(this.completer.get());
     }
 
     /**
      * @param config the static system configuration information
-     * @param registrationManager the shell command registration manager
+     * @param shellEnvironment the shell environment
      * @param consoleReader the {@link ConsoleReader} used to retrieve input from the user
      */
     @VisibleForTesting
     public ConsoleManager(
-            final Config config, final RegistrationManager registrationManager, final ConsoleReader consoleReader) {
+            final Config config, final ShellEnvironment shellEnvironment, final ConsoleReader consoleReader) {
         this.config = Objects.requireNonNull(config);
-        this.registrationManager = Objects.requireNonNull(registrationManager);
+        this.shellEnvironment = Objects.requireNonNull(shellEnvironment);
         this.consoleReader = Objects.requireNonNull(consoleReader);
         this.fileHistory = Optional.empty();
         this.completer = Optional.empty();
@@ -85,10 +88,10 @@ public class ConsoleManager {
     }
 
     /**
-     * @return the shell command registration manager
+     * @return the shell environment
      */
-    protected RegistrationManager getRegistrationManager() {
-        return this.registrationManager;
+    protected ShellEnvironment getShellEnvironment() {
+        return this.shellEnvironment;
     }
 
     /**
@@ -190,6 +193,7 @@ public class ConsoleManager {
         } catch (final Exception restoreException) {
             // Ignored, we are stopping any way.
         }
+        getShellEnvironment().close();
     }
 
     protected CommandStatus handleInput(final Optional<String> input, final boolean printCommand) throws IOException {
@@ -221,7 +225,8 @@ public class ConsoleManager {
 
     protected CommandStatus handleTokens(final List<Token> tokens) throws IOException {
         final CommandPath commandPath = new CommandPath(tokens);
-        final SortedSet<Registration> registrations = getRegistrationManager().getRegistrations(commandPath);
+        final SortedSet<Registration> registrations =
+                getShellEnvironment().getRegistrationManager().getRegistrations(commandPath);
 
         CommandStatus returnStatus = CommandStatus.SUCCESS;
         if (registrations.isEmpty()) {
@@ -230,11 +235,12 @@ public class ConsoleManager {
             getConsoleReader().flush();
         } else if (registrations.size() > 1) {
             // Multiple matching commands. Send to the "help" command to process.
-            final Registration help = getRegistrationManager().getRegistrations(new CommandPath("help")).first();
+            final Registration help =
+                    getShellEnvironment().getRegistrationManager().getRegistrations(new CommandPath("help")).first();
             final List<String> path = new LinkedList<>(commandPath.getPath());
             path.add(0, "help");
             final UserCommand userCommand = new UserCommand(new CommandPath(path), help, tokens);
-            returnStatus = getRegistrationManager().getCommand(help).get()
+            returnStatus = getShellEnvironment().getRegistrationManager().getCommand(help).get()
                     .process(userCommand, new PrintWriter(getConsoleReader().getOutput(), true));
         } else {
             // A single matching command, run it.
@@ -245,7 +251,7 @@ public class ConsoleManager {
             }
 
             // This command will always exist.
-            final Optional<Command> command = getRegistrationManager().getCommand(registration);
+            final Optional<Command> command = getShellEnvironment().getRegistrationManager().getCommand(registration);
             final UserCommand userCommand = new UserCommand(commandPath, registration, tokens);
             try {
                 userCommand.validateCommandLine();

@@ -1,18 +1,25 @@
 package microsys.shell;
 
-import ch.qos.logback.classic.Level;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigValue;
 import com.typesafe.config.ConfigValueFactory;
-import microsys.common.config.CommonConfig;
-import microsys.service.discovery.DiscoveryManager;
-import microsys.shell.model.ShellEnvironment;
+
 import org.apache.curator.framework.CuratorFramework;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.mockito.Mockito;
 import org.slf4j.LoggerFactory;
+
+import ch.qos.logback.classic.Level;
+import microsys.common.config.CommonConfig;
+import microsys.service.discovery.DiscoveryManager;
+import microsys.shell.model.ShellEnvironment;
+import okhttp3.OkHttpClient;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -21,10 +28,8 @@ import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * Perform testing on the {@link ConsoleManager} class
@@ -33,12 +38,13 @@ public class ConsoleManagerTest {
     @Test
     public void testStandardConstructor() throws IOException {
         final Config config = ConfigFactory.load();
-        final RegistrationManager registrationManager = new RegistrationManager();
-        final ConsoleManager cm = new ConsoleManager(config, registrationManager);
+        final ShellEnvironment shellEnvironment = Mockito.mock(ShellEnvironment.class);
+        Mockito.when(shellEnvironment.getRegistrationManager()).thenReturn(new RegistrationManager());
+        final ConsoleManager cm = new ConsoleManager(config, shellEnvironment);
         cm.stop();
 
         assertEquals(config, cm.getConfig());
-        assertEquals(registrationManager, cm.getRegistrationManager());
+        assertEquals(shellEnvironment, cm.getShellEnvironment());
         assertNotNull(cm.getConsoleReader());
     }
 
@@ -50,17 +56,19 @@ public class ConsoleManagerTest {
         final Config config =
                 ConfigFactory.parseString(String.format("%s = 1.2.3", CommonConfig.SYSTEM_VERSION.getKey()))
                         .withFallback(ConfigFactory.load());
+        final ExecutorService executor = Executors.newFixedThreadPool(3);
         final DiscoveryManager discovery = Mockito.mock(DiscoveryManager.class);
         final CuratorFramework curator = Mockito.mock(CuratorFramework.class);
-
         final RegistrationManager registrationManager = new RegistrationManager();
-        final ShellEnvironment shellEnvironment = new ShellEnvironment(config, discovery, curator, registrationManager);
+        final OkHttpClient httpClient = new OkHttpClient.Builder().build();
+        final ShellEnvironment shellEnvironment =
+                new ShellEnvironment(config, executor, discovery, curator, registrationManager, httpClient);
         registrationManager.loadCommands(shellEnvironment);
 
         final CapturingConsoleReader consoleReader =
                 new CapturingConsoleReader("unrecognized", "", "  #comment", "help", "s", "service li -t", "'invalid");
 
-        final ConsoleManager cm = new ConsoleManager(config, registrationManager, consoleReader);
+        final ConsoleManager cm = new ConsoleManager(config, shellEnvironment, consoleReader);
         cm.run();
 
         assertTrue(consoleReader.isShutdown());
@@ -120,17 +128,19 @@ public class ConsoleManagerTest {
         final Config config =
                 ConfigFactory.parseString(String.format("%s = 1.2.3", CommonConfig.SYSTEM_VERSION.getKey()))
                         .withFallback(ConfigFactory.load());
+        final ExecutorService executor = Executors.newFixedThreadPool(3);
         final DiscoveryManager discovery = Mockito.mock(DiscoveryManager.class);
         final CuratorFramework curator = Mockito.mock(CuratorFramework.class);
-
         final RegistrationManager registrationManager = new RegistrationManager();
-        final ShellEnvironment shellEnvironment = new ShellEnvironment(config, discovery, curator, registrationManager);
+        final OkHttpClient httpClient = new OkHttpClient.Builder().build();
+        final ShellEnvironment shellEnvironment =
+                new ShellEnvironment(config, executor, discovery, curator, registrationManager, httpClient);
         registrationManager.loadCommands(shellEnvironment);
 
         final CapturingConsoleReader consoleReader = new CapturingConsoleReader("help");
         consoleReader.setInterrupt("");
 
-        final ConsoleManager cm = new ConsoleManager(config, registrationManager, consoleReader);
+        final ConsoleManager cm = new ConsoleManager(config, shellEnvironment, consoleReader);
         cm.run();
         assertTrue(consoleReader.isShutdown());
 
@@ -156,17 +166,19 @@ public class ConsoleManagerTest {
         final Config config =
                 ConfigFactory.parseString(String.format("%s = 1.2.3", CommonConfig.SYSTEM_VERSION.getKey()))
                         .withFallback(ConfigFactory.load());
+        final ExecutorService executor = Executors.newFixedThreadPool(3);
         final DiscoveryManager discovery = Mockito.mock(DiscoveryManager.class);
         final CuratorFramework curator = Mockito.mock(CuratorFramework.class);
-
         final RegistrationManager registrationManager = new RegistrationManager();
-        final ShellEnvironment shellEnvironment = new ShellEnvironment(config, discovery, curator, registrationManager);
+        final OkHttpClient httpClient = new OkHttpClient.Builder().build();
+        final ShellEnvironment shellEnvironment =
+                new ShellEnvironment(config, executor, discovery, curator, registrationManager, httpClient);
         registrationManager.loadCommands(shellEnvironment);
 
         final CapturingConsoleReader consoleReader = new CapturingConsoleReader("help");
         consoleReader.setInterrupt("partial");
 
-        final ConsoleManager cm = new ConsoleManager(config, registrationManager, consoleReader);
+        final ConsoleManager cm = new ConsoleManager(config, shellEnvironment, consoleReader);
         cm.run();
         assertTrue(consoleReader.isShutdown());
 
@@ -208,16 +220,17 @@ public class ConsoleManagerTest {
             final Config config =
                     ConfigFactory.parseString(String.format("%s = 1.2.3", CommonConfig.SYSTEM_VERSION.getKey()))
                             .withFallback(ConfigFactory.load());
+            final ExecutorService executor = Executors.newFixedThreadPool(3);
             final DiscoveryManager discovery = Mockito.mock(DiscoveryManager.class);
             final CuratorFramework curator = Mockito.mock(CuratorFramework.class);
-
             final RegistrationManager registrationManager = new RegistrationManager();
+            final OkHttpClient httpClient = new OkHttpClient.Builder().build();
             final ShellEnvironment shellEnvironment =
-                    new ShellEnvironment(config, discovery, curator, registrationManager);
+                    new ShellEnvironment(config, executor, discovery, curator, registrationManager, httpClient);
             registrationManager.loadCommands(shellEnvironment);
 
             final CapturingConsoleReader consoleReader = new CapturingConsoleReader();
-            final ConsoleManager cm = new ConsoleManager(config, registrationManager, consoleReader);
+            final ConsoleManager cm = new ConsoleManager(config, shellEnvironment, consoleReader);
             cm.run(file);
             assertTrue(consoleReader.isShutdown());
 
@@ -247,16 +260,17 @@ public class ConsoleManagerTest {
             final Config config =
                     ConfigFactory.parseString(String.format("%s = 1.2.3", CommonConfig.SYSTEM_VERSION.getKey()))
                             .withFallback(ConfigFactory.load());
+            final ExecutorService executor = Executors.newFixedThreadPool(3);
             final DiscoveryManager discovery = Mockito.mock(DiscoveryManager.class);
             final CuratorFramework curator = Mockito.mock(CuratorFramework.class);
-
             final RegistrationManager registrationManager = new RegistrationManager();
+            final OkHttpClient httpClient = new OkHttpClient.Builder().build();
             final ShellEnvironment shellEnvironment =
-                    new ShellEnvironment(config, discovery, curator, registrationManager);
+                    new ShellEnvironment(config, executor, discovery, curator, registrationManager, httpClient);
             registrationManager.loadCommands(shellEnvironment);
 
             final CapturingConsoleReader consoleReader = new CapturingConsoleReader();
-            final ConsoleManager cm = new ConsoleManager(config, registrationManager, consoleReader);
+            final ConsoleManager cm = new ConsoleManager(config, shellEnvironment, consoleReader);
             cm.run(file);
             assertTrue(consoleReader.isShutdown());
 
@@ -294,16 +308,18 @@ public class ConsoleManagerTest {
         final Config config =
                 ConfigFactory.parseString(String.format("%s = 1.2.3", CommonConfig.SYSTEM_VERSION.getKey()))
                         .withFallback(ConfigFactory.load());
+        final ExecutorService executor = Executors.newFixedThreadPool(3);
         final DiscoveryManager discovery = Mockito.mock(DiscoveryManager.class);
         final CuratorFramework curator = Mockito.mock(CuratorFramework.class);
-
         final RegistrationManager registrationManager = new RegistrationManager();
-        final ShellEnvironment shellEnvironment = new ShellEnvironment(config, discovery, curator, registrationManager);
+        final OkHttpClient httpClient = new OkHttpClient.Builder().build();
+        final ShellEnvironment shellEnvironment =
+                new ShellEnvironment(config, executor, discovery, curator, registrationManager, httpClient);
         registrationManager.loadCommands(shellEnvironment);
 
         final CapturingConsoleReader consoleReader = new CapturingConsoleReader();
 
-        final ConsoleManager cm = new ConsoleManager(config, registrationManager, consoleReader);
+        final ConsoleManager cm = new ConsoleManager(config, shellEnvironment, consoleReader);
         cm.run("help");
         assertTrue(consoleReader.isShutdown());
 
@@ -319,8 +335,7 @@ public class ConsoleManagerTest {
         assertEquals("  quit                     exit the shell", lines.get(line++));
         assertEquals("  service control restart  request the restart of one or more services", lines.get(line++));
         assertEquals("  service control stop     request the stop of one or more services", lines.get(line++));
-        assertEquals("  service list             provides information about the available services",
-                lines.get(line++));
+        assertEquals("  service list             provides information about the available services", lines.get(line++));
         assertEquals("  service memory           display memory usage information for one or more services",
                 lines.get(line++));
 
@@ -346,15 +361,17 @@ public class ConsoleManagerTest {
             assertTrue("Failed to delete existing dir: " + file.getAbsolutePath(), file.delete());
         }
 
+        final ExecutorService executor = Executors.newFixedThreadPool(3);
         final DiscoveryManager discovery = Mockito.mock(DiscoveryManager.class);
         final CuratorFramework curator = Mockito.mock(CuratorFramework.class);
-
         final RegistrationManager registrationManager = new RegistrationManager();
-        final ShellEnvironment shellEnvironment = new ShellEnvironment(config, discovery, curator, registrationManager);
+        final OkHttpClient httpClient = new OkHttpClient.Builder().build();
+        final ShellEnvironment shellEnvironment =
+                new ShellEnvironment(config, executor, discovery, curator, registrationManager, httpClient);
         registrationManager.loadCommands(shellEnvironment);
 
         final CapturingConsoleReader consoleReader = new CapturingConsoleReader();
-        final ConsoleManager cm = new ConsoleManager(config, registrationManager, consoleReader);
+        final ConsoleManager cm = new ConsoleManager(config, shellEnvironment, consoleReader);
 
         assertNotNull(cm.createHistory(config));
     }
