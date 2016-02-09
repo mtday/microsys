@@ -1,28 +1,24 @@
 package microsys.service.route;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
+import ch.qos.logback.classic.Level;
 import com.google.common.net.MediaType;
 import com.google.gson.JsonObject;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
-
+import microsys.service.BaseService;
+import microsys.service.model.ServiceControlStatus;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.slf4j.LoggerFactory;
-
-import ch.qos.logback.classic.Level;
-import microsys.service.BaseService;
 import spark.Request;
 import spark.Response;
 
+import javax.servlet.http.HttpServletResponse;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import javax.servlet.http.HttpServletResponse;
+import static org.junit.Assert.*;
 
 /**
  * Perform testing on the {@link ServiceControlRoute} class.
@@ -57,7 +53,7 @@ public class ServiceControlRouteTest {
         Mockito.verify(response).type(MediaType.JSON_UTF_8.type());
         assertNotNull(obj);
         assertTrue(obj instanceof JsonObject);
-        assertEquals("{\"success\":true,\"action\":\"stop\"}", obj.toString());
+        assertEquals(new ServiceControlStatus(true, "stop"), new ServiceControlStatus((JsonObject) obj));
     }
 
     @Test
@@ -89,7 +85,7 @@ public class ServiceControlRouteTest {
         Mockito.verify(response).type(MediaType.JSON_UTF_8.type());
         assertNotNull(obj);
         assertTrue(obj instanceof JsonObject);
-        assertEquals("{\"success\":true,\"action\":\"stop\"}", obj.toString());
+        assertEquals(new ServiceControlStatus(true, "stop"), new ServiceControlStatus((JsonObject) obj));
     }
 
     @Test
@@ -114,7 +110,7 @@ public class ServiceControlRouteTest {
         Mockito.verify(response).type(MediaType.JSON_UTF_8.type());
         assertNotNull(obj);
         assertTrue(obj instanceof JsonObject);
-        assertEquals("{\"success\":true,\"action\":\"restart\"}", obj.toString());
+        assertEquals(new ServiceControlStatus(true, "restart"), new ServiceControlStatus((JsonObject) obj));
     }
 
     @Test

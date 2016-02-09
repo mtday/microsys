@@ -11,6 +11,8 @@ import microsys.service.BaseService;
 import microsys.service.discovery.DiscoveryManager;
 import microsys.service.filter.RequestLoggingFilter;
 import microsys.service.model.Service;
+import microsys.service.model.ServiceControlStatus;
+import microsys.service.model.ServiceInfo;
 import microsys.service.model.ServiceMemory;
 import okhttp3.OkHttpClient;
 import okhttp3.mockwebserver.MockResponse;
@@ -37,9 +39,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.LogManager;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * Perform testing of the {@link ServiceClient} class.
@@ -65,6 +65,8 @@ public class ServiceClientIT {
 
         final Map<String, ConfigValue> map = new HashMap<>();
         map.put(CommonConfig.ZOOKEEPER_HOSTS.getKey(), ConfigValueFactory.fromAnyRef(testingServer.getConnectString()));
+        map.put(CommonConfig.SYSTEM_NAME.getKey(), ConfigValueFactory.fromAnyRef("system-name"));
+        map.put(CommonConfig.SYSTEM_VERSION.getKey(), ConfigValueFactory.fromAnyRef("1.2.3"));
         final Config config = ConfigFactory.parseMap(map).withFallback(ConfigFactory.load());
 
         executor = Executors.newFixedThreadPool(4);
@@ -114,13 +116,147 @@ public class ServiceClientIT {
         final Optional<Service> service = baseService.getService();
         assertTrue(service.isPresent());
 
+        final ServiceInfo info = client.getInfo(service.get()).get();
+        assertNotNull(info);
+        assertEquals(new ServiceInfo(ServiceType.CONFIG, "system-name", "1.2.3"), info);
+
+        final Map<Service, ServiceInfo> infoMap = client.getInfo(Collections.singletonList(service.get())).get();
+        assertNotNull(infoMap);
+        assertEquals(1, infoMap.size());
+        assertTrue(infoMap.containsKey(service.get()));
+        assertEquals(new ServiceInfo(ServiceType.CONFIG, "system-name", "1.2.3"), infoMap.get(service.get()));
+
         final ServiceMemory memory = client.getMemory(service.get()).get();
         assertNotNull(memory);
 
-        final Map<Service, ServiceMemory> map = client.getMemory(Collections.singletonList(service.get())).get();
-        assertNotNull(map);
-        assertEquals(1, map.size());
-        assertTrue(map.containsKey(service.get()));
+        final Map<Service, ServiceMemory> memMap = client.getMemory(Collections.singletonList(service.get())).get();
+        assertNotNull(memMap);
+        assertEquals(1, memMap.size());
+        assertTrue(memMap.containsKey(service.get()));
+    }
+
+    @Test
+    public void testControlStop() throws Exception {
+        final MockResponse response = new MockResponse();
+        response.setResponseCode(HttpServletResponse.SC_OK);
+        response.setBody(new ServiceControlStatus(true, "stop").toJson().toString());
+        mockServer.enqueue(response);
+
+        final Service service = new Service(ServiceType.CONFIG, mockServer.getHostName(), mockServer.getPort(),
+                false, "1.2.3");
+        final DiscoveryManager mockDiscovery = Mockito.mock(DiscoveryManager.class);
+        Mockito.when(mockDiscovery.getRandom(ServiceType.CONFIG)).thenReturn(Optional.of(service));
+
+        final ServiceClient client = new ServiceClient(executor, httpClient);
+        client.stop(service).get();
+    }
+
+    @Test
+    public void testControlStopCollection() throws Exception {
+        final MockResponse response = new MockResponse();
+        response.setResponseCode(HttpServletResponse.SC_OK);
+        response.setBody(new ServiceControlStatus(true, "stop").toJson().toString());
+        mockServer.enqueue(response);
+
+        final Service service = new Service(ServiceType.CONFIG, mockServer.getHostName(), mockServer.getPort(),
+                false, "1.2.3");
+        final DiscoveryManager mockDiscovery = Mockito.mock(DiscoveryManager.class);
+        Mockito.when(mockDiscovery.getRandom(ServiceType.CONFIG)).thenReturn(Optional.of(service));
+
+        final ServiceClient client = new ServiceClient(executor, httpClient);
+        client.stop(Collections.singletonList(service)).get();
+    }
+
+    @Test
+    public void testControlRestart() throws Exception {
+        final MockResponse response = new MockResponse();
+        response.setResponseCode(HttpServletResponse.SC_OK);
+        response.setBody(new ServiceControlStatus(true, "restart").toJson().toString());
+        mockServer.enqueue(response);
+
+        final Service service = new Service(ServiceType.CONFIG, mockServer.getHostName(), mockServer.getPort(),
+                false, "1.2.3");
+        final DiscoveryManager mockDiscovery = Mockito.mock(DiscoveryManager.class);
+        Mockito.when(mockDiscovery.getRandom(ServiceType.CONFIG)).thenReturn(Optional.of(service));
+
+        final ServiceClient client = new ServiceClient(executor, httpClient);
+        client.restart(service).get();
+    }
+
+    @Test
+    public void testControlRestartCollection() throws Exception {
+        final MockResponse response = new MockResponse();
+        response.setResponseCode(HttpServletResponse.SC_OK);
+        response.setBody(new ServiceControlStatus(true, "restart").toJson().toString());
+        mockServer.enqueue(response);
+
+        final Service service = new Service(ServiceType.CONFIG, mockServer.getHostName(), mockServer.getPort(),
+                false, "1.2.3");
+        final DiscoveryManager mockDiscovery = Mockito.mock(DiscoveryManager.class);
+        Mockito.when(mockDiscovery.getRandom(ServiceType.CONFIG)).thenReturn(Optional.of(service));
+
+        final ServiceClient client = new ServiceClient(executor, httpClient);
+        client.restart(Collections.singletonList(service)).get();
+    }
+
+    @Test(expected = ExecutionException.class)
+    public void testControlStopInvalidResponse() throws Exception {
+        final MockResponse response = new MockResponse();
+        response.setResponseCode(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+        mockServer.enqueue(response);
+
+        final Service service = new Service(ServiceType.CONFIG, mockServer.getHostName(), mockServer.getPort(),
+                false, "1.2.3");
+        final DiscoveryManager mockDiscovery = Mockito.mock(DiscoveryManager.class);
+        Mockito.when(mockDiscovery.getRandom(ServiceType.CONFIG)).thenReturn(Optional.of(service));
+
+        final ServiceClient client = new ServiceClient(executor, httpClient);
+        client.stop(service).get();
+    }
+
+    @Test(expected = ExecutionException.class)
+    public void testControlStopCollectionInvalidResponse() throws Exception {
+        final MockResponse response = new MockResponse();
+        response.setResponseCode(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+        mockServer.enqueue(response);
+
+        final Service service = new Service(ServiceType.CONFIG, mockServer.getHostName(), mockServer.getPort(),
+                false, "1.2.3");
+        final DiscoveryManager mockDiscovery = Mockito.mock(DiscoveryManager.class);
+        Mockito.when(mockDiscovery.getRandom(ServiceType.CONFIG)).thenReturn(Optional.of(service));
+
+        final ServiceClient client = new ServiceClient(executor, httpClient);
+        client.stop(Collections.singletonList(service)).get();
+    }
+
+    @Test(expected = ExecutionException.class)
+    public void testControlRestartInvalidResponse() throws Exception {
+        final MockResponse response = new MockResponse();
+        response.setResponseCode(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+        mockServer.enqueue(response);
+
+        final Service service = new Service(ServiceType.CONFIG, mockServer.getHostName(), mockServer.getPort(),
+                false, "1.2.3");
+        final DiscoveryManager mockDiscovery = Mockito.mock(DiscoveryManager.class);
+        Mockito.when(mockDiscovery.getRandom(ServiceType.CONFIG)).thenReturn(Optional.of(service));
+
+        final ServiceClient client = new ServiceClient(executor, httpClient);
+        client.restart(service).get();
+    }
+
+    @Test(expected = ExecutionException.class)
+    public void testControlRestartCollectionInvalidResponse() throws Exception {
+        final MockResponse response = new MockResponse();
+        response.setResponseCode(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+        mockServer.enqueue(response);
+
+        final Service service = new Service(ServiceType.CONFIG, mockServer.getHostName(), mockServer.getPort(),
+                false, "1.2.3");
+        final DiscoveryManager mockDiscovery = Mockito.mock(DiscoveryManager.class);
+        Mockito.when(mockDiscovery.getRandom(ServiceType.CONFIG)).thenReturn(Optional.of(service));
+
+        final ServiceClient client = new ServiceClient(executor, httpClient);
+        client.restart(Collections.singletonList(service)).get();
     }
 
     @Test(expected = ExecutionException.class)

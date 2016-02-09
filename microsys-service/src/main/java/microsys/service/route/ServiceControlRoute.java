@@ -1,21 +1,18 @@
 package microsys.service.route;
 
 import com.google.common.net.MediaType;
-import com.google.gson.JsonObject;
-
+import microsys.service.BaseRoute;
+import microsys.service.BaseService;
+import microsys.service.model.ServiceControlStatus;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import microsys.service.BaseRoute;
-import microsys.service.BaseService;
 import spark.Request;
 import spark.Response;
 
+import javax.servlet.http.HttpServletResponse;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
-
-import javax.servlet.http.HttpServletResponse;
 
 /**
  * A base route that provides some REST end-points for controlling the service.
@@ -33,14 +30,26 @@ public class ServiceControlRoute extends BaseRoute {
         this.service = service;
     }
 
+    /**
+     * @return the {@link BaseService} object to be managed
+     */
     protected BaseService getService() {
         return this.service;
     }
 
+    /**
+     * Perform the delay, allowing time to return the response back to the caller.
+     * @throws InterruptedException if the sleep operation is interrupted
+     */
     protected void delayBeforeAction() throws InterruptedException {
         Thread.sleep(TimeUnit.SECONDS.toMillis(1));
     }
 
+    /**
+     * Perform a stop, possibly followed by a start (if the {@code restart} parameter is true).
+     *
+     * @param restart whether the service should be restarted
+     */
     protected void stop(final boolean restart) {
         getService().getExecutor().submit(() -> {
             try {
@@ -78,10 +87,7 @@ public class ServiceControlRoute extends BaseRoute {
                 return "Unrecognized control action: " + action;
             }
 
-            final JsonObject json = new JsonObject();
-            json.addProperty("success", true);
-            json.addProperty("action", action);
-            return json;
+            return new ServiceControlStatus(true, action).toJson();
         }
     }
 }

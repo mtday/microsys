@@ -1,5 +1,6 @@
 package microsys.service.model;
 
+import com.google.common.base.Converter;
 import com.google.common.base.Preconditions;
 import com.google.gson.JsonObject;
 
@@ -14,7 +15,7 @@ import microsys.common.model.ServiceType;
 import java.util.Objects;
 
 /**
- * An immutable class representing the registration of a service for automatic discovery.
+ * An immutable class representing summary information about a service.
  */
 public class ServiceInfo implements Model, Comparable<ServiceInfo> {
     private final ServiceType type;
@@ -128,5 +129,26 @@ public class ServiceInfo implements Model, Comparable<ServiceInfo> {
         json.addProperty("systemName", getSystemName());
         json.addProperty("systemVersion", getSystemVersion());
         return json;
+    }
+
+    /**
+     * Support conversions to and from {@link JsonObject} with this class.
+     */
+    public static class ServiceInfoConverter extends Converter<JsonObject, ServiceInfo> {
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        protected ServiceInfo doForward(final JsonObject jsonObject) {
+            return new ServiceInfo(Objects.requireNonNull(jsonObject));
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        protected JsonObject doBackward(final ServiceInfo serviceInfo) {
+            return Objects.requireNonNull(serviceInfo).toJson();
+        }
     }
 }

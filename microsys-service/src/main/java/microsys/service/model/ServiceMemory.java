@@ -1,18 +1,17 @@
 package microsys.service.model;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
+import com.google.common.base.Converter;
 import com.google.gson.JsonObject;
-
+import microsys.common.model.Model;
 import org.apache.commons.lang3.builder.CompareToBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
-import microsys.common.model.Model;
-
 import java.lang.management.MemoryUsage;
 import java.util.Objects;
+
+import static com.google.common.base.Preconditions.checkArgument;
 
 /**
  * An immutable class representing the memory used and available for a service
@@ -217,5 +216,26 @@ public class ServiceMemory implements Model, Comparable<ServiceMemory> {
         json.add("heap", heap);
         json.add("nonheap", nonheap);
         return json;
+    }
+
+    /**
+     * Support conversions to and from {@link JsonObject} with this class.
+     */
+    public static class ServiceMemoryConverter extends Converter<JsonObject, ServiceMemory> {
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        protected ServiceMemory doForward(final JsonObject jsonObject) {
+            return new ServiceMemory(Objects.requireNonNull(jsonObject));
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        protected JsonObject doBackward(final ServiceMemory serviceMemory) {
+            return Objects.requireNonNull(serviceMemory).toJson();
+        }
     }
 }
