@@ -26,21 +26,21 @@ public class ReservationTest {
         assertEquals(0, a.compareTo(a));
         assertEquals(-1, a.compareTo(b));
         assertEquals(-1, a.compareTo(c));
-        assertEquals(-2, a.compareTo(d));
+        assertEquals(-20, a.compareTo(d));
 
         assertEquals(1, b.compareTo(a));
         assertEquals(0, b.compareTo(b));
         assertEquals(-1, b.compareTo(c));
-        assertEquals(-2, b.compareTo(d));
+        assertEquals(-20, b.compareTo(d));
 
         assertEquals(1, c.compareTo(a));
         assertEquals(1, c.compareTo(b));
         assertEquals(0, c.compareTo(c));
-        assertEquals(-2, c.compareTo(d));
+        assertEquals(-20, c.compareTo(d));
 
-        assertEquals(2, d.compareTo(a));
-        assertEquals(2, d.compareTo(b));
-        assertEquals(2, d.compareTo(c));
+        assertEquals(20, d.compareTo(a));
+        assertEquals(20, d.compareTo(b));
+        assertEquals(20, d.compareTo(c));
         assertEquals(0, d.compareTo(d));
     }
 

@@ -81,7 +81,7 @@ public class ServiceInfo implements Model, Comparable<ServiceInfo> {
         }
 
         final CompareToBuilder cmp = new CompareToBuilder();
-        cmp.append(getType(), other.getType());
+        cmp.append(getType().name(), other.getType().name());
         cmp.append(getSystemName(), other.getSystemName());
         cmp.append(getSystemVersion(), other.getSystemVersion());
         return cmp.toComparison();

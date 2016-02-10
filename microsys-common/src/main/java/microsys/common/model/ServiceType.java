@@ -5,19 +5,19 @@ package microsys.common.model;
  */
 public enum ServiceType {
     /**
-     * The system audit service.
-     */
-    AUDIT,
-
-    /**
      * The dynamic configuration service.
      */
     CONFIG,
 
     /**
-     * The health and status service.
+     * The system service that manages service and infrastructure health.
      */
     HEALTH,
+
+    /**
+     * The system security service.
+     */
+    SECURITY,
 
     /**
      * The web user interface service.

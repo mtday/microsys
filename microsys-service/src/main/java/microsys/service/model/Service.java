@@ -140,7 +140,7 @@ public class Service implements Model, Comparable<Service> {
         }
 
         final CompareToBuilder cmp = new CompareToBuilder();
-        cmp.append(getType(), other.getType());
+        cmp.append(getType().name(), other.getType().name());
         cmp.append(getHost(), other.getHost());
         cmp.append(getPort(), other.getPort());
         cmp.append(isSecure(), other.isSecure());

@@ -1,14 +1,16 @@
 package microsys.service.model;
 
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import microsys.common.model.ServiceType;
-import org.apache.curator.x.discovery.ServiceInstance;
-import org.junit.Test;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
+
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+
+import org.apache.curator.x.discovery.ServiceInstance;
+import org.junit.Test;
+
+import microsys.common.model.ServiceType;
 
 /**
  * Perform testing on the {@link Service} class.
@@ -28,30 +30,30 @@ public class ServiceTest {
         assertEquals(1, a.compareTo(b));
         assertEquals(-1, a.compareTo(c));
         assertEquals(-1, a.compareTo(d));
-        assertEquals(-2, a.compareTo(e));
+        assertEquals(-20, a.compareTo(e));
 
         assertEquals(-1, b.compareTo(a));
         assertEquals(0, b.compareTo(b));
         assertEquals(-1, b.compareTo(c));
         assertEquals(-1, b.compareTo(d));
-        assertEquals(-2, b.compareTo(e));
+        assertEquals(-20, b.compareTo(e));
 
         assertEquals(1, c.compareTo(a));
         assertEquals(1, c.compareTo(b));
         assertEquals(0, c.compareTo(c));
         assertEquals(-1, c.compareTo(d));
-        assertEquals(-2, c.compareTo(e));
+        assertEquals(-20, c.compareTo(e));
 
         assertEquals(1, d.compareTo(a));
         assertEquals(1, d.compareTo(b));
         assertEquals(1, d.compareTo(c));
         assertEquals(0, d.compareTo(d));
-        assertEquals(-2, d.compareTo(e));
+        assertEquals(-20, d.compareTo(e));
 
-        assertEquals(2, e.compareTo(a));
-        assertEquals(2, e.compareTo(b));
-        assertEquals(2, e.compareTo(c));
-        assertEquals(2, e.compareTo(d));
+        assertEquals(20, e.compareTo(a));
+        assertEquals(20, e.compareTo(b));
+        assertEquals(20, e.compareTo(c));
+        assertEquals(20, e.compareTo(d));
         assertEquals(0, e.compareTo(e));
     }
 
