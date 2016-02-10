@@ -116,4 +116,14 @@ public class PortManagerIT {
 
         portManager.close();
     }
+
+    @Test(expected = PortReservationException.class)
+    public void testGetReservationException() throws Exception {
+        final SharedCount mockedSharedCount = Mockito.mock(SharedCount.class);
+        Mockito.when(mockedSharedCount.trySetCount(Mockito.any(), Mockito.anyInt())).thenThrow(new Exception("Fake"));
+        final PortManager portManager = Mockito.mock(PortManager.class);
+        Mockito.doCallRealMethod().when(portManager).getReservation(Mockito.any(), Mockito.any());
+        Mockito.when(portManager.getPortReservation()).thenReturn(mockedSharedCount);
+        portManager.getReservation(ServiceType.CONFIG, "localhost");
+    }
 }

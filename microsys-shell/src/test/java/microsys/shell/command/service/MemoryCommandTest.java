@@ -8,6 +8,7 @@ import org.mockito.Mockito;
 
 import microsys.common.model.ServiceType;
 import microsys.service.client.ServiceClient;
+import microsys.service.discovery.DiscoveryException;
 import microsys.service.discovery.DiscoveryManager;
 import microsys.service.model.Service;
 import microsys.service.model.ServiceMemory;
@@ -356,12 +357,16 @@ public class MemoryCommandTest {
 
     @Test
     public void testHandleMemoryException() throws Exception {
-        final MemoryCommand memCommand = new MemoryCommand(getShellEnvironment());
+        final DiscoveryManager discoveryManager = Mockito.mock(DiscoveryManager.class);
+        Mockito.when(discoveryManager.getAll()).thenThrow(new DiscoveryException("Fake"));
+        final ShellEnvironment shellEnvironment = Mockito.mock(ShellEnvironment.class);
+        Mockito.when(shellEnvironment.getDiscoveryManager()).thenReturn(discoveryManager);
+
+        final MemoryCommand memCommand = new MemoryCommand(shellEnvironment);
 
         final CommandPath commandPath = new CommandPath("service", "memory");
         final UserCommand userCommand = Mockito.mock(UserCommand.class);
         Mockito.when(userCommand.getCommandPath()).thenReturn(commandPath);
-        Mockito.when(userCommand.getCommandLine()).thenThrow(new RuntimeException("Fake"));
         final StringWriter stringWriter = new StringWriter();
         final PrintWriter writer = new PrintWriter(stringWriter, true);
 
@@ -370,7 +375,7 @@ public class MemoryCommandTest {
 
         final List<String> output = Arrays.asList(stringWriter.getBuffer().toString().split(System.lineSeparator()));
         assertEquals(1, output.size());
-        assertEquals("Failed to retrieve available services: RuntimeException: Fake", output.get(0));
+        assertEquals("Failed to retrieve available services: DiscoveryException: Fake", output.get(0));
     }
 
     @Test

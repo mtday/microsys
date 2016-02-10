@@ -148,4 +148,13 @@ public class ServiceInfoTest {
         final JsonObject json = new JsonParser().parse(jsonStr).getAsJsonObject();
         new ServiceInfo(json);
     }
+
+    @Test
+    public void testConverter() {
+        final ServiceInfo.ServiceInfoConverter converter = new ServiceInfo.ServiceInfoConverter();
+        final ServiceInfo original = new ServiceInfo(ServiceType.CONFIG, "system-name", "1.2.3");
+        final JsonObject json = converter.doBackward(original);
+        final ServiceInfo copy = converter.doForward(json);
+        assertEquals(original, copy);
+    }
 }

@@ -21,7 +21,7 @@ public class RequestLoggingFilter implements Filter {
      * {@inheritDoc}
      */
     @Override
-    public void handle(final Request request, final Response response) throws Exception {
+    public void handle(final Request request, final Response response) {
         LOG.info(getMessage(Objects.requireNonNull(request)));
     }
 

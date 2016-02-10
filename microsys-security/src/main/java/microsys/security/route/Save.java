@@ -11,8 +11,10 @@ import spark.Request;
 import spark.Response;
 
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import javax.servlet.http.HttpServletResponse;
 
@@ -32,7 +34,8 @@ public class Save extends BaseUserRoute {
      * {@inheritDoc}
      */
     @Override
-    public Object handle(final Request request, final Response response) throws Exception {
+    public Object handle(final Request request, final Response response)
+            throws ExecutionException, InterruptedException, TimeoutException {
         try {
             final String body = request.body();
             Preconditions.checkArgument(body != null, "User object must be provided");

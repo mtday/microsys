@@ -3,6 +3,8 @@ package microsys.service.model;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 
+import com.google.gson.JsonObject;
+
 import org.junit.Test;
 
 import java.lang.management.MemoryUsage;
@@ -72,6 +74,16 @@ public class ServiceMemoryTest {
         final ServiceMemory original =
                 new ServiceMemory(new MemoryUsage(-1, 100, 200, 200), new MemoryUsage(-1, 350, 400, 400));
         final ServiceMemory copy = new ServiceMemory(original.toJson());
+        assertEquals(original, copy);
+    }
+
+    @Test
+    public void testConverter() {
+        final ServiceMemory.ServiceMemoryConverter converter = new ServiceMemory.ServiceMemoryConverter();
+        final ServiceMemory original =
+                new ServiceMemory(new MemoryUsage(-1, 100, 200, 200), new MemoryUsage(-1, 350, 400, 400));
+        final JsonObject json = converter.doBackward(original);
+        final ServiceMemory copy = converter.doForward(json);
         assertEquals(original, copy);
     }
 }

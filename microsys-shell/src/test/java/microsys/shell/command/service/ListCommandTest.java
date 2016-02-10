@@ -7,6 +7,7 @@ import org.junit.Test;
 import org.mockito.Mockito;
 
 import microsys.common.model.ServiceType;
+import microsys.service.discovery.DiscoveryException;
 import microsys.service.discovery.DiscoveryManager;
 import microsys.service.model.Service;
 import microsys.shell.model.CommandPath;
@@ -295,12 +296,16 @@ public class ListCommandTest {
 
     @Test
     public void testHandleListException() throws Exception {
-        final ListCommand listCommand = new ListCommand(getShellEnvironment());
+        final DiscoveryManager discoveryManager = Mockito.mock(DiscoveryManager.class);
+        Mockito.when(discoveryManager.getAll()).thenThrow(new DiscoveryException("Fake"));
+        final ShellEnvironment shellEnvironment = Mockito.mock(ShellEnvironment.class);
+        Mockito.when(shellEnvironment.getDiscoveryManager()).thenReturn(discoveryManager);
+
+        final ListCommand listCommand = new ListCommand(shellEnvironment);
 
         final CommandPath commandPath = new CommandPath("service", "list");
         final UserCommand userCommand = Mockito.mock(UserCommand.class);
         Mockito.when(userCommand.getCommandPath()).thenReturn(commandPath);
-        Mockito.when(userCommand.getCommandLine()).thenThrow(new RuntimeException("Fake"));
         final StringWriter stringWriter = new StringWriter();
         final PrintWriter writer = new PrintWriter(stringWriter, true);
 
@@ -309,6 +314,6 @@ public class ListCommandTest {
 
         final List<String> output = Arrays.asList(stringWriter.getBuffer().toString().split(System.lineSeparator()));
         assertEquals(1, output.size());
-        assertEquals("Failed to retrieve available services: RuntimeException: Fake", output.get(0));
+        assertEquals("Failed to retrieve available services: DiscoveryException: Fake", output.get(0));
     }
 }

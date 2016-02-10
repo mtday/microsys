@@ -1,4 +1,4 @@
-package microsys.config.client;
+package microsys.security.client;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -22,10 +22,8 @@ import org.slf4j.LoggerFactory;
 import ch.qos.logback.classic.Level;
 import microsys.common.config.CommonConfig;
 import microsys.common.model.ServiceType;
-import microsys.config.model.ConfigKeyValue;
-import microsys.config.model.ConfigKeyValueCollection;
-import microsys.config.runner.Runner;
-import microsys.config.service.CuratorConfigService;
+import microsys.security.model.User;
+import microsys.security.runner.Runner;
 import microsys.service.BaseService;
 import microsys.service.discovery.DiscoveryManager;
 import microsys.service.filter.RequestLoggingFilter;
@@ -35,6 +33,7 @@ import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import spark.webserver.JettySparkServer;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -47,9 +46,9 @@ import java.util.logging.LogManager;
 import javax.servlet.http.HttpServletResponse;
 
 /**
- * Perform testing of the {@link ConfigClient} class.
+ * Perform testing of the {@link SecurityClient} class.
  */
-public class ConfigClientIT {
+public class SecurityClientIT {
     private static TestingServer testingServer;
     private static ExecutorService executor;
     private static CuratorFramework curator;
@@ -61,7 +60,6 @@ public class ConfigClientIT {
     @BeforeClass
     public static void before() throws Exception {
         // Don't want to see too much logging output.
-        ((ch.qos.logback.classic.Logger) LoggerFactory.getLogger(CuratorConfigService.class)).setLevel(Level.OFF);
         ((ch.qos.logback.classic.Logger) LoggerFactory.getLogger(JettySparkServer.class)).setLevel(Level.OFF);
         ((ch.qos.logback.classic.Logger) LoggerFactory.getLogger(BaseService.class)).setLevel(Level.OFF);
         ((ch.qos.logback.classic.Logger) LoggerFactory.getLogger(RequestLoggingFilter.class)).setLevel(Level.OFF);
@@ -74,9 +72,9 @@ public class ConfigClientIT {
         final Config config = ConfigFactory.parseMap(map).withFallback(ConfigFactory.load());
 
         executor = Executors.newFixedThreadPool(3);
-        curator =
-                CuratorFrameworkFactory.builder().namespace("namespace").connectString(testingServer.getConnectString())
-                        .defaultData(new byte[0]).retryPolicy(new ExponentialBackoffRetry(1000, 3)).build();
+        curator = CuratorFrameworkFactory.builder().namespace("sec-client")
+                .connectString(testingServer.getConnectString()).defaultData(new byte[0])
+                .retryPolicy(new ExponentialBackoffRetry(1000, 3)).build();
         curator.start();
         discovery = new DiscoveryManager(config, curator);
         runner = new Runner(config, executor, curator, discovery);
@@ -115,118 +113,123 @@ public class ConfigClientIT {
 
     @Test
     public void test() throws Exception {
-        final ConfigClient client = new ConfigClient(executor, discovery, httpClient);
+        final SecurityClient client = new SecurityClient(executor, discovery, httpClient);
 
-        final ConfigKeyValueCollection coll = client.getAll().get();
-        assertEquals(0, coll.size());
+        final Optional<User> byId = client.getById("id").get();
+        assertFalse(byId.isPresent());
 
-        assertFalse(client.set(new ConfigKeyValue("key", "value")).get().isPresent());
+        final Optional<User> byName = client.getByName("name").get();
+        assertFalse(byName.isPresent());
 
-        // Wait a little to allow the value to be stored.
-        TimeUnit.MILLISECONDS.sleep(300);
+        final Optional<User> missing = client.remove("id").get();
+        assertFalse(missing.isPresent());
 
-        final ConfigKeyValueCollection afterSet = client.getAll().get();
-        assertEquals(1, afterSet.size());
+        final User user = new User("id", "name", Arrays.asList("A", "B"));
+        final Optional<User> save = client.save(user).get();
+        assertFalse(save.isPresent());
 
-        // Overwrite the previous value.
-        final Optional<ConfigKeyValue> oldValue = client.set(new ConfigKeyValue("key", "new-value")).get();
-        assertTrue(oldValue.isPresent());
-        assertEquals(new ConfigKeyValue("key", "value"), oldValue.get());
+        final Optional<User> byIdExists = client.getById(user.getId()).get();
+        assertTrue(byIdExists.isPresent());
+        assertEquals(user, byIdExists.get());
 
-        // Wait a little to allow the value to be stored.
-        TimeUnit.MILLISECONDS.sleep(300);
+        final Optional<User> byNameExists = client.getByName(user.getUserName()).get();
+        assertTrue(byNameExists.isPresent());
+        assertEquals(user, byNameExists.get());
 
-        final Optional<ConfigKeyValue> get = client.get("key").get();
-        assertTrue(get.isPresent());
-        assertEquals(new ConfigKeyValue("key", "new-value"), get.get());
+        final User updatedUser = new User(user.getId(), user.getUserName() + "2", Arrays.asList("A", "B", "C"));
+        final Optional<User> save2 = client.save(updatedUser).get();
+        assertTrue(save2.isPresent());
+        assertEquals(user, save2.get());
 
-        final Optional<ConfigKeyValue> unset = client.unset("key").get();
-        assertTrue(unset.isPresent());
-        assertEquals(new ConfigKeyValue("key", "new-value"), unset.get());
+        final Optional<User> byIdUpdated = client.getById(updatedUser.getId()).get();
+        assertTrue(byIdUpdated.isPresent());
+        assertEquals(updatedUser, byIdUpdated.get());
 
-        final Optional<ConfigKeyValue> getMissing = client.get("missing").get();
-        assertFalse(getMissing.isPresent());
+        final Optional<User> byNameUpdated = client.getByName(updatedUser.getUserName()).get();
+        assertTrue(byNameUpdated.isPresent());
+        assertEquals(updatedUser, byNameUpdated.get());
 
-        final Optional<ConfigKeyValue> unsetMissing = client.unset("missing").get();
-        assertFalse(unsetMissing.isPresent());
+        final Optional<User> removed = client.remove(updatedUser.getId()).get();
+        assertTrue(removed.isPresent());
+        assertEquals(updatedUser, removed.get());
     }
 
     @Test(expected = ExecutionException.class)
-    public void testNoConfigServiceGetAll() throws Exception {
+    public void testNoSecurityServiceGetById() throws Exception {
         final DiscoveryManager mockDiscovery = Mockito.mock(DiscoveryManager.class);
-        Mockito.when(mockDiscovery.getRandom(ServiceType.CONFIG)).thenReturn(Optional.empty());
+        Mockito.when(mockDiscovery.getRandom(ServiceType.SECURITY)).thenReturn(Optional.empty());
 
-        final ConfigClient client = new ConfigClient(executor, mockDiscovery, httpClient);
-        client.getAll().get();
+        final SecurityClient client = new SecurityClient(executor, mockDiscovery, httpClient);
+        client.getById("id").get();
     }
 
     @Test(expected = ExecutionException.class)
-    public void testNoConfigServiceGet() throws Exception {
+    public void testNoSecurityServiceGetByName() throws Exception {
         final DiscoveryManager mockDiscovery = Mockito.mock(DiscoveryManager.class);
-        Mockito.when(mockDiscovery.getRandom(ServiceType.CONFIG)).thenReturn(Optional.empty());
+        Mockito.when(mockDiscovery.getRandom(ServiceType.SECURITY)).thenReturn(Optional.empty());
 
-        final ConfigClient client = new ConfigClient(executor, mockDiscovery, httpClient);
-        client.get("key").get();
+        final SecurityClient client = new SecurityClient(executor, mockDiscovery, httpClient);
+        client.getByName("name").get();
     }
 
     @Test(expected = ExecutionException.class)
-    public void testNoConfigServiceSet() throws Exception {
+    public void testNoSecurityServiceSave() throws Exception {
         final DiscoveryManager mockDiscovery = Mockito.mock(DiscoveryManager.class);
-        Mockito.when(mockDiscovery.getRandom(ServiceType.CONFIG)).thenReturn(Optional.empty());
+        Mockito.when(mockDiscovery.getRandom(ServiceType.SECURITY)).thenReturn(Optional.empty());
 
-        final ConfigClient client = new ConfigClient(executor, mockDiscovery, httpClient);
-        client.set(new ConfigKeyValue("key", "value")).get();
+        final SecurityClient client = new SecurityClient(executor, mockDiscovery, httpClient);
+        client.save(new User("id", "name", Arrays.asList("A", "B"))).get();
     }
 
     @Test(expected = ExecutionException.class)
-    public void testNoConfigServiceUnset() throws Exception {
+    public void testNoSecurityServiceUnset() throws Exception {
         final DiscoveryManager mockDiscovery = Mockito.mock(DiscoveryManager.class);
-        Mockito.when(mockDiscovery.getRandom(ServiceType.CONFIG)).thenReturn(Optional.empty());
+        Mockito.when(mockDiscovery.getRandom(ServiceType.SECURITY)).thenReturn(Optional.empty());
 
-        final ConfigClient client = new ConfigClient(executor, mockDiscovery, httpClient);
-        client.unset("key").get();
+        final SecurityClient client = new SecurityClient(executor, mockDiscovery, httpClient);
+        client.remove("id").get();
     }
 
     @Test(expected = ExecutionException.class)
-    public void testGetAllInvalidResponse() throws Exception {
+    public void testGetByIdInvalidResponse() throws Exception {
         final MockResponse response = new MockResponse();
         response.setResponseCode(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
         mockServer.enqueue(response);
 
         final DiscoveryManager mockDiscovery = Mockito.mock(DiscoveryManager.class);
-        Mockito.when(mockDiscovery.getRandom(ServiceType.CONFIG)).thenReturn(Optional.of(
-                new Service(ServiceType.CONFIG, mockServer.getHostName(), mockServer.getPort(), false, "1.2.3")));
+        Mockito.when(mockDiscovery.getRandom(ServiceType.SECURITY)).thenReturn(Optional.of(
+                new Service(ServiceType.SECURITY, mockServer.getHostName(), mockServer.getPort(), false, "1.2.3")));
 
-        final ConfigClient client = new ConfigClient(executor, mockDiscovery, httpClient);
-        client.getAll().get();
+        final SecurityClient client = new SecurityClient(executor, mockDiscovery, httpClient);
+        client.getById("id").get();
     }
 
     @Test(expected = ExecutionException.class)
-    public void testGetInvalidResponse() throws Exception {
+    public void testGetByNameInvalidResponse() throws Exception {
         final MockResponse response = new MockResponse();
         response.setResponseCode(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
         mockServer.enqueue(response);
 
         final DiscoveryManager mockDiscovery = Mockito.mock(DiscoveryManager.class);
-        Mockito.when(mockDiscovery.getRandom(ServiceType.CONFIG)).thenReturn(Optional.of(
-                new Service(ServiceType.CONFIG, mockServer.getHostName(), mockServer.getPort(), false, "1.2.3")));
+        Mockito.when(mockDiscovery.getRandom(ServiceType.SECURITY)).thenReturn(Optional.of(
+                new Service(ServiceType.SECURITY, mockServer.getHostName(), mockServer.getPort(), false, "1.2.3")));
 
-        final ConfigClient client = new ConfigClient(executor, mockDiscovery, httpClient);
-        client.get("key").get();
+        final SecurityClient client = new SecurityClient(executor, mockDiscovery, httpClient);
+        client.getByName("name").get();
     }
 
     @Test(expected = ExecutionException.class)
-    public void testSetInvalidResponse() throws Exception {
+    public void testSaveInvalidResponse() throws Exception {
         final MockResponse response = new MockResponse();
         response.setResponseCode(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
         mockServer.enqueue(response);
 
         final DiscoveryManager mockDiscovery = Mockito.mock(DiscoveryManager.class);
-        Mockito.when(mockDiscovery.getRandom(ServiceType.CONFIG)).thenReturn(Optional.of(
-                new Service(ServiceType.CONFIG, mockServer.getHostName(), mockServer.getPort(), false, "1.2.3")));
+        Mockito.when(mockDiscovery.getRandom(ServiceType.SECURITY)).thenReturn(Optional.of(
+                new Service(ServiceType.SECURITY, mockServer.getHostName(), mockServer.getPort(), false, "1.2.3")));
 
-        final ConfigClient client = new ConfigClient(executor, mockDiscovery, httpClient);
-        client.set(new ConfigKeyValue("key", "value")).get();
+        final SecurityClient client = new SecurityClient(executor, mockDiscovery, httpClient);
+        client.save(new User("id", "name", Arrays.asList("A", "B"))).get();
     }
 
     @Test(expected = ExecutionException.class)
@@ -236,10 +239,10 @@ public class ConfigClientIT {
         mockServer.enqueue(response);
 
         final DiscoveryManager mockDiscovery = Mockito.mock(DiscoveryManager.class);
-        Mockito.when(mockDiscovery.getRandom(ServiceType.CONFIG)).thenReturn(Optional.of(
-                new Service(ServiceType.CONFIG, mockServer.getHostName(), mockServer.getPort(), false, "1.2.3")));
+        Mockito.when(mockDiscovery.getRandom(ServiceType.SECURITY)).thenReturn(Optional.of(
+                new Service(ServiceType.SECURITY, mockServer.getHostName(), mockServer.getPort(), false, "1.2.3")));
 
-        final ConfigClient client = new ConfigClient(executor, mockDiscovery, httpClient);
-        client.unset("key").get();
+        final SecurityClient client = new SecurityClient(executor, mockDiscovery, httpClient);
+        client.remove("id").get();
     }
 }

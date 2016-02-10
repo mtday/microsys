@@ -7,7 +7,9 @@ import microsys.config.service.ConfigService;
 import spark.Request;
 import spark.Response;
 
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import javax.servlet.http.HttpServletResponse;
 
@@ -27,7 +29,8 @@ public class GetAll extends BaseConfigRoute {
      * {@inheritDoc}
      */
     @Override
-    public Object handle(final Request request, final Response response) throws Exception {
+    public Object handle(final Request request, final Response response)
+            throws ExecutionException, InterruptedException, TimeoutException {
         response.status(HttpServletResponse.SC_OK);
         response.type(MediaType.JSON_UTF_8.type());
 

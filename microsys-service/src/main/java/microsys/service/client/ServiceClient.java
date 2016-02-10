@@ -15,8 +15,8 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Request.Builder;
 import okhttp3.Response;
-import okhttp3.ResponseBody;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -67,18 +67,19 @@ public class ServiceClient {
      * @param url       the URL path to invoke with a {@code GET} request on the service
      * @param converter the {@link Converter} object used to transform the {@link JsonObject} into the return object
      * @return the {@link JsonObject} returned from the service
+     * @throws IOException if there is a problem with I/O when fetching the data
+     * @throws ServiceException if there was a problem on the remote service
      */
     protected <T> T get(final Service service, final String url, final Converter<JsonObject, T> converter)
-            throws Exception {
+            throws IOException, ServiceException {
         final Request request = new Builder().url(service.asUrl() + url).get().build();
         final Response response = getHttpClient().newCall(request).execute();
-        try (final ResponseBody responseBody = response.body()) {
-            switch (response.code()) {
-                case HttpServletResponse.SC_OK:
-                    return converter.convert(new JsonParser().parse(responseBody.string()).getAsJsonObject());
-                default:
-                    throw new Exception(responseBody.string());
-            }
+        final String responseBody = response.body().string();
+        switch (response.code()) {
+            case HttpServletResponse.SC_OK:
+                return converter.convert(new JsonParser().parse(responseBody).getAsJsonObject());
+            default:
+                throw new ServiceException(responseBody);
         }
     }
 
@@ -106,7 +107,7 @@ public class ServiceClient {
                     final String service =
                             String.format("%s:%d (%s)", entry.getKey().getHost(), entry.getKey().getPort(),
                                     entry.getKey().getType().name());
-                    throw new Exception("Failed to retrieve response data for " + service, failed);
+                    throw new ServiceException("Failed to retrieve response data for " + service, failed);
                 }
             }
             return map;

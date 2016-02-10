@@ -1,13 +1,15 @@
 package microsys.service;
 
-import ch.qos.logback.classic.Level;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigValue;
 import com.typesafe.config.ConfigValueFactory;
-import microsys.common.config.CommonConfig;
-import microsys.common.model.ServiceType;
-import microsys.service.discovery.DiscoveryManager;
+
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.retry.ExponentialBackoffRetry;
@@ -16,6 +18,12 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.slf4j.LoggerFactory;
+
+import ch.qos.logback.classic.Level;
+import microsys.common.config.CommonConfig;
+import microsys.common.model.ServiceType;
+import microsys.service.discovery.DiscoveryException;
+import microsys.service.discovery.DiscoveryManager;
 import spark.webserver.JettySparkServer;
 
 import java.io.File;
@@ -25,11 +33,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 
 /**
  * Perform testing of the {@link BaseService} class.
@@ -125,8 +128,8 @@ public class BaseServiceIT {
 
             final ExecutorService executor = Executors.newFixedThreadPool(2);
             final DiscoveryManager discovery = Mockito.mock(DiscoveryManager.class);
-            Mockito.doThrow(new Exception("Fake")).when(discovery).register(Mockito.any());
-            Mockito.doThrow(new Exception("Fake")).when(discovery).unregister(Mockito.any());
+            Mockito.doThrow(new DiscoveryException("Fake")).when(discovery).register(Mockito.any());
+            Mockito.doThrow(new DiscoveryException("Fake")).when(discovery).unregister(Mockito.any());
 
             baseService = new BaseService(config, executor, curator, discovery, ServiceType.CONFIG) {
             };

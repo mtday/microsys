@@ -3,6 +3,7 @@ package microsys.shell.command.service;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
+import microsys.service.discovery.DiscoveryException;
 import microsys.service.model.Service;
 import microsys.shell.model.CommandPath;
 import microsys.shell.model.CommandStatus;
@@ -63,7 +64,7 @@ public class ListCommand extends BaseServiceCommand {
 
             writer.println(new ServiceSummary(services.size(), output.size()));
             output.forEach(writer::println);
-        } catch (final Exception exception) {
+        } catch (final DiscoveryException exception) {
             writer.println("Failed to retrieve available services: " + ExceptionUtils.getMessage(exception));
         }
 

@@ -122,4 +122,48 @@ public class DiscoveryManagerIT {
         Mockito.doCallRealMethod().when(discovery).close();
         discovery.close();
     }
+
+    @SuppressWarnings("unchecked")
+    @Test(expected = DiscoveryException.class)
+    public void testRegisterWithException() throws Exception {
+        final ServiceDiscovery<String> serviceDiscovery = Mockito.mock(ServiceDiscovery.class);
+        Mockito.doThrow(new Exception("Fake")).when(serviceDiscovery).registerService(Mockito.any());
+        final DiscoveryManager discovery = Mockito.mock(DiscoveryManager.class);
+        Mockito.when(discovery.getDiscovery()).thenReturn(serviceDiscovery);
+        Mockito.doCallRealMethod().when(discovery).register(Mockito.any());
+        discovery.register(new Service(ServiceType.CONFIG, "host", 1234, false, "1.2.3"));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test(expected = DiscoveryException.class)
+    public void testUnregisterWithException() throws Exception {
+        final ServiceDiscovery<String> serviceDiscovery = Mockito.mock(ServiceDiscovery.class);
+        Mockito.doThrow(new Exception("Fake")).when(serviceDiscovery).unregisterService(Mockito.any());
+        final DiscoveryManager discovery = Mockito.mock(DiscoveryManager.class);
+        Mockito.when(discovery.getDiscovery()).thenReturn(serviceDiscovery);
+        Mockito.doCallRealMethod().when(discovery).unregister(Mockito.any());
+        discovery.unregister(new Service(ServiceType.CONFIG, "host", 1234, false, "1.2.3"));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test(expected = DiscoveryException.class)
+    public void testGetAllForServiceTypeWithException() throws Exception {
+        final ServiceDiscovery<String> serviceDiscovery = Mockito.mock(ServiceDiscovery.class);
+        Mockito.doThrow(new Exception("Fake")).when(serviceDiscovery).queryForInstances(Mockito.anyString());
+        final DiscoveryManager discovery = Mockito.mock(DiscoveryManager.class);
+        Mockito.when(discovery.getDiscovery()).thenReturn(serviceDiscovery);
+        Mockito.doCallRealMethod().when(discovery).getAll(Mockito.any());
+        discovery.getAll(ServiceType.CONFIG);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test(expected = DiscoveryException.class)
+    public void testGetRandomWithException() throws Exception {
+        final ServiceDiscovery<String> serviceDiscovery = Mockito.mock(ServiceDiscovery.class);
+        Mockito.doThrow(new Exception("Fake")).when(serviceDiscovery).queryForInstances(Mockito.anyString());
+        final DiscoveryManager discovery = Mockito.mock(DiscoveryManager.class);
+        Mockito.when(discovery.getDiscovery()).thenReturn(serviceDiscovery);
+        Mockito.doCallRealMethod().when(discovery).getRandom(Mockito.any());
+        discovery.getRandom(ServiceType.CONFIG);
+    }
 }

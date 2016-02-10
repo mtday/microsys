@@ -10,8 +10,10 @@ import org.slf4j.LoggerFactory;
 
 import microsys.common.config.CommonConfig;
 import microsys.common.model.ServiceType;
+import microsys.service.discovery.DiscoveryException;
 import microsys.service.discovery.DiscoveryManager;
 import microsys.service.discovery.port.PortManager;
+import microsys.service.discovery.port.PortReservationException;
 import microsys.service.filter.RequestLoggingFilter;
 import microsys.service.model.Reservation;
 import microsys.service.model.Service;
@@ -26,6 +28,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * The base class for a micro service in this system.
@@ -50,7 +53,7 @@ public abstract class BaseService {
      * @param serverStopLatch the {@link CountDownLatch} used to manage the running server process
      */
     public BaseService(final Config config, final ServiceType serviceType, final CountDownLatch serverStopLatch)
-            throws Exception {
+            throws DiscoveryException, TimeoutException, InterruptedException, PortReservationException {
         this.config = Objects.requireNonNull(config);
         this.serviceType = Objects.requireNonNull(serviceType);
         this.serverStopLatch = Optional.of(Objects.requireNonNull(serverStopLatch));
@@ -71,7 +74,8 @@ public abstract class BaseService {
      */
     public BaseService(
             final Config config, final ExecutorService executor, final CuratorFramework curator,
-            final DiscoveryManager discoveryManager, final ServiceType serviceType) throws Exception {
+            final DiscoveryManager discoveryManager, final ServiceType serviceType)
+            throws DiscoveryException, TimeoutException, InterruptedException, PortReservationException {
         this.config = Objects.requireNonNull(config);
         this.executor = Objects.requireNonNull(executor);
         this.curator = Objects.requireNonNull(curator);
@@ -150,7 +154,7 @@ public abstract class BaseService {
     }
 
     protected DiscoveryManager createDiscoveryManager(final Config config, final CuratorFramework curator)
-            throws Exception {
+            throws DiscoveryException {
         return new DiscoveryManager(Objects.requireNonNull(config), Objects.requireNonNull(curator));
     }
 
@@ -158,7 +162,7 @@ public abstract class BaseService {
         return Executors.newFixedThreadPool(config.getInt(CommonConfig.EXECUTOR_THREADS.getKey()));
     }
 
-    protected CuratorFramework createCurator(final Config config) throws Exception {
+    protected CuratorFramework createCurator(final Config config) throws InterruptedException, TimeoutException {
         final String zookeepers = config.getString(CommonConfig.ZOOKEEPER_HOSTS.getKey());
         final String namespace = config.getString(CommonConfig.SYSTEM_NAME.getKey());
         final CuratorFramework curator =
@@ -166,7 +170,7 @@ public abstract class BaseService {
                         .defaultData(new byte[0]).retryPolicy(new ExponentialBackoffRetry(1000, 3)).build();
         curator.start();
         if (!curator.blockUntilConnected(1500, TimeUnit.MILLISECONDS)) {
-            throw new Exception("Failed to connect to zookeeper");
+            throw new TimeoutException("Failed to connect to zookeeper");
         }
         return curator;
     }
@@ -206,10 +210,9 @@ public abstract class BaseService {
 
     /**
      * Start the service.
-     *
-     * @throws Exception if there is a problem starting the service
+     * @throws PortReservationException if there is a problem reserving the port for the service
      */
-    public void start() throws Exception {
+    public void start() throws PortReservationException {
         // Configure the service.
         final PortManager portManager = new PortManager(getConfig(), getCurator());
         final Reservation reservation = portManager.getReservation(getServiceType(), getHostName());
@@ -235,7 +238,7 @@ public abstract class BaseService {
                 if (getService().isPresent()) {
                     getDiscoveryManager().register(getService().get());
                 }
-            } catch (final Exception registerFailed) {
+            } catch (final DiscoveryException registerFailed) {
                 LOG.error("Failed to register with service discovery", registerFailed);
                 stop();
             }
@@ -251,7 +254,7 @@ public abstract class BaseService {
                 getDiscoveryManager().unregister(getService().get());
                 this.service = Optional.empty();
             }
-        } catch (final Exception unregisterFailed) {
+        } catch (final DiscoveryException unregisterFailed) {
             // Not really an issue because the ephemeral registration will disappear automatically soon.
             LOG.warn("Failed to unregister with service discovery", unregisterFailed);
         }

@@ -8,6 +8,7 @@ import org.mockito.Mockito;
 
 import microsys.common.model.ServiceType;
 import microsys.service.client.ServiceClient;
+import microsys.service.discovery.DiscoveryException;
 import microsys.service.discovery.DiscoveryManager;
 import microsys.service.model.Service;
 import microsys.service.model.ServiceControlStatus;
@@ -70,9 +71,9 @@ public class ControlCommandTest {
     @Test
     public void testGetRegistrations() {
         final ShellEnvironment shellEnvironment = Mockito.mock(ShellEnvironment.class);
-        final ControlCommand memCommand = new ControlCommand(shellEnvironment);
+        final ControlCommand ctrlCommand = new ControlCommand(shellEnvironment);
 
-        final List<Registration> registrations = memCommand.getRegistrations();
+        final List<Registration> registrations = ctrlCommand.getRegistrations();
         assertEquals(2, registrations.size());
 
         final Registration stop = registrations.get(0);
@@ -94,7 +95,7 @@ public class ControlCommandTest {
 
     @Test
     public void testProcess() throws Exception {
-        final ControlCommand memCommand = new ControlCommand(getShellEnvironment());
+        final ControlCommand ctrlCommand = new ControlCommand(getShellEnvironment());
 
         final CommandPath commandPath = new CommandPath("service", "control", "stop");
         final Registration reg = new Registration(commandPath, Optional.empty(), Optional.empty());
@@ -102,7 +103,7 @@ public class ControlCommandTest {
         final StringWriter stringWriter = new StringWriter();
         final PrintWriter writer = new PrintWriter(stringWriter, true);
 
-        final CommandStatus status = memCommand.process(userCommand, writer);
+        final CommandStatus status = ctrlCommand.process(userCommand, writer);
         assertEquals(CommandStatus.SUCCESS, status);
 
         final List<String> output = Arrays.asList(stringWriter.getBuffer().toString().split(System.lineSeparator()));
@@ -116,16 +117,16 @@ public class ControlCommandTest {
 
     @Test
     public void testProcessWithType() throws Exception {
-        final ControlCommand memCommand = new ControlCommand(getShellEnvironment());
+        final ControlCommand ctrlCommand = new ControlCommand(getShellEnvironment());
 
         final List<String> input = Arrays.asList("service", "control", "restart", "-t", ServiceType.CONFIG.name());
         final CommandPath commandPath = new CommandPath("service", "control", "restart");
-        final Registration reg = memCommand.getRegistrations().get(0);
+        final Registration reg = ctrlCommand.getRegistrations().get(0);
         final UserCommand userCommand = new UserCommand(commandPath, reg, input);
         final StringWriter stringWriter = new StringWriter();
         final PrintWriter writer = new PrintWriter(stringWriter, true);
 
-        final CommandStatus status = memCommand.process(userCommand, writer);
+        final CommandStatus status = ctrlCommand.process(userCommand, writer);
         assertEquals(CommandStatus.SUCCESS, status);
 
         final List<String> output = Arrays.asList(stringWriter.getBuffer().toString().split(System.lineSeparator()));
@@ -138,16 +139,16 @@ public class ControlCommandTest {
 
     @Test
     public void testProcessWithHost() throws Exception {
-        final ControlCommand memCommand = new ControlCommand(getShellEnvironment());
+        final ControlCommand ctrlCommand = new ControlCommand(getShellEnvironment());
 
         final List<String> input = Arrays.asList("service", "control", "stop", "-h", "host1");
         final CommandPath commandPath = new CommandPath("service", "control", "stop");
-        final Registration reg = memCommand.getRegistrations().get(0);
+        final Registration reg = ctrlCommand.getRegistrations().get(0);
         final UserCommand userCommand = new UserCommand(commandPath, reg, input);
         final StringWriter stringWriter = new StringWriter();
         final PrintWriter writer = new PrintWriter(stringWriter, true);
 
-        final CommandStatus status = memCommand.process(userCommand, writer);
+        final CommandStatus status = ctrlCommand.process(userCommand, writer);
         assertEquals(CommandStatus.SUCCESS, status);
 
         final List<String> output = Arrays.asList(stringWriter.getBuffer().toString().split(System.lineSeparator()));
@@ -161,16 +162,16 @@ public class ControlCommandTest {
 
     @Test
     public void testProcessWithPort() throws Exception {
-        final ControlCommand memCommand = new ControlCommand(getShellEnvironment());
+        final ControlCommand ctrlCommand = new ControlCommand(getShellEnvironment());
 
         final List<String> input = Arrays.asList("service", "control", "stop", "-p", "1234");
         final CommandPath commandPath = new CommandPath("service", "control", "stop");
-        final Registration reg = memCommand.getRegistrations().get(0);
+        final Registration reg = ctrlCommand.getRegistrations().get(0);
         final UserCommand userCommand = new UserCommand(commandPath, reg, input);
         final StringWriter stringWriter = new StringWriter();
         final PrintWriter writer = new PrintWriter(stringWriter, true);
 
-        final CommandStatus status = memCommand.process(userCommand, writer);
+        final CommandStatus status = ctrlCommand.process(userCommand, writer);
         assertEquals(CommandStatus.SUCCESS, status);
 
         final List<String> output = Arrays.asList(stringWriter.getBuffer().toString().split(System.lineSeparator()));
@@ -184,16 +185,16 @@ public class ControlCommandTest {
 
     @Test
     public void testProcessWithPortNotNumeric() throws Exception {
-        final ControlCommand memCommand = new ControlCommand(getShellEnvironment());
+        final ControlCommand ctrlCommand = new ControlCommand(getShellEnvironment());
 
         final List<String> input = Arrays.asList("service", "control", "stop", "-p", "abcd");
         final CommandPath commandPath = new CommandPath("service", "control", "stop");
-        final Registration reg = memCommand.getRegistrations().get(0);
+        final Registration reg = ctrlCommand.getRegistrations().get(0);
         final UserCommand userCommand = new UserCommand(commandPath, reg, input);
         final StringWriter stringWriter = new StringWriter();
         final PrintWriter writer = new PrintWriter(stringWriter, true);
 
-        final CommandStatus status = memCommand.process(userCommand, writer);
+        final CommandStatus status = ctrlCommand.process(userCommand, writer);
         assertEquals(CommandStatus.SUCCESS, status);
 
         final List<String> output = Arrays.asList(stringWriter.getBuffer().toString().split(System.lineSeparator()));
@@ -207,16 +208,16 @@ public class ControlCommandTest {
 
     @Test
     public void testProcessWithVersion() throws Exception {
-        final ControlCommand memCommand = new ControlCommand(getShellEnvironment());
+        final ControlCommand ctrlCommand = new ControlCommand(getShellEnvironment());
 
         final List<String> input = Arrays.asList("service", "control", "stop", "-v", "1.2.3");
         final CommandPath commandPath = new CommandPath("service", "control", "stop");
-        final Registration reg = memCommand.getRegistrations().get(0);
+        final Registration reg = ctrlCommand.getRegistrations().get(0);
         final UserCommand userCommand = new UserCommand(commandPath, reg, input);
         final StringWriter stringWriter = new StringWriter();
         final PrintWriter writer = new PrintWriter(stringWriter, true);
 
-        final CommandStatus status = memCommand.process(userCommand, writer);
+        final CommandStatus status = ctrlCommand.process(userCommand, writer);
         assertEquals(CommandStatus.SUCCESS, status);
 
         final List<String> output = Arrays.asList(stringWriter.getBuffer().toString().split(System.lineSeparator()));
@@ -230,16 +231,16 @@ public class ControlCommandTest {
 
     @Test
     public void testProcessNoMatchingServices() throws Exception {
-        final ControlCommand memCommand = new ControlCommand(getShellEnvironment());
+        final ControlCommand ctrlCommand = new ControlCommand(getShellEnvironment());
 
         final List<String> input = Arrays.asList("service", "control", "stop", "-h", "missing");
         final CommandPath commandPath = new CommandPath("service", "control", "stop");
-        final Registration reg = memCommand.getRegistrations().get(0);
+        final Registration reg = ctrlCommand.getRegistrations().get(0);
         final UserCommand userCommand = new UserCommand(commandPath, reg, input);
         final StringWriter stringWriter = new StringWriter();
         final PrintWriter writer = new PrintWriter(stringWriter, true);
 
-        final CommandStatus status = memCommand.process(userCommand, writer);
+        final CommandStatus status = ctrlCommand.process(userCommand, writer);
         assertEquals(CommandStatus.SUCCESS, status);
 
         final List<String> output = Arrays.asList(stringWriter.getBuffer().toString().split(System.lineSeparator()));
@@ -253,16 +254,16 @@ public class ControlCommandTest {
         Mockito.when(discoveryManager.getAll()).thenReturn(new TreeSet<>());
         final ShellEnvironment shellEnvironment = Mockito.mock(ShellEnvironment.class);
         Mockito.when(shellEnvironment.getDiscoveryManager()).thenReturn(discoveryManager);
-        final ControlCommand memCommand = new ControlCommand(shellEnvironment);
+        final ControlCommand ctrlCommand = new ControlCommand(shellEnvironment);
 
         final List<String> input = Arrays.asList("service", "control", "stop");
         final CommandPath commandPath = new CommandPath("service", "control", "stop");
-        final Registration reg = memCommand.getRegistrations().get(0);
+        final Registration reg = ctrlCommand.getRegistrations().get(0);
         final UserCommand userCommand = new UserCommand(commandPath, reg, input);
         final StringWriter stringWriter = new StringWriter();
         final PrintWriter writer = new PrintWriter(stringWriter, true);
 
-        final CommandStatus status = memCommand.process(userCommand, writer);
+        final CommandStatus status = ctrlCommand.process(userCommand, writer);
         assertEquals(CommandStatus.SUCCESS, status);
 
         final List<String> output = Arrays.asList(stringWriter.getBuffer().toString().split(System.lineSeparator()));
@@ -288,16 +289,16 @@ public class ControlCommandTest {
         final ShellEnvironment shellEnvironment = Mockito.mock(ShellEnvironment.class);
         Mockito.when(shellEnvironment.getServiceClient()).thenReturn(serviceClient);
         Mockito.when(shellEnvironment.getDiscoveryManager()).thenReturn(discoveryManager);
-        final ControlCommand memCommand = new ControlCommand(shellEnvironment);
+        final ControlCommand ctrlCommand = new ControlCommand(shellEnvironment);
 
         final List<String> input = Arrays.asList("service", "control", "stop");
         final CommandPath commandPath = new CommandPath("service", "control", "stop");
-        final Registration reg = memCommand.getRegistrations().get(0);
+        final Registration reg = ctrlCommand.getRegistrations().get(0);
         final UserCommand userCommand = new UserCommand(commandPath, reg, input);
         final StringWriter stringWriter = new StringWriter();
         final PrintWriter writer = new PrintWriter(stringWriter, true);
 
-        final CommandStatus status = memCommand.process(userCommand, writer);
+        final CommandStatus status = ctrlCommand.process(userCommand, writer);
         assertEquals(CommandStatus.SUCCESS, status);
 
         final List<String> output = Arrays.asList(stringWriter.getBuffer().toString().split(System.lineSeparator()));
@@ -328,16 +329,16 @@ public class ControlCommandTest {
         final ShellEnvironment shellEnvironment = Mockito.mock(ShellEnvironment.class);
         Mockito.when(shellEnvironment.getDiscoveryManager()).thenReturn(discoveryManager);
         Mockito.when(shellEnvironment.getServiceClient()).thenReturn(serviceClient);
-        final ControlCommand memCommand = new ControlCommand(shellEnvironment);
+        final ControlCommand ctrlCommand = new ControlCommand(shellEnvironment);
 
         final List<String> input = Arrays.asList("service", "control", "stop");
         final CommandPath commandPath = new CommandPath("service", "control", "stop");
-        final Registration reg = memCommand.getRegistrations().get(0);
+        final Registration reg = ctrlCommand.getRegistrations().get(0);
         final UserCommand userCommand = new UserCommand(commandPath, reg, input);
         final StringWriter stringWriter = new StringWriter();
         final PrintWriter writer = new PrintWriter(stringWriter, true);
 
-        final CommandStatus status = memCommand.process(userCommand, writer);
+        final CommandStatus status = ctrlCommand.process(userCommand, writer);
         assertEquals(CommandStatus.SUCCESS, status);
 
         final List<String> output = Arrays.asList(stringWriter.getBuffer().toString().split(System.lineSeparator()));
@@ -348,21 +349,25 @@ public class ControlCommandTest {
     }
 
     @Test
-    public void testHandleMemoryException() throws Exception {
-        final ControlCommand memCommand = new ControlCommand(getShellEnvironment());
+    public void testHandleException() throws Exception {
+        final DiscoveryManager discoveryManager = Mockito.mock(DiscoveryManager.class);
+        Mockito.when(discoveryManager.getAll()).thenThrow(new DiscoveryException("Fake"));
+        final ShellEnvironment shellEnvironment = Mockito.mock(ShellEnvironment.class);
+        Mockito.when(shellEnvironment.getDiscoveryManager()).thenReturn(discoveryManager);
+
+        final ControlCommand ctrlCommand = new ControlCommand(shellEnvironment);
 
         final CommandPath commandPath = new CommandPath("service", "control", "stop");
         final UserCommand userCommand = Mockito.mock(UserCommand.class);
         Mockito.when(userCommand.getCommandPath()).thenReturn(commandPath);
-        Mockito.when(userCommand.getCommandLine()).thenThrow(new RuntimeException("Fake"));
         final StringWriter stringWriter = new StringWriter();
         final PrintWriter writer = new PrintWriter(stringWriter, true);
 
-        final CommandStatus status = memCommand.process(userCommand, writer);
+        final CommandStatus status = ctrlCommand.process(userCommand, writer);
         assertEquals(CommandStatus.SUCCESS, status);
 
         final List<String> output = Arrays.asList(stringWriter.getBuffer().toString().split(System.lineSeparator()));
         assertEquals(1, output.size());
-        assertEquals("Failed to retrieve available services: RuntimeException: Fake", output.get(0));
+        assertEquals("Failed to retrieve available services: DiscoveryException: Fake", output.get(0));
     }
 }

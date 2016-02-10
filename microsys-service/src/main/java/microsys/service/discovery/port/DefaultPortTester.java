@@ -12,7 +12,7 @@ public class DefaultPortTester implements PortTester {
     /**
      * {@inheritDoc}
      */
-    public boolean isAvailable(final String host, final int port) throws Exception {
+    public boolean isAvailable(final String host, final int port) {
         try (final Socket socket = new Socket()) {
             socket.connect(new InetSocketAddress(host, port), (int) TimeUnit.SECONDS.toMillis(1));
             return false;

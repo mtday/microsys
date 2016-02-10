@@ -11,8 +11,10 @@ import spark.Request;
 import spark.Response;
 
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import javax.servlet.http.HttpServletResponse;
 
@@ -32,7 +34,8 @@ public class Get extends BaseConfigRoute {
      * {@inheritDoc}
      */
     @Override
-    public Object handle(final Request request, final Response response) throws Exception {
+    public Object handle(final Request request, final Response response)
+            throws ExecutionException, InterruptedException, TimeoutException {
         final String key = request.params("key");
 
         if (StringUtils.isEmpty(key)) {

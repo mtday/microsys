@@ -36,18 +36,27 @@ public class CuratorConfigService implements ConfigService, TreeCacheListener {
     /**
      * @param executor used to execute asynchronous processing of the configuration service
      * @param curator the {@link CuratorFramework} used to communicate configuration information with zookeeper
-     * @throws Exception if there is a problem with zookeeper communications
+     * @throws ConfigServiceException if there is a problem with zookeeper communications
      */
-    public CuratorConfigService(final ExecutorService executor, final CuratorFramework curator) throws Exception {
+    public CuratorConfigService(final ExecutorService executor, final CuratorFramework curator)
+            throws ConfigServiceException {
         this.executor = Objects.requireNonNull(executor);
         this.curator = Objects.requireNonNull(curator);
 
-        if (this.curator.checkExists().forPath(PATH) == null) {
-            this.curator.create().creatingParentsIfNeeded().forPath(PATH);
+        try {
+            if (this.curator.checkExists().forPath(PATH) == null) {
+                this.curator.create().creatingParentsIfNeeded().forPath(PATH);
+            }
+        } catch (final Exception exception) {
+            throw new ConfigServiceException("Failed to create path", exception);
         }
 
-        this.treeCache = new TreeCache(this.curator, PATH);
-        this.treeCache.start();
+        try {
+            this.treeCache = new TreeCache(this.curator, PATH);
+            this.treeCache.start();
+        } catch (final Exception exception) {
+            throw new ConfigServiceException("Failed to start tree cache", exception);
+        }
 
         // Add this class as a listener.
         this.treeCache.getListenable().addListener(this);
@@ -112,7 +121,6 @@ public class CuratorConfigService implements ConfigService, TreeCacheListener {
     @Override
     public Future<Optional<ConfigKeyValue>> get(final String key) {
         Objects.requireNonNull(key);
-
         return getExecutor().submit(() -> {
             final Optional<ChildData> existing = Optional.ofNullable(getTreeCache().getCurrentData(getPath(key)));
             if (existing.isPresent()) {
@@ -128,7 +136,6 @@ public class CuratorConfigService implements ConfigService, TreeCacheListener {
     @Override
     public Future<Optional<ConfigKeyValue>> set(final ConfigKeyValue kv) {
         Objects.requireNonNull(kv);
-
         return getExecutor().submit(() -> {
             final Optional<ChildData> existing =
                     Optional.ofNullable(getTreeCache().getCurrentData(getPath(kv.getKey())));
@@ -159,7 +166,6 @@ public class CuratorConfigService implements ConfigService, TreeCacheListener {
     @Override
     public Future<Optional<ConfigKeyValue>> unset(final String key) {
         Objects.requireNonNull(key);
-
         return getExecutor().submit(() -> {
             final Optional<ChildData> existing = Optional.ofNullable(getTreeCache().getCurrentData(getPath(key)));
             try {

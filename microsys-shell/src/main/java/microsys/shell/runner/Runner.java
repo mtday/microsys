@@ -11,6 +11,7 @@ import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.retry.ExponentialBackoffRetry;
 
 import microsys.common.config.CommonConfig;
+import microsys.service.discovery.DiscoveryException;
 import microsys.service.discovery.DiscoveryManager;
 import microsys.shell.ConsoleManager;
 import microsys.shell.RegistrationManager;
@@ -20,27 +21,30 @@ import microsys.shell.model.ShellEnvironment;
 import okhttp3.OkHttpClient;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * Launch the shell.
  */
 public class Runner {
-    private CuratorFramework curator;
     private ConsoleManager consoleManager;
     private ShellEnvironment shellEnvironment;
 
     /**
-     * @throws Exception if there is a problem creating the curator framework
+     * @throws TimeoutException if there is a problem connecting with zookeeper
+     * @throws InterruptedException if communications with zookeeper are interrupted
+     * @throws DiscoveryException if there is a problem starting service discovery
+     * @throws IOException if there is a problem starting the shell console
      */
-    protected Runner(final Config config) throws Exception {
-        this.curator = createCurator(config);
-
-        this.shellEnvironment = getShellEnvironment(config, curator);
+    protected Runner(final Config config)
+            throws TimeoutException, InterruptedException, DiscoveryException, IOException {
+        this.shellEnvironment = getShellEnvironment(config, createCurator(config));
         this.consoleManager = new ConsoleManager(config, shellEnvironment);
     }
 
@@ -60,15 +64,15 @@ public class Runner {
         return this.shellEnvironment;
     }
 
-    protected void run(final File file) throws Exception {
+    protected void run(final File file) throws IOException {
         getConsoleManager().run(Objects.requireNonNull(file));
     }
 
-    protected void run(final String command) throws Exception {
+    protected void run(final String command) throws IOException {
         getConsoleManager().run(Objects.requireNonNull(command));
     }
 
-    protected void run() throws Exception {
+    protected void run() throws IOException {
         // Blocks until the shell is finished.
         getConsoleManager().run();
     }
@@ -78,7 +82,7 @@ public class Runner {
     }
 
     protected ShellEnvironment getShellEnvironment(final Config config, final CuratorFramework curator)
-            throws Exception {
+            throws DiscoveryException {
         final ExecutorService executor =
                 Executors.newFixedThreadPool(config.getInt(CommonConfig.EXECUTOR_THREADS.getKey()));
         final DiscoveryManager discoveryManager = new DiscoveryManager(config, curator);
@@ -90,7 +94,7 @@ public class Runner {
         return shellEnvironment;
     }
 
-    protected CuratorFramework createCurator(final Config config) throws Exception {
+    protected CuratorFramework createCurator(final Config config) throws TimeoutException, InterruptedException {
         final String zookeepers = config.getString(CommonConfig.ZOOKEEPER_HOSTS.getKey());
         final String namespace = config.getString(CommonConfig.SYSTEM_NAME.getKey());
         final CuratorFramework curator =
@@ -98,12 +102,12 @@ public class Runner {
                         .retryPolicy(new ExponentialBackoffRetry(1000, 3)).build();
         curator.start();
         if (!curator.blockUntilConnected(2, TimeUnit.SECONDS)) {
-            throw new Exception("Failed to connect to zookeeper");
+            throw new TimeoutException("Failed to connect to zookeeper");
         }
         return curator;
     }
 
-    protected static void processCommandLine(final Runner runner, final String[] args) throws Exception {
+    protected static void processCommandLine(final Runner runner, final String[] args) throws IOException {
         final Option fileOption =
                 new Option("run shell commands provided by a file", "f", Optional.of("file"), Optional.of("file"), 1,
                         false, false, Optional.empty());
@@ -137,9 +141,13 @@ public class Runner {
 
     /**
      * @param args the command-line arguments
-     * @throws Exception if there is a problem running the shell
+     * @throws TimeoutException if there is a problem connecting with zookeeper
+     * @throws InterruptedException if communications with zookeeper are interrupted
+     * @throws DiscoveryException if there is a problem starting service discovery
+     * @throws IOException if there is a problem starting the shell console
      */
-    public static void main(final String... args) throws Exception {
+    public static void main(final String... args)
+            throws InterruptedException, TimeoutException, DiscoveryException, IOException {
         Runner.processCommandLine(new Runner(ConfigFactory.load()), args);
     }
 }

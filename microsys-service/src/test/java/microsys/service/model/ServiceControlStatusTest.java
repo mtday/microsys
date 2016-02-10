@@ -1,10 +1,12 @@
 package microsys.service.model;
 
-import com.google.gson.JsonParser;
-import org.junit.Test;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
+
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+
+import org.junit.Test;
 
 /**
  * Perform testing on the {@link ServiceControlStatus} class.
@@ -94,5 +96,15 @@ public class ServiceControlStatusTest {
     @Test(expected = IllegalArgumentException.class)
     public void testJsonConstructorActionWrongType() {
         new ServiceControlStatus(new JsonParser().parse("{\"success\":true,\"action\":[]}").getAsJsonObject());
+    }
+
+    @Test
+    public void testConverter() {
+        final ServiceControlStatus.ServiceControlStatusConverter converter =
+                new ServiceControlStatus.ServiceControlStatusConverter();
+        final ServiceControlStatus original = new ServiceControlStatus(true, "stop");
+        final JsonObject json = converter.doBackward(original);
+        final ServiceControlStatus copy = converter.doForward(json);
+        assertEquals(original, copy);
     }
 }

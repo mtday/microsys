@@ -8,7 +8,7 @@ public interface PortTester {
      * @param host the host on which the port should be checked
      * @param port the port number to test and determine if it is available
      * @return whether the specified host and port are available
-     * @throws Exception if there is a problem verifying that the port is available
+     * @throws PortReservationException if there is a problem verifying that the port is available
      */
-    boolean isAvailable(String host, int port) throws Exception;
+    boolean isAvailable(String host, int port) throws PortReservationException;
 }

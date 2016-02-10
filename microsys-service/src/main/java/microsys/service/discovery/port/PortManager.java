@@ -26,9 +26,9 @@ public class PortManager {
     /**
      * @param config the static system configuration information
      * @param curator the {@link CuratorFramework} that is managing zookeeper operations
-     * @throws Exception if there is a problem with zookeeper communication
+     * @throws PortReservationException if there is a problem with zookeeper communication
      */
-    public PortManager(final Config config, final CuratorFramework curator) throws Exception {
+    public PortManager(final Config config, final CuratorFramework curator) throws PortReservationException {
         this(config, curator, new DefaultPortTester());
     }
 
@@ -36,15 +36,19 @@ public class PortManager {
      * @param config the static system configuration information
      * @param curator the {@link CuratorFramework} that is managing zookeeper operations
      * @param portTester the {@link PortTester} used to verify that each port is available
-     * @throws Exception if there is a problem with zookeeper communication
+     * @throws PortReservationException if there is a problem with zookeeper communication
      */
     public PortManager(final Config config, final CuratorFramework curator, final PortTester portTester)
-            throws Exception {
+            throws PortReservationException {
         this.config = Objects.requireNonNull(config);
 
         final int minPort = config.getInt(CommonConfig.SERVER_PORT_MIN.getKey()) - 1;
         this.portReservation = new SharedCount(curator, PORT_RESERVATION_PATH, minPort);
-        this.portReservation.start();
+        try {
+            this.portReservation.start();
+        } catch (final Exception exception) {
+            throw new PortReservationException("Failed to start the shared count", exception);
+        }
 
         this.portTester = portTester;
     }
@@ -103,9 +107,9 @@ public class PortManager {
      * @param type the {@link ServiceType} for which a reservation should be found
      * @param host the host on which the service should run
      * @return a {@link Reservation} representing the available host and port information
-     * @throws Exception if there is a problem reserving the port
+     * @throws PortReservationException if there is a problem reserving the port
      */
-    public Reservation getReservation(final ServiceType type, final String host) throws Exception {
+    public Reservation getReservation(final ServiceType type, final String host) throws PortReservationException {
         boolean successful = false;
 
         int totalAttempts = getMaxPort() - getMinPort() + 2;
@@ -113,12 +117,16 @@ public class PortManager {
         while (!successful && totalAttempts-- > 0) {
             final VersionedValue<Integer> currentValue = getPortReservation().getVersionedValue();
             reservedPort = getNextPort(currentValue);
-            successful = getPortReservation().trySetCount(currentValue, reservedPort) && getPortTester()
-                    .isAvailable(host, reservedPort);
+            try {
+                successful = getPortReservation().trySetCount(currentValue, reservedPort) && getPortTester()
+                        .isAvailable(host, reservedPort);
+            } catch (final Exception exception) {
+                throw new PortReservationException("Failed to set the shared count", exception);
+            }
         }
 
         if (!successful) {
-            throw new Exception("Failed to reserve a port, all of them are currently taken");
+            throw new PortReservationException("Failed to reserve a port, all of them are currently taken");
         }
 
         return new Reservation(type, host, reservedPort);

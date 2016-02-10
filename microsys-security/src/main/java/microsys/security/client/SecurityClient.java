@@ -1,12 +1,11 @@
-package microsys.config.client;
+package microsys.security.client;
 
 import com.google.gson.JsonParser;
 
 import microsys.common.model.ServiceType;
-import microsys.config.model.ConfigKeyValue;
-import microsys.config.model.ConfigKeyValueCollection;
-import microsys.config.service.ConfigService;
-import microsys.config.service.ConfigServiceException;
+import microsys.security.model.User;
+import microsys.security.service.UserService;
+import microsys.security.service.UserServiceException;
 import microsys.service.discovery.DiscoveryException;
 import microsys.service.discovery.DiscoveryManager;
 import microsys.service.model.Service;
@@ -25,9 +24,9 @@ import java.util.concurrent.Future;
 import javax.servlet.http.HttpServletResponse;
 
 /**
- * Provides remote access over REST to the configuration service.
+ * Provides remote access over REST to the security service.
  */
-public class ConfigClient implements ConfigService {
+public class SecurityClient implements UserService {
     private final ExecutorService executor;
     private final DiscoveryManager discoveryManager;
     private final OkHttpClient httpClient;
@@ -37,7 +36,7 @@ public class ConfigClient implements ConfigService {
      * @param discoveryManager the service discovery manager used to find configuration service end-points
      * @param httpClient the HTTP client used to perform REST communication
      */
-    public ConfigClient(
+    public SecurityClient(
             final ExecutorService executor, final DiscoveryManager discoveryManager, final OkHttpClient httpClient) {
         this.executor = Objects.requireNonNull(executor);
         this.discoveryManager = Objects.requireNonNull(discoveryManager);
@@ -66,66 +65,46 @@ public class ConfigClient implements ConfigService {
     }
 
     /**
-     * @return a randomly chosen {@link Service} object from service discovery to use when connecting to the
-     * configuration service
+     * @return a randomly chosen {@link Service} object from service discovery to use when connecting to the security
+     * service
      * @throws DiscoveryException if there is a problem retrieving a random {@link Service}
-     * @throws ConfigServiceException if there no random configuration {@link Service} objects are available
+     * @throws UserServiceException if there no random security {@link Service} objects are available
      */
-    protected Service getRandom() throws DiscoveryException, ConfigServiceException {
-        final Optional<Service> random = getDiscoveryManager().getRandom(ServiceType.CONFIG);
+    protected Service getRandom() throws DiscoveryException, UserServiceException {
+        final Optional<Service> random = getDiscoveryManager().getRandom(ServiceType.SECURITY);
         if (!random.isPresent()) {
-            throw new ConfigServiceException("Unable to find a running configuration service");
+            throw new UserServiceException("Unable to find a running security service");
         }
         return random.get();
     }
 
     /**
      * @param response the {@link Response} to be processed
-     * @return the {@link ConfigKeyValue} object parsed from the response data, if available
+     * @return the {@link User} object parsed from the response data, if available
      * @throws IOException if there is a problem processing the response data
-     * @throws ConfigServiceException if there was a problem with the remote security service
+     * @throws UserServiceException if there was a problem with the remote security service
      */
-    protected Optional<ConfigKeyValue> handleResponse(final Response response)
-            throws IOException, ConfigServiceException {
+    protected Optional<User> handleResponse(final Response response) throws IOException, UserServiceException {
         Objects.requireNonNull(response);
         switch (response.code()) {
             case HttpServletResponse.SC_OK:
-                return Optional
-                        .of(new ConfigKeyValue(new JsonParser().parse(response.body().string()).getAsJsonObject()));
+                return Optional.of(new User(new JsonParser().parse(response.body().string()).getAsJsonObject()));
             case HttpServletResponse.SC_NO_CONTENT:
             case HttpServletResponse.SC_NOT_FOUND:
                 return Optional.empty();
             default:
-                throw new ConfigServiceException(response.body().string());
+                throw new UserServiceException(response.body().string());
         }
     }
 
     /**
-     * {@inheritDoc}
+     * @param url the base url path from which a {@link User} object will be retrieved
+     * @return an {@link Optional} {@link User}, possibly empty if not found, wrapped in a {@link Future}
      */
-    @Override
-    public Future<ConfigKeyValueCollection> getAll() {
+    protected Future<Optional<User>> get(final String url) {
+        Objects.requireNonNull(url);
         return getExecutor().submit(() -> {
-            final Request request = new Request.Builder().url(getRandom().asUrl()).get().build();
-            final Response response = getHttpClient().newCall(request).execute();
-            switch (response.code()) {
-                case HttpServletResponse.SC_OK:
-                    return new ConfigKeyValueCollection(
-                            new JsonParser().parse(response.body().string()).getAsJsonObject());
-                default:
-                    throw new ConfigServiceException(response.body().string());
-            }
-        });
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Future<Optional<ConfigKeyValue>> get(final String key) {
-        Objects.requireNonNull(key);
-        return getExecutor().submit(() -> {
-            final Request request = new Request.Builder().url(getRandom().asUrl() + key).get().build();
+            final Request request = new Request.Builder().url(getRandom().asUrl() + url).get().build();
             return handleResponse(getHttpClient().newCall(request).execute());
         });
     }
@@ -134,11 +113,27 @@ public class ConfigClient implements ConfigService {
      * {@inheritDoc}
      */
     @Override
-    public Future<Optional<ConfigKeyValue>> set(final ConfigKeyValue kv) {
-        Objects.requireNonNull(kv);
+    public Future<Optional<User>> getById(final String id) {
+        return get("id/" + Objects.requireNonNull(id));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Future<Optional<User>> getByName(final String name) {
+        return get("name/" + Objects.requireNonNull(name));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Future<Optional<User>> save(final User user) {
+        Objects.requireNonNull(user);
         return getExecutor().submit(() -> {
             final RequestBody body =
-                    RequestBody.create(MediaType.parse("application/json; charset=utf-8"), kv.toJson().toString());
+                    RequestBody.create(MediaType.parse("application/json; charset=utf-8"), user.toJson().toString());
             final Request request = new Request.Builder().url(getRandom().asUrl()).post(body).build();
             return handleResponse(getHttpClient().newCall(request).execute());
         });
@@ -148,10 +143,10 @@ public class ConfigClient implements ConfigService {
      * {@inheritDoc}
      */
     @Override
-    public Future<Optional<ConfigKeyValue>> unset(final String key) {
-        Objects.requireNonNull(key);
+    public Future<Optional<User>> remove(final String id) {
+        Objects.requireNonNull(id);
         return getExecutor().submit(() -> {
-            final Request request = new Request.Builder().url(getRandom().asUrl() + key).delete().build();
+            final Request request = new Request.Builder().url(getRandom().asUrl() + id).delete().build();
             return handleResponse(getHttpClient().newCall(request).execute());
         });
     }

@@ -3,6 +3,7 @@ package microsys.shell.command.service;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
+import microsys.service.discovery.DiscoveryException;
 import microsys.service.model.Service;
 import microsys.service.model.ServiceControlStatus;
 import microsys.shell.model.CommandPath;
@@ -21,8 +22,10 @@ import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
 import java.util.SortedSet;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
 /**
@@ -77,23 +80,25 @@ public class ControlCommand extends BaseServiceCommand {
                     return handleRestart(filtered, writer);
                 }
             }
-        } catch (final Exception exception) {
+        } catch (final ExecutionException | InterruptedException | TimeoutException | DiscoveryException exception) {
             writer.println("Failed to retrieve available services: " + ExceptionUtils.getMessage(exception));
         }
 
         return CommandStatus.SUCCESS;
     }
 
-    protected CommandStatus handleStop(final List<Service> services, final PrintWriter writer) throws Exception {
+    protected CommandStatus handleStop(final List<Service> services, final PrintWriter writer)
+            throws ExecutionException, InterruptedException, TimeoutException {
         return control(getShellEnvironment().getServiceClient().stop(services), writer);
     }
 
-    protected CommandStatus handleRestart(final List<Service> services, final PrintWriter writer) throws Exception {
+    protected CommandStatus handleRestart(final List<Service> services, final PrintWriter writer)
+            throws ExecutionException, InterruptedException, TimeoutException {
         return control(getShellEnvironment().getServiceClient().restart(services), writer);
     }
 
     protected CommandStatus control(final Future<Map<Service, ServiceControlStatus>> future, final PrintWriter writer)
-            throws Exception {
+            throws ExecutionException, InterruptedException, TimeoutException {
         final Map<Service, ServiceControlStatus> map = future.get(10, TimeUnit.SECONDS);
         final Stringer stringer = new Stringer(map.keySet());
         map.entrySet().stream().map(stringer::toString).forEach(writer::println);

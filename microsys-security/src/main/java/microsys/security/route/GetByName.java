@@ -11,8 +11,10 @@ import spark.Request;
 import spark.Response;
 
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import javax.servlet.http.HttpServletResponse;
 
@@ -32,7 +34,8 @@ public class GetByName extends BaseUserRoute {
      * {@inheritDoc}
      */
     @Override
-    public Object handle(final Request request, final Response response) throws Exception {
+    public Object handle(final Request request, final Response response)
+            throws ExecutionException, InterruptedException, TimeoutException {
         final String name = request.params("name");
 
         if (StringUtils.isEmpty(name)) {

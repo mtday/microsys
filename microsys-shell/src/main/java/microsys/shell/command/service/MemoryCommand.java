@@ -3,6 +3,7 @@ package microsys.shell.command.service;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
+import microsys.service.discovery.DiscoveryException;
 import microsys.service.model.Service;
 import microsys.service.model.ServiceMemory;
 import microsys.shell.model.CommandPath;
@@ -20,8 +21,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.SortedSet;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
 /**
@@ -72,7 +75,7 @@ public class MemoryCommand extends BaseServiceCommand {
                 final Stringer stringer = new Stringer(filtered);
                 memoryMap.entrySet().stream().map(stringer::toString).forEach(writer::println);
             }
-        } catch (final Exception exception) {
+        } catch (final ExecutionException | InterruptedException | TimeoutException | DiscoveryException exception) {
             writer.println("Failed to retrieve available services: " + ExceptionUtils.getMessage(exception));
         }
 
@@ -106,8 +109,9 @@ public class MemoryCommand extends BaseServiceCommand {
             final String nonheapAvailable = readable(memory.getNonHeapAvailable());
             final double nonheapPct = memory.getNonHeapUsedPercent() < 0 ? 0 : memory.getNonHeapUsedPercent();
 
-            return String.format("    %s  %s  %s  Heap: %s of %s (%.2f%%), Non-Heap: %s of %s (%.2f%%)",
-                    type, host, port, heapUsed, heapAvailable, heapPct, nonheapUsed, nonheapAvailable, nonheapPct);
+            return String
+                    .format("    %s  %s  %s  Heap: %s of %s (%.2f%%), Non-Heap: %s of %s (%.2f%%)", type, host, port,
+                            heapUsed, heapAvailable, heapPct, nonheapUsed, nonheapAvailable, nonheapPct);
         }
 
         public String readable(final long bytes) {
