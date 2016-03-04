@@ -28,6 +28,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
+import javax.annotation.Nonnull;
+
 /**
  * This command implements the {@code service control} commands in the shell.
  */
@@ -35,7 +37,7 @@ public class ControlCommand extends BaseServiceCommand {
     /**
      * @param shellEnvironment the shell command execution environment
      */
-    public ControlCommand(final ShellEnvironment shellEnvironment) {
+    public ControlCommand(@Nonnull final ShellEnvironment shellEnvironment) {
         super(shellEnvironment);
     }
 
@@ -43,6 +45,7 @@ public class ControlCommand extends BaseServiceCommand {
      * {@inheritDoc}
      */
     @Override
+    @Nonnull
     public List<Registration> getRegistrations() {
         final Option type = getTypeOption("the service type to control");
         final Option host = getHostOption("the host of the service to control");
@@ -65,7 +68,8 @@ public class ControlCommand extends BaseServiceCommand {
      * {@inheritDoc}
      */
     @Override
-    public CommandStatus process(final UserCommand userCommand, final PrintWriter writer) {
+    @Nonnull
+    public CommandStatus process(@Nonnull final UserCommand userCommand, @Nonnull final PrintWriter writer) {
         try {
             final SortedSet<Service> services = getShellEnvironment().getDiscoveryManager().getAll();
             final ServiceFilter filter = new ServiceFilter(userCommand.getCommandLine());
@@ -87,17 +91,20 @@ public class ControlCommand extends BaseServiceCommand {
         return CommandStatus.SUCCESS;
     }
 
-    protected CommandStatus handleStop(final List<Service> services, final PrintWriter writer)
+    @Nonnull
+    protected CommandStatus handleStop(@Nonnull final List<Service> services, @Nonnull final PrintWriter writer)
             throws ExecutionException, InterruptedException, TimeoutException {
         return control(getShellEnvironment().getServiceClient().stop(services), writer);
     }
 
-    protected CommandStatus handleRestart(final List<Service> services, final PrintWriter writer)
+    @Nonnull
+    protected CommandStatus handleRestart(@Nonnull final List<Service> services, @Nonnull final PrintWriter writer)
             throws ExecutionException, InterruptedException, TimeoutException {
         return control(getShellEnvironment().getServiceClient().restart(services), writer);
     }
 
-    protected CommandStatus control(final Future<Map<Service, ServiceControlStatus>> future, final PrintWriter writer)
+    @Nonnull
+    protected CommandStatus control(@Nonnull final Future<Map<Service, ServiceControlStatus>> future, @Nonnull final PrintWriter writer)
             throws ExecutionException, InterruptedException, TimeoutException {
         final Map<Service, ServiceControlStatus> map = future.get(10, TimeUnit.SECONDS);
         final Stringer stringer = new Stringer(map.keySet());
@@ -110,13 +117,14 @@ public class ControlCommand extends BaseServiceCommand {
         private final OptionalInt longestHost;
         private final OptionalInt longestPort;
 
-        public Stringer(final Set<Service> services) {
+        public Stringer(@Nonnull final Set<Service> services) {
             this.longestType = services.stream().mapToInt(s -> s.getType().name().length()).max();
             this.longestHost = services.stream().mapToInt(s -> s.getHost().length()).max();
             this.longestPort = services.stream().mapToInt(s -> String.valueOf(s.getPort()).length()).max();
         }
 
-        public String toString(final Map.Entry<Service, ServiceControlStatus> entry) {
+        @Nonnull
+        public String toString(@Nonnull final Map.Entry<Service, ServiceControlStatus> entry) {
             final Service service = entry.getKey();
             final ServiceControlStatus status = entry.getValue();
 

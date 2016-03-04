@@ -19,12 +19,16 @@ import java.util.Random;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+import javax.annotation.Nonnull;
+
 /**
  * The class is used to manage the system service discovery activity and is responsible for registering and
  * unregistering services, and retrieving available services.
  */
 public class DiscoveryManager {
+    @Nonnull
     private final Config config;
+    @Nonnull
     private final ServiceDiscovery<String> discovery;
 
     private boolean isClosed = false;
@@ -34,7 +38,7 @@ public class DiscoveryManager {
      * @param curator the {@link CuratorFramework} that is managing zookeeper operations
      * @throws DiscoveryException if there is a problem starting the service discovery service
      */
-    public DiscoveryManager(final Config config, final CuratorFramework curator) throws DiscoveryException {
+    public DiscoveryManager(@Nonnull final Config config, @Nonnull final CuratorFramework curator) throws DiscoveryException {
         this.config = Objects.requireNonNull(config);
         this.discovery = ServiceDiscoveryBuilder.builder(String.class).client(curator).basePath("/discovery").build();
         try {
@@ -47,6 +51,7 @@ public class DiscoveryManager {
     /**
      * @return the static system configuration information
      */
+    @Nonnull
     protected Config getConfig() {
         return this.config;
     }
@@ -54,6 +59,7 @@ public class DiscoveryManager {
     /**
      * @return the internal curator {@link ServiceDiscovery} object that manages the interaction with zookeeper
      */
+    @Nonnull
     protected ServiceDiscovery<String> getDiscovery() {
         return this.discovery;
     }
@@ -81,7 +87,7 @@ public class DiscoveryManager {
      * @param service the {@link Service} to register
      * @throws DiscoveryException if there is a problem registering the service
      */
-    public void register(final Service service) throws DiscoveryException {
+    public void register(@Nonnull final Service service) throws DiscoveryException {
         final ServiceInstance<String> serviceInstance = Objects.requireNonNull(service).asServiceInstance();
         if (!isClosed()) {
             try {
@@ -96,7 +102,7 @@ public class DiscoveryManager {
      * @param service the {@link Service} to unregister
      * @throws DiscoveryException if there is a problem unregistering the service
      */
-    public void unregister(final Service service) throws DiscoveryException {
+    public void unregister(@Nonnull final Service service) throws DiscoveryException {
         final ServiceInstance<String> serviceInstance = service.asServiceInstance();
         if (!isClosed()) {
             try {
@@ -111,6 +117,7 @@ public class DiscoveryManager {
      * @return all of the available {@link Service} objects that have registered with service discovery
      * @throws DiscoveryException if there is a problem retrieving all of the discoverable services
      */
+    @Nonnull
     public SortedSet<Service> getAll() throws DiscoveryException {
         final SortedSet<Service> services = new TreeSet<>();
         for (final ServiceType serviceType : ServiceType.values()) {
@@ -125,7 +132,8 @@ public class DiscoveryManager {
      * discovery
      * @throws DiscoveryException if there is a problem retrieving the discoverable services of the specified type
      */
-    public SortedSet<Service> getAll(final ServiceType serviceType) throws DiscoveryException {
+    @Nonnull
+    public SortedSet<Service> getAll(@Nonnull final ServiceType serviceType) throws DiscoveryException {
         final SortedSet<Service> services = new TreeSet<>();
         if (!isClosed()) {
             try {
@@ -145,7 +153,8 @@ public class DiscoveryManager {
      * possibly empty if there are no registered services of the specified type
      * @throws DiscoveryException if there is a problem retrieving a random discoverable service of the specified type
      */
-    public Optional<Service> getRandom(final ServiceType serviceType) throws DiscoveryException {
+    @Nonnull
+    public Optional<Service> getRandom(@Nonnull final ServiceType serviceType) throws DiscoveryException {
         if (!isClosed()) {
             try {
                 final List<ServiceInstance<String>> services =

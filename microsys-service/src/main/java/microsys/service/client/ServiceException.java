@@ -1,5 +1,7 @@
 package microsys.service.client;
 
+import javax.annotation.Nonnull;
+
 /**
  * An exception thrown by the {@link ServiceClient} when there are problems communicating with remote services.
  */
@@ -9,14 +11,14 @@ public class ServiceException extends Exception {
     /**
      * @param message the error message associated with the exception
      */
-    public ServiceException(final String message) {
+    public ServiceException(@Nonnull final String message) {
         super(message);
     }
 
     /**
      * @param cause the cause of the exception
      */
-    public ServiceException(final Throwable cause) {
+    public ServiceException(@Nonnull final Throwable cause) {
         super(cause);
     }
 
@@ -24,7 +26,7 @@ public class ServiceException extends Exception {
      * @param message the error message associated with the exception
      * @param cause the cause of the exception
      */
-    public ServiceException(final String message, final Throwable cause) {
+    public ServiceException(@Nonnull final String message, @Nonnull final Throwable cause) {
         super(message, cause);
     }
 }

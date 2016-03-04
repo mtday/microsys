@@ -8,16 +8,21 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 
+import javax.annotation.Nonnull;
+
 /**
  * Provides an in-memory implementation of a {@link UserService}.
  */
 public class MemoryUserService implements UserService {
+    @Nonnull
     private final ConcurrentHashMap<String, User> idMap = new ConcurrentHashMap<>();
+    @Nonnull
     private final ConcurrentHashMap<String, User> nameMap = new ConcurrentHashMap<>();
 
     /**
      * @return the {@link ConcurrentHashMap} holding the user ids and the matching {@link User} objects
      */
+    @Nonnull
     protected ConcurrentHashMap<String, User> getIdMap() {
         return this.idMap;
     }
@@ -25,6 +30,7 @@ public class MemoryUserService implements UserService {
     /**
      * @return the {@link ConcurrentHashMap} holding the user ids and the matching {@link User} objects
      */
+    @Nonnull
     protected ConcurrentHashMap<String, User> getNameMap() {
         return this.nameMap;
     }
@@ -33,7 +39,8 @@ public class MemoryUserService implements UserService {
      * {@inheritDoc}
      */
     @Override
-    public Future<Optional<User>> getById(final String id) {
+    @Nonnull
+    public Future<Optional<User>> getById(@Nonnull final String id) {
         Objects.requireNonNull(id);
         return CompletableFuture.completedFuture(Optional.ofNullable(getIdMap().get(id)));
     }
@@ -42,7 +49,8 @@ public class MemoryUserService implements UserService {
      * {@inheritDoc}
      */
     @Override
-    public Future<Optional<User>> getByName(final String userName) {
+    @Nonnull
+    public Future<Optional<User>> getByName(@Nonnull final String userName) {
         Objects.requireNonNull(userName);
         return CompletableFuture.completedFuture(Optional.ofNullable(getNameMap().get(userName)));
     }
@@ -51,7 +59,8 @@ public class MemoryUserService implements UserService {
      * {@inheritDoc}
      */
     @Override
-    public Future<Optional<User>> save(final User user) {
+    @Nonnull
+    public Future<Optional<User>> save(@Nonnull final User user) {
         Objects.requireNonNull(user);
         final Optional<User> existingById = Optional.ofNullable(getIdMap().put(user.getId(), user));
         final Optional<User> existingByName = Optional.ofNullable(getNameMap().put(user.getUserName(), user));
@@ -62,7 +71,8 @@ public class MemoryUserService implements UserService {
      * {@inheritDoc}
      */
     @Override
-    public Future<Optional<User>> remove(final String id) {
+    @Nonnull
+    public Future<Optional<User>> remove(@Nonnull final String id) {
         Objects.requireNonNull(id);
         return CompletableFuture.completedFuture(Optional.ofNullable(getIdMap().remove(id)));
     }

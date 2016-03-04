@@ -22,14 +22,18 @@ import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
+import javax.annotation.Nonnull;
 import javax.servlet.http.HttpServletResponse;
 
 /**
  * Provides remote access over REST to the configuration service.
  */
 public class ConfigClient implements ConfigService {
+    @Nonnull
     private final ExecutorService executor;
+    @Nonnull
     private final DiscoveryManager discoveryManager;
+    @Nonnull
     private final OkHttpClient httpClient;
 
     /**
@@ -38,7 +42,8 @@ public class ConfigClient implements ConfigService {
      * @param httpClient the HTTP client used to perform REST communication
      */
     public ConfigClient(
-            final ExecutorService executor, final DiscoveryManager discoveryManager, final OkHttpClient httpClient) {
+            @Nonnull final ExecutorService executor, @Nonnull final DiscoveryManager discoveryManager,
+            @Nonnull final OkHttpClient httpClient) {
         this.executor = Objects.requireNonNull(executor);
         this.discoveryManager = Objects.requireNonNull(discoveryManager);
         this.httpClient = Objects.requireNonNull(httpClient);
@@ -47,6 +52,7 @@ public class ConfigClient implements ConfigService {
     /**
      * @return the {@link ExecutorService} used to execute asynchronous processing of the configuration client
      */
+    @Nonnull
     protected ExecutorService getExecutor() {
         return this.executor;
     }
@@ -54,6 +60,7 @@ public class ConfigClient implements ConfigService {
     /**
      * @return the service discovery manager used to find configuration service end-points
      */
+    @Nonnull
     protected DiscoveryManager getDiscoveryManager() {
         return this.discoveryManager;
     }
@@ -61,6 +68,7 @@ public class ConfigClient implements ConfigService {
     /**
      * @return the service discovery manager used to find configuration service end-points
      */
+    @Nonnull
     protected OkHttpClient getHttpClient() {
         return this.httpClient;
     }
@@ -71,6 +79,7 @@ public class ConfigClient implements ConfigService {
      * @throws DiscoveryException if there is a problem retrieving a random {@link Service}
      * @throws ConfigServiceException if there no random configuration {@link Service} objects are available
      */
+    @Nonnull
     protected Service getRandom() throws DiscoveryException, ConfigServiceException {
         final Optional<Service> random = getDiscoveryManager().getRandom(ServiceType.CONFIG);
         if (!random.isPresent()) {
@@ -85,7 +94,8 @@ public class ConfigClient implements ConfigService {
      * @throws IOException if there is a problem processing the response data
      * @throws ConfigServiceException if there was a problem with the remote security service
      */
-    protected Optional<ConfigKeyValue> handleResponse(final Response response)
+    @Nonnull
+    protected Optional<ConfigKeyValue> handleResponse(@Nonnull final Response response)
             throws IOException, ConfigServiceException {
         Objects.requireNonNull(response);
         switch (response.code()) {
@@ -104,6 +114,7 @@ public class ConfigClient implements ConfigService {
      * {@inheritDoc}
      */
     @Override
+    @Nonnull
     public Future<ConfigKeyValueCollection> getAll() {
         return getExecutor().submit(() -> {
             final Request request = new Request.Builder().url(getRandom().asUrl()).get().build();
@@ -122,7 +133,8 @@ public class ConfigClient implements ConfigService {
      * {@inheritDoc}
      */
     @Override
-    public Future<Optional<ConfigKeyValue>> get(final String key) {
+    @Nonnull
+    public Future<Optional<ConfigKeyValue>> get(@Nonnull final String key) {
         Objects.requireNonNull(key);
         return getExecutor().submit(() -> {
             final Request request = new Request.Builder().url(getRandom().asUrl() + key).get().build();
@@ -134,7 +146,8 @@ public class ConfigClient implements ConfigService {
      * {@inheritDoc}
      */
     @Override
-    public Future<Optional<ConfigKeyValue>> set(final ConfigKeyValue kv) {
+    @Nonnull
+    public Future<Optional<ConfigKeyValue>> set(@Nonnull final ConfigKeyValue kv) {
         Objects.requireNonNull(kv);
         return getExecutor().submit(() -> {
             final RequestBody body =
@@ -148,7 +161,8 @@ public class ConfigClient implements ConfigService {
      * {@inheritDoc}
      */
     @Override
-    public Future<Optional<ConfigKeyValue>> unset(final String key) {
+    @Nonnull
+    public Future<Optional<ConfigKeyValue>> unset(@Nonnull final String key) {
         Objects.requireNonNull(key);
         return getExecutor().submit(() -> {
             final Request request = new Request.Builder().url(getRandom().asUrl() + key).delete().build();

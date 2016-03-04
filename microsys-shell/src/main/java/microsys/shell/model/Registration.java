@@ -3,20 +3,24 @@ package microsys.shell.model;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
-import jline.console.completer.Completer;
 import microsys.shell.completer.CompletionTree;
 
 import java.util.Objects;
 import java.util.Optional;
 
+import javax.annotation.CheckForNull;
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
  * An immutable representation of a command registration available for use within the shell.
  */
 public class Registration implements Comparable<Registration> {
+    @Nonnull
     private final CommandPath path;
+    @Nonnull
     private final Optional<Options> options;
+    @Nonnull
     private final Optional<String> description;
 
     /**
@@ -24,7 +28,9 @@ public class Registration implements Comparable<Registration> {
      * @param options     the options available for the command
      * @param description a description of the command defined in this registration
      */
-    public Registration(final CommandPath path, final Optional<Options> options, final Optional<String> description) {
+    public Registration(
+            @Nonnull final CommandPath path, @Nonnull final Optional<Options> options,
+            @Nonnull final Optional<String> description) {
         this.path = Objects.requireNonNull(path);
         this.options = Objects.requireNonNull(options);
         this.description = Objects.requireNonNull(description);
@@ -33,6 +39,7 @@ public class Registration implements Comparable<Registration> {
     /**
      * @return the fully qualified path to the command
      */
+    @Nonnull
     public CommandPath getPath() {
         return this.path;
     }
@@ -40,6 +47,7 @@ public class Registration implements Comparable<Registration> {
     /**
      * @return the options available for the command
      */
+    @Nonnull
     public Optional<Options> getOptions() {
         return this.options;
     }
@@ -47,6 +55,7 @@ public class Registration implements Comparable<Registration> {
     /**
      * @return a description of the command defined in this registration
      */
+    @Nonnull
     public Optional<String> getDescription() {
         return this.description;
     }
@@ -54,6 +63,7 @@ public class Registration implements Comparable<Registration> {
     /**
      * @return the completion tree representing the possible tab-completions available for this command and its options
      */
+    @Nonnull
     public CompletionTree getCompletions() {
         final CompletionTree root = new CompletionTree();
         CompletionTree current = root;
@@ -71,48 +81,10 @@ public class Registration implements Comparable<Registration> {
     }
 
     /**
-     * @return a {@link Completer} capable of performing tab-completion for this registration and the command it defines
-    public Completer getCompleter() {
-        final List<Completer> completers = new ArrayList<>();
-        // First add the completers for the command path.
-        completers.addAll(getPath().getCompleters());
-
-        // Second, add the completers for the options as an aggregate.
-        if (getOptions().isPresent()) {
-            completers.add(getOptions().get().getCompleter());
-        }
-
-        // Lastly, end the list of completers.
-        completers.add(new NullCompleter());
-
-        return new ArgumentCompleter(new CustomArgumentDelimiter(), completers);
-    }
-
-    public static class CustomArgumentDelimiter extends ArgumentCompleter.WhitespaceArgumentDelimiter {
-        @Override
-        public ArgumentCompleter.ArgumentList delimit(CharSequence buffer, int pos) {
-            return new CustomArgumentList(super.delimit(buffer, pos));
-        }
-
-        public static class CustomArgumentList extends ArgumentCompleter.ArgumentList {
-            public CustomArgumentList(final ArgumentCompleter.ArgumentList list) {
-                super(
-                        list.getArguments(), list.getCursorArgumentIndex(), list.getArgumentPosition(),
-                        list.getBufferPosition());
-            }
-
-            @Override
-            public String getCursorArgument() {
-                return StringUtils.trimToEmpty(super.getCursorArgument());
-            }
-        }
-    }
-     */
-
-    /**
      * {@inheritDoc}
      */
     @Override
+    @Nonnull
     public String toString() {
         final ToStringBuilder str = new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE);
         str.append("path", getPath());
@@ -137,7 +109,7 @@ public class Registration implements Comparable<Registration> {
      * {@inheritDoc}
      */
     @Override
-    public boolean equals(final Object other) {
+    public boolean equals(@CheckForNull final Object other) {
         return (other instanceof Registration) && compareTo((Registration) other) == 0;
     }
 

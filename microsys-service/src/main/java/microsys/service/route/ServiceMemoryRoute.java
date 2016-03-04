@@ -11,6 +11,7 @@ import spark.Response;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryUsage;
 
+import javax.annotation.Nonnull;
 import javax.servlet.http.HttpServletResponse;
 
 /**
@@ -20,14 +21,16 @@ public class ServiceMemoryRoute extends BaseRoute {
     /**
      * @param config the static system configuration information
      */
-    public ServiceMemoryRoute(final Config config) {
+    public ServiceMemoryRoute(@Nonnull final Config config) {
         super(config);
     }
 
+    @Nonnull
     protected MemoryUsage getHeapMemoryUsage() {
         return ManagementFactory.getMemoryMXBean().getHeapMemoryUsage();
     }
 
+    @Nonnull
     protected MemoryUsage getNonHeapMemoryUsage() {
         return ManagementFactory.getMemoryMXBean().getNonHeapMemoryUsage();
     }
@@ -36,7 +39,8 @@ public class ServiceMemoryRoute extends BaseRoute {
      * {@inheritDoc}
      */
     @Override
-    public Object handle(final Request request, final Response response) {
+    @Nonnull
+    public Object handle(@Nonnull final Request request, @Nonnull final Response response) {
         response.status(HttpServletResponse.SC_OK);
         response.type(MediaType.JSON_UTF_8.type());
 

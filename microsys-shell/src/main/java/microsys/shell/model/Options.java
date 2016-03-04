@@ -17,31 +17,35 @@ import java.util.Objects;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+import javax.annotation.CheckForNull;
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
  * An immutable class used to manage the options available to a command.
  */
 public class Options implements Comparable<Options> {
+    @Nonnull
     private final SortedSet<Option> options = new TreeSet<>();
 
     /**
      * @param options the individual option objects supported for the command
      */
-    public Options(final Collection<Option> options) {
+    public Options(@Nonnull final Collection<Option> options) {
         this.options.addAll(Objects.requireNonNull(options));
     }
 
     /**
      * @param options the individual option objects supported for the command
      */
-    public Options(final Option... options) {
+    public Options(@Nonnull final Option... options) {
         this(Arrays.asList(Objects.requireNonNull(options)));
     }
 
     /**
      * @return an unmodifiable sorted set of the options supported for the command
      */
+    @Nonnull
     public SortedSet<Option> getOptions() {
         return Collections.unmodifiableSortedSet(this.options);
     }
@@ -49,6 +53,7 @@ public class Options implements Comparable<Options> {
     /**
      * @return the commons-cli options implementation corresponding to this object
      */
+    @Nonnull
     public org.apache.commons.cli.Options asOptions() {
         final org.apache.commons.cli.Options options = new org.apache.commons.cli.Options();
         getOptions().stream().map(Option::asOption).forEach(options::addOption);
@@ -58,6 +63,7 @@ public class Options implements Comparable<Options> {
     /**
      * @return the possible completion trees available for tab-completing this collection of options
      */
+    @Nonnull
     public List<CompletionTree> getCompletions() {
         final List<CompletionTree> list = new LinkedList<>();
         getOptions().forEach(option -> {
@@ -87,6 +93,7 @@ public class Options implements Comparable<Options> {
      * {@inheritDoc}
      */
     @Override
+    @Nonnull
     public String toString() {
         final ToStringBuilder str = new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE);
         str.append("options", getOptions());
@@ -111,7 +118,7 @@ public class Options implements Comparable<Options> {
      * {@inheritDoc}
      */
     @Override
-    public boolean equals(final Object other) {
+    public boolean equals(@CheckForNull final Object other) {
         return (other instanceof Options) && compareTo((Options) other) == 0;
     }
 

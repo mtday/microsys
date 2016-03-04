@@ -16,6 +16,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import javax.annotation.Nonnull;
 import javax.servlet.http.HttpServletResponse;
 
 /**
@@ -26,7 +27,7 @@ public class GetById extends BaseUserRoute {
      * @param config the static system configuration properties
      * @param userService the {@link UserService} used to manage the system user accounts
      */
-    public GetById(final Config config, final UserService userService) {
+    public GetById(@Nonnull final Config config, @Nonnull final UserService userService) {
         super(config, userService);
     }
 
@@ -34,7 +35,8 @@ public class GetById extends BaseUserRoute {
      * {@inheritDoc}
      */
     @Override
-    public Object handle(final Request request, final Response response)
+    @Nonnull
+    public Object handle(@Nonnull final Request request, @Nonnull final Response response)
             throws ExecutionException, InterruptedException, TimeoutException {
         final String id = request.params("id");
 

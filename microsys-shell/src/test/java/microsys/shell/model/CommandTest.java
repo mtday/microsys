@@ -17,6 +17,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 
+import javax.annotation.Nonnull;
+
 /**
  * Perform testing of the {@link Command} class.
  */
@@ -37,17 +39,19 @@ public class CommandTest {
     }
 
     public static class TestCommand extends Command {
-        public TestCommand(final ShellEnvironment env) {
+        public TestCommand(@Nonnull final ShellEnvironment env) {
             super(env);
         }
 
         @Override
+        @Nonnull
         public List<Registration> getRegistrations() {
             return Collections.emptyList();
         }
 
         @Override
-        public CommandStatus process(UserCommand userCommand, PrintWriter writer) {
+        @Nonnull
+        public CommandStatus process(@Nonnull UserCommand userCommand, @Nonnull PrintWriter writer) {
             return CommandStatus.SUCCESS;
         }
     }

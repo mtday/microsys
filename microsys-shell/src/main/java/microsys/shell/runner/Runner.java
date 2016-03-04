@@ -29,11 +29,15 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import javax.annotation.Nonnull;
+
 /**
  * Launch the shell.
  */
 public class Runner {
+    @Nonnull
     private ConsoleManager consoleManager;
+    @Nonnull
     private ShellEnvironment shellEnvironment;
 
     /**
@@ -42,33 +46,35 @@ public class Runner {
      * @throws DiscoveryException if there is a problem starting service discovery
      * @throws IOException if there is a problem starting the shell console
      */
-    protected Runner(final Config config)
+    protected Runner(@Nonnull final Config config)
             throws TimeoutException, InterruptedException, DiscoveryException, IOException {
         this.shellEnvironment = getShellEnvironment(config, createCurator(config));
         this.consoleManager = new ConsoleManager(config, shellEnvironment);
     }
 
-    protected void setConsoleManager(final ConsoleManager consoleManager) {
+    protected void setConsoleManager(@Nonnull final ConsoleManager consoleManager) {
         this.consoleManager = Objects.requireNonNull(consoleManager);
     }
 
+    @Nonnull
     protected ConsoleManager getConsoleManager() {
         return this.consoleManager;
     }
 
-    protected void setShellEnvironment(final ShellEnvironment shellEnvironment) {
+    protected void setShellEnvironment(@Nonnull final ShellEnvironment shellEnvironment) {
         this.shellEnvironment = shellEnvironment;
     }
 
+    @Nonnull
     protected ShellEnvironment getShellEnvironment() {
         return this.shellEnvironment;
     }
 
-    protected void run(final File file) throws IOException {
+    protected void run(@Nonnull final File file) throws IOException {
         getConsoleManager().run(Objects.requireNonNull(file));
     }
 
-    protected void run(final String command) throws IOException {
+    protected void run(@Nonnull final String command) throws IOException {
         getConsoleManager().run(Objects.requireNonNull(command));
     }
 
@@ -81,7 +87,8 @@ public class Runner {
         this.shellEnvironment.close();
     }
 
-    protected ShellEnvironment getShellEnvironment(final Config config, final CuratorFramework curator)
+    @Nonnull
+    protected ShellEnvironment getShellEnvironment(@Nonnull final Config config, @Nonnull final CuratorFramework curator)
             throws DiscoveryException {
         final ExecutorService executor =
                 Executors.newFixedThreadPool(config.getInt(CommonConfig.EXECUTOR_THREADS.getKey()));
@@ -94,7 +101,8 @@ public class Runner {
         return shellEnvironment;
     }
 
-    protected CuratorFramework createCurator(final Config config) throws TimeoutException, InterruptedException {
+    @Nonnull
+    protected CuratorFramework createCurator(@Nonnull final Config config) throws TimeoutException, InterruptedException {
         final String zookeepers = config.getString(CommonConfig.ZOOKEEPER_HOSTS.getKey());
         final String namespace = config.getString(CommonConfig.SYSTEM_NAME.getKey());
         final CuratorFramework curator =
@@ -107,7 +115,7 @@ public class Runner {
         return curator;
     }
 
-    protected static void processCommandLine(final Runner runner, final String[] args) throws IOException {
+    protected static void processCommandLine(@Nonnull final Runner runner, @Nonnull final String[] args) throws IOException {
         final Option fileOption =
                 new Option("run shell commands provided by a file", "f", Optional.of("file"), Optional.of("file"), 1,
                         false, false, Optional.empty());
@@ -146,7 +154,7 @@ public class Runner {
      * @throws DiscoveryException if there is a problem starting service discovery
      * @throws IOException if there is a problem starting the shell console
      */
-    public static void main(final String... args)
+    public static void main(@Nonnull final String... args)
             throws InterruptedException, TimeoutException, DiscoveryException, IOException {
         Runner.processCommandLine(new Runner(ConfigFactory.load()), args);
     }

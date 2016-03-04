@@ -27,6 +27,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
+import javax.annotation.Nonnull;
+
 /**
  * This command implements the {@code service memory} command in the shell.
  */
@@ -34,7 +36,7 @@ public class MemoryCommand extends BaseServiceCommand {
     /**
      * @param shellEnvironment the shell command execution environment
      */
-    public MemoryCommand(final ShellEnvironment shellEnvironment) {
+    public MemoryCommand(@Nonnull final ShellEnvironment shellEnvironment) {
         super(shellEnvironment);
     }
 
@@ -42,6 +44,7 @@ public class MemoryCommand extends BaseServiceCommand {
      * {@inheritDoc}
      */
     @Override
+    @Nonnull
     public List<Registration> getRegistrations() {
         final Option type = getTypeOption("the service type to show memory information");
         final Option host = getHostOption("the host of the service to show memory information");
@@ -58,7 +61,8 @@ public class MemoryCommand extends BaseServiceCommand {
      * {@inheritDoc}
      */
     @Override
-    public CommandStatus process(final UserCommand userCommand, final PrintWriter writer) {
+    @Nonnull
+    public CommandStatus process(@Nonnull final UserCommand userCommand, @Nonnull final PrintWriter writer) {
         try {
             final SortedSet<Service> services = getShellEnvironment().getDiscoveryManager().getAll();
             final ServiceFilter filter = new ServiceFilter(userCommand.getCommandLine());
@@ -87,13 +91,14 @@ public class MemoryCommand extends BaseServiceCommand {
         private final OptionalInt longestHost;
         private final OptionalInt longestPort;
 
-        public Stringer(final List<Service> services) {
+        public Stringer(@Nonnull final List<Service> services) {
             this.longestType = services.stream().mapToInt(s -> s.getType().name().length()).max();
             this.longestHost = services.stream().mapToInt(s -> s.getHost().length()).max();
             this.longestPort = services.stream().mapToInt(s -> String.valueOf(s.getPort()).length()).max();
         }
 
-        public String toString(final Map.Entry<Service, ServiceMemory> entry) {
+        @Nonnull
+        public String toString(@Nonnull final Map.Entry<Service, ServiceMemory> entry) {
             final Service service = entry.getKey();
             final ServiceMemory memory = entry.getValue();
 
@@ -114,6 +119,7 @@ public class MemoryCommand extends BaseServiceCommand {
                             heapUsed, heapAvailable, heapPct, nonheapUsed, nonheapAvailable, nonheapPct);
         }
 
+        @Nonnull
         public String readable(final long bytes) {
             if (bytes < 0) {
                 return "unknown";

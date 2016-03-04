@@ -22,30 +22,35 @@ import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
+import javax.annotation.CheckForNull;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
 /**
  * Represents a collection of dynamic configuration key and value pairs.
  */
 public class ConfigKeyValueCollection implements Model, Comparable<ConfigKeyValueCollection> {
+    @Nonnull
     private final Map<String, ConfigKeyValue> map = new TreeMap<>();
 
     /**
      * @param values the configuration key
      */
-    public ConfigKeyValueCollection(final Collection<ConfigKeyValue> values) {
+    public ConfigKeyValueCollection(@Nonnull final Collection<ConfigKeyValue> values) {
         Objects.requireNonNull(values).forEach(kv -> map.put(kv.getKey(), kv));
     }
 
     /**
      * @param values the configuration key
      */
-    public ConfigKeyValueCollection(final ConfigKeyValue... values) {
+    public ConfigKeyValueCollection(@Nonnull final ConfigKeyValue... values) {
         this(Arrays.asList(Objects.requireNonNull(values)));
     }
 
     /**
      * @param json a {@link JsonObject} from which a {@link ConfigKeyValueCollection} will be parsed
      */
-    public ConfigKeyValueCollection(final JsonObject json) {
+    public ConfigKeyValueCollection(@Nonnull final JsonObject json) {
         // Validate the json object
         Objects.requireNonNull(json);
         Preconditions.checkArgument(json.has("config"), "Config field required");
@@ -63,13 +68,15 @@ public class ConfigKeyValueCollection implements Model, Comparable<ConfigKeyValu
      * @param key the configuration key for which a configuration value should be retrieved
      * @return the requested configuration value, possibly empty if the specified key was not found
      */
-    public Optional<ConfigKeyValue> get(final String key) {
+    @Nonnull
+    public Optional<ConfigKeyValue> get(@Nonnull final String key) {
         return Optional.ofNullable(this.map.get(Objects.requireNonNull(key)));
     }
 
     /**
      * @return a {@link Map} containing all of the configuration keys and values
      */
+    @Nonnull
     public Map<String, ConfigKeyValue> asMap() {
         return Collections.unmodifiableMap(this.map);
     }
@@ -77,6 +84,7 @@ public class ConfigKeyValueCollection implements Model, Comparable<ConfigKeyValu
     /**
      * @return a {@link SortedSet} containing all of the configuration keys and values
      */
+    @Nonnull
     public SortedSet<ConfigKeyValue> asSet() {
         return new TreeSet<>(this.map.values());
     }
@@ -92,7 +100,7 @@ public class ConfigKeyValueCollection implements Model, Comparable<ConfigKeyValu
      * {@inheritDoc}
      */
     @Override
-    public int compareTo(final ConfigKeyValueCollection other) {
+    public int compareTo(@Nullable final ConfigKeyValueCollection other) {
         if (other == null) {
             return 1;
         }
@@ -106,7 +114,7 @@ public class ConfigKeyValueCollection implements Model, Comparable<ConfigKeyValu
      * {@inheritDoc}
      */
     @Override
-    public boolean equals(final Object other) {
+    public boolean equals(@CheckForNull final Object other) {
         return (other instanceof ConfigKeyValueCollection) && compareTo((ConfigKeyValueCollection) other) == 0;
     }
 
@@ -124,6 +132,7 @@ public class ConfigKeyValueCollection implements Model, Comparable<ConfigKeyValu
      * {@inheritDoc}
      */
     @Override
+    @Nonnull
     public String toString() {
         final ToStringBuilder str = new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE);
         str.append("configs", asSet());
@@ -134,6 +143,7 @@ public class ConfigKeyValueCollection implements Model, Comparable<ConfigKeyValu
      * {@inheritDoc}
      */
     @Override
+    @Nonnull
     public JsonObject toJson() {
         final JsonArray arr = new JsonArray();
         asSet().stream().map(ConfigKeyValue::toJson).forEach(arr::add);

@@ -15,25 +15,29 @@ import java.util.List;
 import java.util.Optional;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * Used to perform shell testing to capture the output written to the console.
  */
 public class CapturingConsoleReader extends ConsoleReader {
+    @Nonnull
     private final List<String> output = new LinkedList<>();
+    @Nonnull
     private final List<String> lines = new LinkedList<>();
 
+    @Nonnull
     private Optional<String> interrupt = Optional.empty();
     private boolean shutdown = false;
 
-    public CapturingConsoleReader(final String... lines) throws IOException {
+    public CapturingConsoleReader(@Nullable final String... lines) throws IOException {
         if (lines != null) {
             this.lines.addAll(Arrays.asList(lines));
         }
         super.shutdown();
     }
 
-    public void setInterrupt(final String partialLine) {
+    public void setInterrupt(@Nullable final String partialLine) {
         this.interrupt = Optional.ofNullable(partialLine);
     }
 
@@ -50,6 +54,7 @@ public class CapturingConsoleReader extends ConsoleReader {
     }
 
     @Override
+    @Nullable
     public String readLine() {
         if (this.interrupt.isPresent()) {
             final String partial = this.interrupt.get();
@@ -63,7 +68,7 @@ public class CapturingConsoleReader extends ConsoleReader {
     }
 
     @Override
-    public void print(final CharSequence s) {
+    public void print(@Nullable final CharSequence s) {
         if (s != null) {
             this.output.add(s.toString());
         }
@@ -75,7 +80,7 @@ public class CapturingConsoleReader extends ConsoleReader {
     }
 
     @Override
-    public void println(final CharSequence line) {
+    public void println(@Nullable final CharSequence line) {
         if (line != null) {
             this.output.add(line.toString());
         }
@@ -87,6 +92,7 @@ public class CapturingConsoleReader extends ConsoleReader {
     }
 
     @Override
+    @Nonnull
     public Terminal getTerminal() {
         return Mockito.mock(Terminal.class);
     }
@@ -95,6 +101,7 @@ public class CapturingConsoleReader extends ConsoleReader {
         return this.shutdown;
     }
 
+    @Nonnull
     public List<String> getOutputLines() {
         return this.output;
     }

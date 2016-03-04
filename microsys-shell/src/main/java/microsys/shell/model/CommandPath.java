@@ -16,18 +16,21 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import javax.annotation.CheckForNull;
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
  * An immutable representation of the fully qualified path to a shell command.
  */
 public class CommandPath implements Comparable<CommandPath> {
+    @Nonnull
     private final List<String> path;
 
     /**
      * @param path the fully qualified path (typically of strings or tokens) representing a shell command
      */
-    public CommandPath(final List<?> path) {
+    public CommandPath(@Nonnull final List<?> path) {
         this.path = new ArrayList<>();
         final List<String> parts =
                 Objects.requireNonNull(path).stream().map(String::valueOf).collect(Collectors.toList());
@@ -48,13 +51,14 @@ public class CommandPath implements Comparable<CommandPath> {
     /**
      * @param path the fully qualified path representing a shell command
      */
-    public CommandPath(final String... path) {
+    public CommandPath(@Nonnull final String... path) {
         this(Arrays.asList(Objects.requireNonNull(path)));
     }
 
     /**
      * @return the individual path components uniquely identifying a shell command
      */
+    @Nonnull
     public List<String> getPath() {
         return Collections.unmodifiableList(this.path);
     }
@@ -74,7 +78,7 @@ public class CommandPath implements Comparable<CommandPath> {
      * @param other the path to check to see if it is a prefix for this path
      * @return whether the provided path is a prefix of this path
      */
-    public boolean isPrefix(final CommandPath other) {
+    public boolean isPrefix(@Nonnull final CommandPath other) {
         Objects.requireNonNull(other);
 
         final Iterator<String> iterA = getPath().iterator();
@@ -99,13 +103,14 @@ public class CommandPath implements Comparable<CommandPath> {
      * <p>
      * {@code
      * CommandPath ab = CommandPath.Builder("a b").build();
-     * CommandPath a = a.getParent().get();
+     * CommandPath a = ab.getParent().get();
      * ab.toString(); // a b
      * a.toString(); // a
      * }
      *
      * @return the parent {@link CommandPath} to this one, possibly empty if this path has only one path element
      */
+    @Nonnull
     public Optional<CommandPath> getParent() {
         if (getPath().size() == 1) {
             return Optional.empty();
@@ -130,6 +135,7 @@ public class CommandPath implements Comparable<CommandPath> {
      *
      * @return the parent {@link CommandPath} to this one, possibly empty if this path has only one path element
      */
+    @Nonnull
     public Optional<CommandPath> getChild() {
         if (getPath().size() == 1) {
             return Optional.empty();
@@ -151,6 +157,7 @@ public class CommandPath implements Comparable<CommandPath> {
      * {@inheritDoc}
      */
     @Override
+    @Nonnull
     public String toString() {
         return String.join(" ", getPath());
     }
@@ -173,7 +180,7 @@ public class CommandPath implements Comparable<CommandPath> {
      * {@inheritDoc}
      */
     @Override
-    public boolean equals(final Object other) {
+    public boolean equals(@CheckForNull final Object other) {
         return (other instanceof CommandPath) && compareTo((CommandPath) other) == 0;
     }
 

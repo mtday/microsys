@@ -28,20 +28,23 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import javax.annotation.Nonnull;
 import javax.servlet.http.HttpServletResponse;
 
 /**
  * Provides remote access over REST to the base service routes.
  */
 public class ServiceClient {
+    @Nonnull
     private final ExecutorService executor;
+    @Nonnull
     private final OkHttpClient httpClient;
 
     /**
      * @param executor   used to execute asynchronous processing of the client
      * @param httpClient the HTTP client used to perform REST communication
      */
-    public ServiceClient(final ExecutorService executor, final OkHttpClient httpClient) {
+    public ServiceClient(@Nonnull final ExecutorService executor, @Nonnull final OkHttpClient httpClient) {
         this.executor = Objects.requireNonNull(executor);
         this.httpClient = Objects.requireNonNull(httpClient);
     }
@@ -49,6 +52,7 @@ public class ServiceClient {
     /**
      * @return the {@link ExecutorService} used to execute asynchronous processing of the configuration client
      */
+    @Nonnull
     protected ExecutorService getExecutor() {
         return this.executor;
     }
@@ -56,6 +60,7 @@ public class ServiceClient {
     /**
      * @return the service discovery manager used to find configuration service end-points
      */
+    @Nonnull
     protected OkHttpClient getHttpClient() {
         return this.httpClient;
     }
@@ -70,8 +75,10 @@ public class ServiceClient {
      * @throws IOException if there is a problem with I/O when fetching the data
      * @throws ServiceException if there was a problem on the remote service
      */
-    protected <T> T get(final Service service, final String url, final Converter<JsonObject, T> converter)
-            throws IOException, ServiceException {
+    @Nonnull
+    protected <T> T get(
+            @Nonnull final Service service, @Nonnull final String url,
+            @Nonnull final Converter<JsonObject, T> converter) throws IOException, ServiceException {
         final Request request = new Builder().url(service.asUrl() + url).get().build();
         final Response response = getHttpClient().newCall(request).execute();
         final String responseBody = response.body().string();
@@ -92,8 +99,10 @@ public class ServiceClient {
      * @param converter the {@link Converter} object used to transform the {@link JsonObject} into the return object
      * @return the {@link JsonObject} returned from the service
      */
+    @Nonnull
     protected <T> Future<Map<Service, T>> getMap(
-            final Collection<Service> services, final String url, final Converter<JsonObject, T> converter) {
+            @Nonnull final Collection<Service> services, @Nonnull final String url,
+            @Nonnull final Converter<JsonObject, T> converter) {
         return getExecutor().submit(() -> {
             final Map<Service, Future<T>> futureMap = new HashMap<>();
             services.forEach(
@@ -118,7 +127,8 @@ public class ServiceClient {
      * @param service the {@link Service} for which a {@link ServiceInfo} will be retrieved
      * @return the {@link ServiceInfo} returned from the service wrapped in a {@link Future}
      */
-    public Future<ServiceInfo> getInfo(final Service service) {
+    @Nonnull
+    public Future<ServiceInfo> getInfo(@Nonnull final Service service) {
         Objects.requireNonNull(service);
         return getExecutor().submit(() -> get(service, "service/info", new ServiceInfoConverter()));
     }
@@ -129,7 +139,8 @@ public class ServiceClient {
      * @return a {@link Map} of {@link Service} object mapping to the associated {@link ServiceInfo} returned from the
      * individual services, wrapped in a {@link Future}
      */
-    public Future<Map<Service, ServiceInfo>> getInfo(final Collection<Service> services) {
+    @Nonnull
+    public Future<Map<Service, ServiceInfo>> getInfo(@Nonnull final Collection<Service> services) {
         Objects.requireNonNull(services);
         return getExecutor()
                 .submit(() -> getMap(services, "service/info", new ServiceInfoConverter()).get(10, TimeUnit.SECONDS));
@@ -139,7 +150,8 @@ public class ServiceClient {
      * @param service the {@link Service} for which a {@link ServiceMemory} will be retrieved
      * @return the {@link ServiceMemory} returned from the service wrapped in a {@link Future}
      */
-    public Future<ServiceMemory> getMemory(final Service service) {
+    @Nonnull
+    public Future<ServiceMemory> getMemory(@Nonnull final Service service) {
         Objects.requireNonNull(service);
         return getExecutor().submit(() -> get(service, "service/memory", new ServiceMemoryConverter()));
     }
@@ -150,7 +162,8 @@ public class ServiceClient {
      * @return a {@link Map} of {@link Service} object mapping to the associated {@link ServiceMemory} returned from
      * the individual services, wrapped in a {@link Future}
      */
-    public Future<Map<Service, ServiceMemory>> getMemory(final Collection<Service> services) {
+    @Nonnull
+    public Future<Map<Service, ServiceMemory>> getMemory(@Nonnull final Collection<Service> services) {
         Objects.requireNonNull(services);
         return getExecutor().submit(() -> getMap(services, "service/memory", new ServiceMemoryConverter())
                 .get(10, TimeUnit.SECONDS));
@@ -161,7 +174,8 @@ public class ServiceClient {
      * @param url     the URL path of the control operation
      * @return the resulting {@link ServiceControlStatus} returned from the service
      */
-    protected Future<ServiceControlStatus> control(final Service service, final String url) {
+    @Nonnull
+    protected Future<ServiceControlStatus> control(@Nonnull final Service service, @Nonnull final String url) {
         Objects.requireNonNull(service);
         return getExecutor().submit(() -> get(service, url, new ServiceControlStatusConverter()));
     }
@@ -172,7 +186,8 @@ public class ServiceClient {
      * @return a {@link Map} of {@link Service} object mapping to the associated {@link ServiceControlStatus} returned
      * from the individual controlled services, wrapped in a {@link Future}
      */
-    protected Future<Map<Service, ServiceControlStatus>> control(final Collection<Service> services, final String url) {
+    @Nonnull
+    protected Future<Map<Service, ServiceControlStatus>> control(@Nonnull final Collection<Service> services, @Nonnull final String url) {
         Objects.requireNonNull(services);
         return getExecutor()
                 .submit(() -> getMap(services, url, new ServiceControlStatusConverter()).get(10, TimeUnit.SECONDS));
@@ -182,7 +197,8 @@ public class ServiceClient {
      * @param service the {@link Service} to be stopped
      * @return the resulting {@link ServiceControlStatus} returned from the stopped service
      */
-    public Future<ServiceControlStatus> stop(final Service service) {
+    @Nonnull
+    public Future<ServiceControlStatus> stop(@Nonnull final Service service) {
         return control(service, "service/control/stop");
     }
 
@@ -191,7 +207,8 @@ public class ServiceClient {
      * @return a {@link Map} of {@link Service} object mapping to the associated {@link ServiceControlStatus} returned
      * from the individual stopped services, wrapped in a {@link Future}
      */
-    public Future<Map<Service, ServiceControlStatus>> stop(final Collection<Service> services) {
+    @Nonnull
+    public Future<Map<Service, ServiceControlStatus>> stop(@Nonnull final Collection<Service> services) {
         return control(services, "service/control/stop");
     }
 
@@ -199,7 +216,8 @@ public class ServiceClient {
      * @param service the {@link Service} to be restarted
      * @return the resulting {@link ServiceControlStatus} returned from the restarted service
      */
-    public Future<ServiceControlStatus> restart(final Service service) {
+    @Nonnull
+    public Future<ServiceControlStatus> restart(@Nonnull final Service service) {
         return control(service, "service/control/restart");
     }
 
@@ -208,7 +226,8 @@ public class ServiceClient {
      * @return a {@link Map} of {@link Service} object mapping to the associated {@link ServiceControlStatus} returned
      * from the individual restarted services, wrapped in a {@link Future}
      */
-    public Future<Map<Service, ServiceControlStatus>> restart(final Collection<Service> services) {
+    @Nonnull
+    public Future<Map<Service, ServiceControlStatus>> restart(@Nonnull final Collection<Service> services) {
         return control(services, "service/control/restart");
     }
 }

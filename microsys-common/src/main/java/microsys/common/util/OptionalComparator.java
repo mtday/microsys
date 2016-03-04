@@ -6,10 +6,13 @@ import java.util.Comparator;
 import java.util.Objects;
 import java.util.Optional;
 
+import javax.annotation.Nonnull;
+
 /**
  * Perform comparisons between two {@link Optional} objects.
  */
 public class OptionalComparator<T> implements Comparator<Optional<T>> {
+    @Nonnull
     private final Optional<Comparator<T>> comparator;
 
     /**
@@ -22,7 +25,7 @@ public class OptionalComparator<T> implements Comparator<Optional<T>> {
     /**
      * @param comparator the {@link Comparator} used to perform comparisons on the objects within the optionals
      */
-    public OptionalComparator(final Comparator<T> comparator) {
+    public OptionalComparator(@Nonnull final Comparator<T> comparator) {
         this.comparator = Optional.of(Objects.requireNonNull(comparator));
     }
 
@@ -30,6 +33,7 @@ public class OptionalComparator<T> implements Comparator<Optional<T>> {
      * @return the {@link Comparator} used to perform comparisons on the objects within the optionals in which case
      * the natural ordering will be used
      */
+    @Nonnull
     public Optional<Comparator<T>> getComparator() {
         return this.comparator;
     }
@@ -38,7 +42,7 @@ public class OptionalComparator<T> implements Comparator<Optional<T>> {
      * {@inheritDoc}
      */
     @Override
-    public int compare(final Optional<T> a, final Optional<T> b) {
+    public int compare(@Nonnull final Optional<T> a, @Nonnull final Optional<T> b) {
         // Parameters expected to not be null. That is why optionals are used, after all.
         if (a.isPresent() && b.isPresent()) {
             final CompareToBuilder cmp = new CompareToBuilder();

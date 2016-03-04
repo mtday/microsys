@@ -14,19 +14,26 @@ import microsys.common.util.OptionalComparator;
 import java.util.Objects;
 import java.util.Optional;
 
+import javax.annotation.CheckForNull;
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
  * An immutable class representing a possible option available to a command.
  */
 public class Option implements Comparable<Option> {
+    @Nonnull
     private final String description;
+    @Nonnull
     private final String shortOption;
+    @Nonnull
     private final Optional<String> longOption;
+    @Nonnull
     private final Optional<String> argName;
     private final int arguments;
     private final boolean required;
     private final boolean optionalArg;
+    @Nonnull
     private final Optional<Completer> completer;
 
     /**
@@ -40,9 +47,9 @@ public class Option implements Comparable<Option> {
      * @param completer   the completer to use when tab-completing this option, possibly empty
      */
     public Option(
-            final String description, final String shortOption, final Optional<String> longOption,
-            final Optional<String> argName, final int arguments, final boolean required, final boolean optionalArg,
-            final Optional<Completer> completer) {
+            @Nonnull final String description, @Nonnull final String shortOption,
+            @Nonnull final Optional<String> longOption, @Nonnull final Optional<String> argName, final int arguments,
+            final boolean required, final boolean optionalArg, @Nonnull final Optional<Completer> completer) {
         Objects.requireNonNull(description);
         Preconditions.checkArgument(StringUtils.isNotEmpty(description), "Description cannot be empty");
         Objects.requireNonNull(shortOption);
@@ -62,6 +69,7 @@ public class Option implements Comparable<Option> {
     /**
      * @return the description of the option
      */
+    @Nonnull
     public String getDescription() {
         return this.description;
     }
@@ -69,6 +77,7 @@ public class Option implements Comparable<Option> {
     /**
      * @return the name of the option in short form
      */
+    @Nonnull
     public String getShortOption() {
         return this.shortOption;
     }
@@ -76,6 +85,7 @@ public class Option implements Comparable<Option> {
     /**
      * @return the name of the option in long form
      */
+    @Nonnull
     public Optional<String> getLongOption() {
         return this.longOption;
     }
@@ -83,6 +93,7 @@ public class Option implements Comparable<Option> {
     /**
      * @return the name of the argument for the option
      */
+    @Nonnull
     public Optional<String> getArgName() {
         return this.argName;
     }
@@ -111,6 +122,7 @@ public class Option implements Comparable<Option> {
     /**
      * @return the completer to use when tab-completing this option
      */
+    @Nonnull
     public Optional<Completer> getCompleter() {
         return this.completer;
     }
@@ -118,6 +130,7 @@ public class Option implements Comparable<Option> {
     /**
      * @return the commons-cli option implementation corresponding to this object
      */
+    @Nonnull
     public org.apache.commons.cli.Option asOption() {
         final org.apache.commons.cli.Option option =
                 new org.apache.commons.cli.Option(getShortOption(), getDescription());
@@ -137,6 +150,7 @@ public class Option implements Comparable<Option> {
      * {@inheritDoc}
      */
     @Override
+    @Nonnull
     public String toString() {
         final ToStringBuilder str = new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE);
         str.append("description", getDescription());
@@ -174,7 +188,7 @@ public class Option implements Comparable<Option> {
      * {@inheritDoc}
      */
     @Override
-    public boolean equals(final Object other) {
+    public boolean equals(@CheckForNull final Object other) {
         return (other instanceof Option) && compareTo((Option) other) == 0;
     }
 

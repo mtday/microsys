@@ -18,6 +18,8 @@ import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
 
+import javax.annotation.Nonnull;
+
 /**
  * This actor implements the {@code help} command in the shell.
  */
@@ -25,7 +27,7 @@ public class HelpCommand extends Command {
     /**
      * @param shellEnvironment the shell command execution environment
      */
-    public HelpCommand(final ShellEnvironment shellEnvironment) {
+    public HelpCommand(@Nonnull final ShellEnvironment shellEnvironment) {
         super(shellEnvironment);
     }
 
@@ -33,6 +35,7 @@ public class HelpCommand extends Command {
      * {@inheritDoc}
      */
     @Override
+    @Nonnull
     public List<Registration> getRegistrations() {
         final Optional<String> description = Optional.of("display usage information for available shell commands");
         final CommandPath help = new CommandPath("help");
@@ -43,7 +46,8 @@ public class HelpCommand extends Command {
      * {@inheritDoc}
      */
     @Override
-    public CommandStatus process(final UserCommand userCommand, final PrintWriter writer) {
+    @Nonnull
+    public CommandStatus process(@Nonnull final UserCommand userCommand, @Nonnull final PrintWriter writer) {
         final CommandPath path = userCommand.getCommandPath();
         if (path.getSize() > 1) {
             // Strip off the "help" at the front and lookup the registrations for which help should be retrieved.
@@ -57,7 +61,8 @@ public class HelpCommand extends Command {
         return CommandStatus.SUCCESS;
     }
 
-    protected void handleRegistrations(final Set<Registration> registrations, final PrintWriter writer) {
+    protected void handleRegistrations(
+            @Nonnull final Set<Registration> registrations, @Nonnull final PrintWriter writer) {
         // Only show options for help with a single command.
         final boolean includeOptions = registrations.size() == 1;
 
@@ -69,8 +74,10 @@ public class HelpCommand extends Command {
         output.forEach(writer::println);
     }
 
+    @Nonnull
     protected List<String> getOutput(
-            final Registration registration, final boolean includeOptions, final OptionalInt longestPath) {
+            @Nonnull final Registration registration, final boolean includeOptions,
+            @Nonnull final OptionalInt longestPath) {
         final List<String> output = new LinkedList<>();
         output.add(getDescription(registration, longestPath));
         if (includeOptions) {
@@ -79,7 +86,8 @@ public class HelpCommand extends Command {
         return output;
     }
 
-    protected String getDescription(final Registration registration, final OptionalInt longestPath) {
+    @Nonnull
+    protected String getDescription(@Nonnull final Registration registration, @Nonnull final OptionalInt longestPath) {
         if (registration.getDescription().isPresent()) {
             final String path = StringUtils.rightPad(registration.getPath().toString(), longestPath.getAsInt());
             return String.format("  %s  %s", path, registration.getDescription().get());
@@ -87,7 +95,8 @@ public class HelpCommand extends Command {
         return String.format("  %s", registration.getPath().toString());
     }
 
-    protected List<String> getOptions(final Registration registration) {
+    @Nonnull
+    protected List<String> getOptions(@Nonnull final Registration registration) {
         final List<String> output = new LinkedList<>();
         if (registration.getOptions().isPresent()) {
             for (final Option option : registration.getOptions().get().getOptions()) {

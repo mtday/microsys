@@ -1,23 +1,32 @@
 package microsys.shell.command.service;
 
-import microsys.common.model.ServiceType;
-import microsys.service.model.Service;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.lang3.StringUtils;
 
+import microsys.common.model.ServiceType;
+import microsys.service.model.Service;
+
+import java.util.Objects;
 import java.util.Optional;
+
+import javax.annotation.Nonnull;
 
 /**
  * Responsible for performing filtering operations on {@link Service} objects based on user-provided command-line
  * parameters from the shell.
  */
 public class ServiceFilter {
+    @Nonnull
     private final Optional<ServiceType> type;
+    @Nonnull
     private final Optional<String> host;
+    @Nonnull
     private final Optional<Integer> port;
+    @Nonnull
     private final Optional<String> version;
 
-    public ServiceFilter(final Optional<CommandLine> commandLine) {
+    public ServiceFilter(@Nonnull final Optional<CommandLine> commandLine) {
+        Objects.requireNonNull(commandLine);
         if (commandLine.isPresent()) {
             if (commandLine.get().hasOption('t')) {
                 this.type = Optional.of(ServiceType.valueOf(commandLine.get().getOptionValue('t').toUpperCase()));
@@ -47,7 +56,8 @@ public class ServiceFilter {
         }
     }
 
-    public boolean matches(final Service service) {
+    public boolean matches(@Nonnull final Service service) {
+        Objects.requireNonNull(service);
         boolean matches = true;
         if (this.type.isPresent() && !this.type.get().equals(service.getType())) {
             matches = false;

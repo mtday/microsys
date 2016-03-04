@@ -14,12 +14,19 @@ import microsys.common.model.ServiceType;
 
 import java.util.Objects;
 
+import javax.annotation.CheckForNull;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
 /**
  * An immutable class representing summary information about a service.
  */
 public class ServiceInfo implements Model, Comparable<ServiceInfo> {
+    @Nonnull
     private final ServiceType type;
+    @Nonnull
     private final String systemName;
+    @Nonnull
     private final String systemVersion;
 
     /**
@@ -27,7 +34,7 @@ public class ServiceInfo implements Model, Comparable<ServiceInfo> {
      * @param systemName the name of the system in which this service is running
      * @param systemVersion the version of the service
      */
-    public ServiceInfo(final ServiceType type, final String systemName, final String systemVersion) {
+    public ServiceInfo(@Nonnull final ServiceType type, @Nonnull final String systemName, @Nonnull final String systemVersion) {
         this.type = Objects.requireNonNull(type);
         this.systemName = Objects.requireNonNull(systemName);
         this.systemVersion = Objects.requireNonNull(systemVersion);
@@ -36,7 +43,7 @@ public class ServiceInfo implements Model, Comparable<ServiceInfo> {
     /**
      * @param json the JSON representation of a {@link ServiceInfo} object
      */
-    public ServiceInfo(final JsonObject json) {
+    public ServiceInfo(@Nonnull final JsonObject json) {
         Objects.requireNonNull(json);
         Preconditions.checkArgument(json.has("type"), "Type field required");
         Preconditions.checkArgument(json.get("type").isJsonPrimitive(), "Type field must be a primitive");
@@ -53,6 +60,7 @@ public class ServiceInfo implements Model, Comparable<ServiceInfo> {
     /**
      * @return the type of service represented
      */
+    @Nonnull
     public ServiceType getType() {
         return this.type;
     }
@@ -60,6 +68,7 @@ public class ServiceInfo implements Model, Comparable<ServiceInfo> {
     /**
      * @return the name of the system in which this service is running
      */
+    @Nonnull
     public String getSystemName() {
         return this.systemName;
     }
@@ -67,6 +76,7 @@ public class ServiceInfo implements Model, Comparable<ServiceInfo> {
     /**
      * @return the version of the service
      */
+    @Nonnull
     public String getSystemVersion() {
         return this.systemVersion;
     }
@@ -75,7 +85,7 @@ public class ServiceInfo implements Model, Comparable<ServiceInfo> {
      * {@inheritDoc}
      */
     @Override
-    public int compareTo(final ServiceInfo other) {
+    public int compareTo(@Nullable final ServiceInfo other) {
         if (other == null) {
             return 1;
         }
@@ -91,7 +101,7 @@ public class ServiceInfo implements Model, Comparable<ServiceInfo> {
      * {@inheritDoc}
      */
     @Override
-    public boolean equals(final Object other) {
+    public boolean equals(@CheckForNull final Object other) {
         return (other instanceof ServiceInfo) && compareTo((ServiceInfo) other) == 0;
     }
 
@@ -111,6 +121,7 @@ public class ServiceInfo implements Model, Comparable<ServiceInfo> {
      * {@inheritDoc}
      */
     @Override
+    @Nonnull
     public String toString() {
         final ToStringBuilder str = new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE);
         str.append("type", getType());
@@ -123,6 +134,7 @@ public class ServiceInfo implements Model, Comparable<ServiceInfo> {
      * {@inheritDoc}
      */
     @Override
+    @Nonnull
     public JsonObject toJson() {
         final JsonObject json = new JsonObject();
         json.addProperty("type", getType().name());
@@ -139,7 +151,8 @@ public class ServiceInfo implements Model, Comparable<ServiceInfo> {
          * {@inheritDoc}
          */
         @Override
-        protected ServiceInfo doForward(final JsonObject jsonObject) {
+        @Nonnull
+        protected ServiceInfo doForward(@Nonnull final JsonObject jsonObject) {
             return new ServiceInfo(Objects.requireNonNull(jsonObject));
         }
 
@@ -147,8 +160,25 @@ public class ServiceInfo implements Model, Comparable<ServiceInfo> {
          * {@inheritDoc}
          */
         @Override
-        protected JsonObject doBackward(final ServiceInfo serviceInfo) {
+        @Nonnull
+        protected JsonObject doBackward(@Nonnull final ServiceInfo serviceInfo) {
             return Objects.requireNonNull(serviceInfo).toJson();
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public boolean equals(@CheckForNull final Object other) {
+            return (other instanceof ServiceInfoConverter);
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public int hashCode() {
+            return getClass().getName().hashCode();
         }
     }
 }

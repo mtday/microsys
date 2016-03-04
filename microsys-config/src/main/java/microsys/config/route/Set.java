@@ -16,6 +16,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import javax.annotation.Nonnull;
 import javax.servlet.http.HttpServletResponse;
 
 /**
@@ -26,7 +27,7 @@ public class Set extends BaseConfigRoute {
      * @param config the system configuration properties
      * @param configService the {@link ConfigService} used to manage the dynamic system configuration properties
      */
-    public Set(final Config config, final ConfigService configService) {
+    public Set(@Nonnull final Config config, @Nonnull final ConfigService configService) {
         super(config, configService);
     }
 
@@ -34,7 +35,8 @@ public class Set extends BaseConfigRoute {
      * {@inheritDoc}
      */
     @Override
-    public Object handle(final Request request, final Response response)
+    @Nonnull
+    public Object handle(@Nonnull final Request request, @Nonnull final Response response)
             throws ExecutionException, InterruptedException, TimeoutException {
         try {
             final String body = request.body();

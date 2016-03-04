@@ -35,5 +35,6 @@ public class ShellEnvironmentTest {
         assertEquals(discovery, env.getDiscoveryManager());
         assertEquals(curator, env.getCuratorFramework());
         assertEquals(registration, env.getRegistrationManager());
+        assertEquals(httpClient, env.getHttpClient());
     }
 }

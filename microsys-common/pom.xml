@@ -48,6 +48,12 @@
             <artifactId>guava</artifactId>
         </dependency>
 
+        <!-- Null checking annotations -->
+        <dependency>
+            <groupId>com.google.code.findbugs</groupId>
+            <artifactId>annotations</artifactId>
+        </dependency>
+
         <!-- Logging -->
         <dependency>
             <groupId>org.slf4j</groupId>

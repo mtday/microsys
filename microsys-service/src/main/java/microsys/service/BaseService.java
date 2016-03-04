@@ -30,20 +30,29 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import javax.annotation.Nonnull;
+
 /**
  * The base class for a micro service in this system.
  */
 public abstract class BaseService {
     private final static Logger LOG = LoggerFactory.getLogger(BaseService.class);
 
+    @Nonnull
     private final Config config;
+    @Nonnull
     private final ServiceType serviceType;
+    @Nonnull
     private final Optional<CountDownLatch> serverStopLatch;
 
+    @Nonnull
     private final ExecutorService executor;
+    @Nonnull
     private final CuratorFramework curator;
+    @Nonnull
     private final DiscoveryManager discoveryManager;
 
+    @Nonnull
     private Optional<Service> service;
     private boolean shouldRestart = false;
 
@@ -52,7 +61,9 @@ public abstract class BaseService {
      * @param serviceType     the type of this service
      * @param serverStopLatch the {@link CountDownLatch} used to manage the running server process
      */
-    public BaseService(final Config config, final ServiceType serviceType, final CountDownLatch serverStopLatch)
+    public BaseService(
+            @Nonnull final Config config, @Nonnull final ServiceType serviceType,
+            @Nonnull final CountDownLatch serverStopLatch)
             throws DiscoveryException, TimeoutException, InterruptedException, PortReservationException {
         this.config = Objects.requireNonNull(config);
         this.serviceType = Objects.requireNonNull(serviceType);
@@ -61,6 +72,8 @@ public abstract class BaseService {
         this.executor = createExecutor(config);
         this.curator = createCurator(config);
         this.discoveryManager = createDiscoveryManager(this.config, this.curator);
+
+        this.service = Optional.empty();
 
         start();
     }
@@ -73,8 +86,9 @@ public abstract class BaseService {
      * @param serviceType      the type of this service
      */
     public BaseService(
-            final Config config, final ExecutorService executor, final CuratorFramework curator,
-            final DiscoveryManager discoveryManager, final ServiceType serviceType)
+            @Nonnull final Config config, @Nonnull final ExecutorService executor,
+            @Nonnull final CuratorFramework curator, @Nonnull final DiscoveryManager discoveryManager,
+            @Nonnull final ServiceType serviceType)
             throws DiscoveryException, TimeoutException, InterruptedException, PortReservationException {
         this.config = Objects.requireNonNull(config);
         this.executor = Objects.requireNonNull(executor);
@@ -83,12 +97,15 @@ public abstract class BaseService {
         this.serviceType = Objects.requireNonNull(serviceType);
         this.serverStopLatch = Optional.empty();
 
+        this.service = Optional.empty();
+
         start();
     }
 
     /**
      * @return the static system configuration information
      */
+    @Nonnull
     public Config getConfig() {
         return this.config;
     }
@@ -96,6 +113,7 @@ public abstract class BaseService {
     /**
      * @return the {@link ExecutorService} used to perform asynchronous task processing
      */
+    @Nonnull
     public ExecutorService getExecutor() {
         return this.executor;
     }
@@ -103,6 +121,7 @@ public abstract class BaseService {
     /**
      * @return the {@link CuratorFramework} used to perform communication with zookeeper
      */
+    @Nonnull
     public CuratorFramework getCurator() {
         return this.curator;
     }
@@ -110,6 +129,7 @@ public abstract class BaseService {
     /**
      * @return the {@link DiscoveryManager} used to manage available services
      */
+    @Nonnull
     public DiscoveryManager getDiscoveryManager() {
         return this.discoveryManager;
     }
@@ -117,6 +137,7 @@ public abstract class BaseService {
     /**
      * @return the type of service being hosted
      */
+    @Nonnull
     public ServiceType getServiceType() {
         return this.serviceType;
     }
@@ -124,6 +145,7 @@ public abstract class BaseService {
     /**
      * @return the {@link CountDownLatch} tracking the running server process
      */
+    @Nonnull
     public Optional<CountDownLatch> getServerStopLatch() {
         return this.serverStopLatch;
     }
@@ -131,6 +153,7 @@ public abstract class BaseService {
     /**
      * @return the {@link Service} describing this running service, possibly not present if not running
      */
+    @Nonnull
     public Optional<Service> getService() {
         return this.service;
     }
@@ -149,20 +172,25 @@ public abstract class BaseService {
         this.shouldRestart = shouldRestart;
     }
 
+    @Nonnull
     protected String getHostName() {
         return getConfig().getString(CommonConfig.SERVER_HOSTNAME.getKey());
     }
 
-    protected DiscoveryManager createDiscoveryManager(final Config config, final CuratorFramework curator)
-            throws DiscoveryException {
+    @Nonnull
+    protected DiscoveryManager createDiscoveryManager(
+            @Nonnull final Config config, @Nonnull final CuratorFramework curator) throws DiscoveryException {
         return new DiscoveryManager(Objects.requireNonNull(config), Objects.requireNonNull(curator));
     }
 
-    protected ExecutorService createExecutor(final Config config) {
+    @Nonnull
+    protected ExecutorService createExecutor(@Nonnull final Config config) {
         return Executors.newFixedThreadPool(config.getInt(CommonConfig.EXECUTOR_THREADS.getKey()));
     }
 
-    protected CuratorFramework createCurator(final Config config) throws InterruptedException, TimeoutException {
+    @Nonnull
+    protected CuratorFramework createCurator(@Nonnull final Config config)
+            throws InterruptedException, TimeoutException {
         final String zookeepers = config.getString(CommonConfig.ZOOKEEPER_HOSTS.getKey());
         final String namespace = config.getString(CommonConfig.SYSTEM_NAME.getKey());
         final CuratorFramework curator =
@@ -175,7 +203,7 @@ public abstract class BaseService {
         return curator;
     }
 
-    protected void configurePort(final Reservation reservation) {
+    protected void configurePort(@Nonnull final Reservation reservation) {
         Spark.port(reservation.getPort());
     }
 

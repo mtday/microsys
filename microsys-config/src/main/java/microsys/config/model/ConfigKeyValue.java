@@ -14,18 +14,24 @@ import microsys.common.model.Model;
 
 import java.util.Objects;
 
+import javax.annotation.CheckForNull;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
 /**
  * Represents a dynamic configuration key and value pair.
  */
 public class ConfigKeyValue implements Model, Comparable<ConfigKeyValue> {
+    @Nonnull
     private final String key;
+    @Nonnull
     private final String value;
 
     /**
      * @param key the configuration key
      * @param value the configuration value
      */
-    public ConfigKeyValue(final String key, final String value) {
+    public ConfigKeyValue(@Nonnull final String key, @Nonnull final String value) {
         Preconditions.checkArgument(isNotEmpty(key), "Invalid empty key");
         Preconditions.checkArgument(isNotEmpty(value), "Invalid empty value");
 
@@ -36,7 +42,7 @@ public class ConfigKeyValue implements Model, Comparable<ConfigKeyValue> {
     /**
      * @param json a {@link JsonObject} from which a {@link ConfigKeyValue} will be parsed
      */
-    public ConfigKeyValue(final JsonObject json) {
+    public ConfigKeyValue(@Nonnull final JsonObject json) {
         // Validate the json object
         Objects.requireNonNull(json);
         Preconditions.checkArgument(json.has("key"), "Key field required");
@@ -53,6 +59,7 @@ public class ConfigKeyValue implements Model, Comparable<ConfigKeyValue> {
     /**
      * @return the configuration key
      */
+    @Nonnull
     public String getKey() {
         return this.key;
     }
@@ -60,6 +67,7 @@ public class ConfigKeyValue implements Model, Comparable<ConfigKeyValue> {
     /**
      * @return the configuration value
      */
+    @Nonnull
     public String getValue() {
         return this.value;
     }
@@ -68,7 +76,7 @@ public class ConfigKeyValue implements Model, Comparable<ConfigKeyValue> {
      * {@inheritDoc}
      */
     @Override
-    public int compareTo(final ConfigKeyValue other) {
+    public int compareTo(@Nullable final ConfigKeyValue other) {
         if (other == null) {
             return 1;
         }
@@ -83,7 +91,7 @@ public class ConfigKeyValue implements Model, Comparable<ConfigKeyValue> {
      * {@inheritDoc}
      */
     @Override
-    public boolean equals(final Object other) {
+    public boolean equals(@CheckForNull final Object other) {
         return (other instanceof ConfigKeyValue) && compareTo((ConfigKeyValue) other) == 0;
     }
 
@@ -102,6 +110,7 @@ public class ConfigKeyValue implements Model, Comparable<ConfigKeyValue> {
      * {@inheritDoc}
      */
     @Override
+    @Nonnull
     public String toString() {
         final ToStringBuilder str = new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE);
         str.append("key", getKey());
@@ -113,6 +122,7 @@ public class ConfigKeyValue implements Model, Comparable<ConfigKeyValue> {
      * {@inheritDoc}
      */
     @Override
+    @Nonnull
     public JsonObject toJson() {
         final JsonObject json = new JsonObject();
         json.addProperty("key", getKey());

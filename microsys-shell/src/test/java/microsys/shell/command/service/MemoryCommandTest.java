@@ -33,11 +33,14 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.CompletableFuture;
 
+import javax.annotation.Nonnull;
+
 /**
  * Perform testing of the {@link MemoryCommand} class.
  */
 public class MemoryCommandTest {
     @SuppressWarnings("unchecked")
+    @Nonnull
     protected ShellEnvironment getShellEnvironment() throws Exception {
         final Service s1 = new Service(ServiceType.CONFIG, "host1", 1234, false, "1.2.3");
         final Service s2 = new Service(ServiceType.HEALTH, "host1", 1235, false, "1.2.3");

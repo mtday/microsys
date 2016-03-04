@@ -21,14 +21,18 @@ import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
+import javax.annotation.Nonnull;
 import javax.servlet.http.HttpServletResponse;
 
 /**
  * Provides remote access over REST to the security service.
  */
 public class SecurityClient implements UserService {
+    @Nonnull
     private final ExecutorService executor;
+    @Nonnull
     private final DiscoveryManager discoveryManager;
+    @Nonnull
     private final OkHttpClient httpClient;
 
     /**
@@ -37,7 +41,8 @@ public class SecurityClient implements UserService {
      * @param httpClient the HTTP client used to perform REST communication
      */
     public SecurityClient(
-            final ExecutorService executor, final DiscoveryManager discoveryManager, final OkHttpClient httpClient) {
+            @Nonnull final ExecutorService executor, @Nonnull final DiscoveryManager discoveryManager,
+            @Nonnull final OkHttpClient httpClient) {
         this.executor = Objects.requireNonNull(executor);
         this.discoveryManager = Objects.requireNonNull(discoveryManager);
         this.httpClient = Objects.requireNonNull(httpClient);
@@ -46,6 +51,7 @@ public class SecurityClient implements UserService {
     /**
      * @return the {@link ExecutorService} used to execute asynchronous processing of the configuration client
      */
+    @Nonnull
     protected ExecutorService getExecutor() {
         return this.executor;
     }
@@ -53,6 +59,7 @@ public class SecurityClient implements UserService {
     /**
      * @return the service discovery manager used to find configuration service end-points
      */
+    @Nonnull
     protected DiscoveryManager getDiscoveryManager() {
         return this.discoveryManager;
     }
@@ -60,6 +67,7 @@ public class SecurityClient implements UserService {
     /**
      * @return the service discovery manager used to find configuration service end-points
      */
+    @Nonnull
     protected OkHttpClient getHttpClient() {
         return this.httpClient;
     }
@@ -70,6 +78,7 @@ public class SecurityClient implements UserService {
      * @throws DiscoveryException if there is a problem retrieving a random {@link Service}
      * @throws UserServiceException if there no random security {@link Service} objects are available
      */
+    @Nonnull
     protected Service getRandom() throws DiscoveryException, UserServiceException {
         final Optional<Service> random = getDiscoveryManager().getRandom(ServiceType.SECURITY);
         if (!random.isPresent()) {
@@ -84,7 +93,8 @@ public class SecurityClient implements UserService {
      * @throws IOException if there is a problem processing the response data
      * @throws UserServiceException if there was a problem with the remote security service
      */
-    protected Optional<User> handleResponse(final Response response) throws IOException, UserServiceException {
+    @Nonnull
+    protected Optional<User> handleResponse(@Nonnull final Response response) throws IOException, UserServiceException {
         Objects.requireNonNull(response);
         switch (response.code()) {
             case HttpServletResponse.SC_OK:
@@ -101,7 +111,8 @@ public class SecurityClient implements UserService {
      * @param url the base url path from which a {@link User} object will be retrieved
      * @return an {@link Optional} {@link User}, possibly empty if not found, wrapped in a {@link Future}
      */
-    protected Future<Optional<User>> get(final String url) {
+    @Nonnull
+    protected Future<Optional<User>> get(@Nonnull final String url) {
         Objects.requireNonNull(url);
         return getExecutor().submit(() -> {
             final Request request = new Request.Builder().url(getRandom().asUrl() + url).get().build();
@@ -113,7 +124,8 @@ public class SecurityClient implements UserService {
      * {@inheritDoc}
      */
     @Override
-    public Future<Optional<User>> getById(final String id) {
+    @Nonnull
+    public Future<Optional<User>> getById(@Nonnull final String id) {
         return get("id/" + Objects.requireNonNull(id));
     }
 
@@ -121,7 +133,8 @@ public class SecurityClient implements UserService {
      * {@inheritDoc}
      */
     @Override
-    public Future<Optional<User>> getByName(final String name) {
+    @Nonnull
+    public Future<Optional<User>> getByName(@Nonnull final String name) {
         return get("name/" + Objects.requireNonNull(name));
     }
 
@@ -129,7 +142,8 @@ public class SecurityClient implements UserService {
      * {@inheritDoc}
      */
     @Override
-    public Future<Optional<User>> save(final User user) {
+    @Nonnull
+    public Future<Optional<User>> save(@Nonnull final User user) {
         Objects.requireNonNull(user);
         return getExecutor().submit(() -> {
             final RequestBody body =
@@ -143,7 +157,8 @@ public class SecurityClient implements UserService {
      * {@inheritDoc}
      */
     @Override
-    public Future<Optional<User>> remove(final String id) {
+    @Nonnull
+    public Future<Optional<User>> remove(@Nonnull final String id) {
         Objects.requireNonNull(id);
         return getExecutor().submit(() -> {
             final Request request = new Request.Builder().url(getRandom().asUrl() + id).delete().build();

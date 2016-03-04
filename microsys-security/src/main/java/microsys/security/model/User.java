@@ -19,12 +19,19 @@ import java.util.Objects;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+import javax.annotation.CheckForNull;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
 /**
  * An immutable class representing an authenticated user in this system.
  */
 public class User implements Model, Comparable<User> {
+    @Nonnull
     private final String id;
+    @Nonnull
     private final String userName;
+    @Nonnull
     private final SortedSet<String> roles = new TreeSet<>();
 
     /**
@@ -32,7 +39,7 @@ public class User implements Model, Comparable<User> {
      * @param userName the user name associated with the user account
      * @param roles the roles authorized to the user
      */
-    public User(final String id, final String userName, final Collection<String> roles) {
+    public User(@Nonnull final String id, @Nonnull final String userName, @Nonnull final Collection<String> roles) {
         this.id = Objects.requireNonNull(id);
         this.userName = Objects.requireNonNull(userName);
         this.roles.addAll(Objects.requireNonNull(roles));
@@ -41,7 +48,7 @@ public class User implements Model, Comparable<User> {
     /**
      * @param json the JSON representation of a {@link User} object
      */
-    public User(final JsonObject json) {
+    public User(@Nonnull final JsonObject json) {
         Objects.requireNonNull(json);
         Preconditions.checkArgument(json.has("id"), "ID field required");
         Preconditions.checkArgument(json.get("id").isJsonPrimitive(), "ID field must be a primitive");
@@ -63,6 +70,7 @@ public class User implements Model, Comparable<User> {
     /**
      * @return the unique id of the user account
      */
+    @Nonnull
     public String getId() {
         return this.id;
     }
@@ -70,6 +78,7 @@ public class User implements Model, Comparable<User> {
     /**
      * @return the user name associated with the user account
      */
+    @Nonnull
     public String getUserName() {
         return this.userName;
     }
@@ -77,6 +86,7 @@ public class User implements Model, Comparable<User> {
     /**
      * @return the unmodifiable sorted set of roles assigned to this user account
      */
+    @Nonnull
     public SortedSet<String> getRoles() {
         return Collections.unmodifiableSortedSet(this.roles);
     }
@@ -85,15 +95,15 @@ public class User implements Model, Comparable<User> {
      * @param role the role to check for existence in this user
      * @return whether the specified role has been granted to this user
      */
-    public boolean hasRole(final String role) {
-        return getRoles().contains(role);
+    public boolean hasRole(@Nonnull final String role) {
+        return getRoles().contains(Objects.requireNonNull(role));
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public int compareTo(final User other) {
+    public int compareTo(@Nullable final User other) {
         if (other == null) {
             return 1;
         }
@@ -109,7 +119,7 @@ public class User implements Model, Comparable<User> {
      * {@inheritDoc}
      */
     @Override
-    public boolean equals(final Object other) {
+    public boolean equals(@CheckForNull final Object other) {
         return (other instanceof User) && compareTo((User) other) == 0;
     }
 
@@ -129,6 +139,7 @@ public class User implements Model, Comparable<User> {
      * {@inheritDoc}
      */
     @Override
+    @Nonnull
     public String toString() {
         final ToStringBuilder str = new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE);
         str.append("id", getId());
@@ -141,6 +152,7 @@ public class User implements Model, Comparable<User> {
      * {@inheritDoc}
      */
     @Override
+    @Nonnull
     public JsonObject toJson() {
         final JsonArray roleArr = new JsonArray();
         getRoles().forEach(roleArr::add);
@@ -160,7 +172,8 @@ public class User implements Model, Comparable<User> {
          * {@inheritDoc}
          */
         @Override
-        protected User doForward(final JsonObject jsonObject) {
+        @Nonnull
+        protected User doForward(@Nonnull final JsonObject jsonObject) {
             return new User(Objects.requireNonNull(jsonObject));
         }
 
@@ -168,8 +181,25 @@ public class User implements Model, Comparable<User> {
          * {@inheritDoc}
          */
         @Override
-        protected JsonObject doBackward(final User user) {
+        @Nonnull
+        protected JsonObject doBackward(@Nonnull final User user) {
             return Objects.requireNonNull(user).toJson();
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public boolean equals(@CheckForNull final Object other) {
+            return (other instanceof UserConverter);
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public int hashCode() {
+            return getClass().getName().hashCode();
         }
     }
 }

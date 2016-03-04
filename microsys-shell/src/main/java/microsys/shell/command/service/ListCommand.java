@@ -21,6 +21,8 @@ import java.util.OptionalInt;
 import java.util.SortedSet;
 import java.util.stream.Collectors;
 
+import javax.annotation.Nonnull;
+
 /**
  * This command implements the {@code service list} command in the shell.
  */
@@ -28,7 +30,7 @@ public class ListCommand extends BaseServiceCommand {
     /**
      * @param shellEnvironment the shell command execution environment
      */
-    public ListCommand(final ShellEnvironment shellEnvironment) {
+    public ListCommand(@Nonnull final ShellEnvironment shellEnvironment) {
         super(shellEnvironment);
     }
 
@@ -36,6 +38,7 @@ public class ListCommand extends BaseServiceCommand {
      * {@inheritDoc}
      */
     @Override
+    @Nonnull
     public List<Registration> getRegistrations() {
         final Option type = getTypeOption("the service type to list");
         final Option host = getHostOption("the host to list");
@@ -52,7 +55,8 @@ public class ListCommand extends BaseServiceCommand {
      * {@inheritDoc}
      */
     @Override
-    public CommandStatus process(final UserCommand userCommand, final PrintWriter writer) {
+    @Nonnull
+    public CommandStatus process(@Nonnull final UserCommand userCommand, @Nonnull final PrintWriter writer) {
         try {
             final SortedSet<Service> services = getShellEnvironment().getDiscoveryManager().getAll();
             final ServiceFilter filter = new ServiceFilter(userCommand.getCommandLine());
@@ -76,13 +80,14 @@ public class ListCommand extends BaseServiceCommand {
         private final OptionalInt longestHost;
         private final OptionalInt longestPort;
 
-        public Stringer(final List<Service> services) {
+        public Stringer(@Nonnull final List<Service> services) {
             this.longestType = services.stream().mapToInt(s -> s.getType().name().length()).max();
             this.longestHost = services.stream().mapToInt(s -> s.getHost().length()).max();
             this.longestPort = services.stream().mapToInt(s -> String.valueOf(s.getPort()).length()).max();
         }
 
-        public String toString(final Service service) {
+        @Nonnull
+        public String toString(@Nonnull final Service service) {
             final String type = StringUtils.rightPad(service.getType().name(), this.longestType.getAsInt());
             final String host = StringUtils.rightPad(service.getHost(), this.longestHost.getAsInt());
             final String port = StringUtils.rightPad(String.valueOf(service.getPort()), this.longestPort.getAsInt());

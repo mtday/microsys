@@ -1,5 +1,7 @@
 package microsys.common.config;
 
+import javax.annotation.Nonnull;
+
 /**
  * Defines the static configuration keys expected to exist in the system configuration.
  */
@@ -29,6 +31,7 @@ public enum CommonConfig {
     /**
      * @return the key to use when retrieving the common configuration value from the system configuration file
      */
+    @Nonnull
     public String getKey() {
         return name().toLowerCase().replaceAll("_", ".");
     }

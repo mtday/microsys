@@ -18,14 +18,19 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import javax.annotation.CheckForNull;
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
  * The immutable parsed user command to be executed.
  */
 public class UserCommand implements Comparable<UserCommand> {
+    @Nonnull
     private final CommandPath commandPath;
+    @Nonnull
     private final Registration registration;
+    @Nonnull
     private final List<String> userInput;
 
     /**
@@ -34,7 +39,8 @@ public class UserCommand implements Comparable<UserCommand> {
      * @param userInput the list of tokens comprising the user input to be executed
      */
     public UserCommand(
-            final CommandPath commandPath, final Registration registration, final List<?> userInput) {
+            @Nonnull final CommandPath commandPath, @Nonnull final Registration registration,
+            @Nonnull final List<?> userInput) {
         this.commandPath = Objects.requireNonNull(commandPath);
         this.registration = Objects.requireNonNull(registration);
         this.userInput = Objects.requireNonNull(userInput).stream().map(String::valueOf).collect(Collectors.toList());
@@ -44,6 +50,7 @@ public class UserCommand implements Comparable<UserCommand> {
     /**
      * @return the {@link CommandPath} representing the user-specified command
      */
+    @Nonnull
     public CommandPath getCommandPath() {
         return this.commandPath;
     }
@@ -51,6 +58,7 @@ public class UserCommand implements Comparable<UserCommand> {
     /**
      * @return the {@link Registration} associated with the command being invoked
      */
+    @Nonnull
     public Registration getRegistration() {
         return this.registration;
     }
@@ -58,6 +66,7 @@ public class UserCommand implements Comparable<UserCommand> {
     /**
      * @return the tokenized user input entered in the shell to be executed
      */
+    @Nonnull
     public List<String> getUserInput() {
         return Collections.unmodifiableList(this.userInput);
     }
@@ -66,6 +75,7 @@ public class UserCommand implements Comparable<UserCommand> {
      * @return the parsed {@link CommandLine} parameters for this command based on the user input and registration
      * options
      */
+    @Nonnull
     public Optional<CommandLine> getCommandLine() {
         try {
             return parseCommandLine(getRegistration(), getUserInput());
@@ -87,6 +97,7 @@ public class UserCommand implements Comparable<UserCommand> {
      * {@inheritDoc}
      */
     @Override
+    @Nonnull
     public String toString() {
         final ToStringBuilder str = new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE);
         str.append("commandPath", getCommandPath());
@@ -115,7 +126,7 @@ public class UserCommand implements Comparable<UserCommand> {
      * {@inheritDoc}
      */
     @Override
-    public boolean equals(final Object other) {
+    public boolean equals(@CheckForNull final Object other) {
         return (other instanceof UserCommand) && compareTo((UserCommand) other) == 0;
     }
 
@@ -131,6 +142,7 @@ public class UserCommand implements Comparable<UserCommand> {
         return hash.toHashCode();
     }
 
+    @Nonnull
     private Optional<CommandLine> parseCommandLine(
             final Registration registration, final List<String> userInput) throws ParseException {
         if (registration.getOptions().isPresent()) {

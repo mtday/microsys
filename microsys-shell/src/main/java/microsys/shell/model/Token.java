@@ -7,6 +7,8 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 import java.util.Objects;
 
+import javax.annotation.CheckForNull;
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
@@ -14,13 +16,14 @@ import javax.annotation.Nullable;
  */
 public class Token implements Comparable<Token> {
     private final int position;
+    @Nonnull
     private final String value;
 
     /**
      * @param position the position in the original input where this token resides
      * @param value the text value of the token
      */
-    public Token(final int position, final String value) {
+    public Token(final int position, @Nonnull final String value) {
         Preconditions.checkArgument(position >= 0, "Position must be non-negative");
         this.position = position;
         this.value = Objects.requireNonNull(value);
@@ -36,6 +39,7 @@ public class Token implements Comparable<Token> {
     /**
      * @return the text value of the token
      */
+    @Nonnull
     public String getValue() {
         return this.value;
     }
@@ -44,6 +48,7 @@ public class Token implements Comparable<Token> {
      * {@inheritDoc}
      */
     @Override
+    @Nonnull
     public String toString() {
         return getValue();
     }
@@ -67,7 +72,7 @@ public class Token implements Comparable<Token> {
      * {@inheritDoc}
      */
     @Override
-    public boolean equals(final Object other) {
+    public boolean equals(@CheckForNull final Object other) {
         return (other instanceof Token) && compareTo((Token) other) == 0;
     }
 

@@ -12,6 +12,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
+import javax.annotation.Nonnull;
+
 /**
  * This command implements the {@code exit} and {@code quit} commands in the shell.
  */
@@ -19,7 +21,7 @@ public class ExitCommand extends Command {
     /**
      * @param shellEnvironment the shell command execution environment
      */
-    public ExitCommand(final ShellEnvironment shellEnvironment) {
+    public ExitCommand(@Nonnull final ShellEnvironment shellEnvironment) {
         super(shellEnvironment);
     }
 
@@ -27,6 +29,7 @@ public class ExitCommand extends Command {
      * {@inheritDoc}
      */
     @Override
+    @Nonnull
     public List<Registration> getRegistrations() {
         final Optional<String> description = Optional.of("exit the shell");
         final CommandPath exit = new CommandPath("exit");
@@ -42,7 +45,8 @@ public class ExitCommand extends Command {
      * {@inheritDoc}
      */
     @Override
-    public CommandStatus process(final UserCommand userCommand, final PrintWriter writer) {
+    @Nonnull
+    public CommandStatus process(@Nonnull final UserCommand userCommand, @Nonnull final PrintWriter writer) {
         writer.println("Terminating");
         return CommandStatus.TERMINATE;
     }

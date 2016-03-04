@@ -1,17 +1,23 @@
 package microsys.service.model;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import com.google.common.base.Converter;
 import com.google.gson.JsonObject;
-import microsys.common.model.Model;
+
 import org.apache.commons.lang3.builder.CompareToBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
+import microsys.common.model.Model;
+
 import java.lang.management.MemoryUsage;
 import java.util.Objects;
 
-import static com.google.common.base.Preconditions.checkArgument;
+import javax.annotation.CheckForNull;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * An immutable class representing the memory used and available for a service
@@ -26,7 +32,7 @@ public class ServiceMemory implements Model, Comparable<ServiceMemory> {
      * @param heap    the {@link MemoryUsage} describing the service heap memory
      * @param nonheap the {@link MemoryUsage} describing the service non-heap memory
      */
-    public ServiceMemory(final MemoryUsage heap, final MemoryUsage nonheap) {
+    public ServiceMemory(@Nonnull final MemoryUsage heap, @Nonnull final MemoryUsage nonheap) {
         Objects.requireNonNull(heap);
         Objects.requireNonNull(nonheap);
 
@@ -39,7 +45,7 @@ public class ServiceMemory implements Model, Comparable<ServiceMemory> {
     /**
      * @param json the JSON representation of a {@link ServiceMemory} object
      */
-    public ServiceMemory(final JsonObject json) {
+    public ServiceMemory(@Nonnull final JsonObject json) {
         Objects.requireNonNull(json);
         checkArgument(json.has("heap"), "Heap field required");
         checkArgument(json.get("heap").isJsonObject(), "Heap field must be an object");
@@ -67,6 +73,7 @@ public class ServiceMemory implements Model, Comparable<ServiceMemory> {
     /**
      * @return the type of unit the memory numbers are in
      */
+    @Nonnull
     public String getUnits() {
         return "bytes";
     }
@@ -96,6 +103,7 @@ public class ServiceMemory implements Model, Comparable<ServiceMemory> {
      * @return the status of the heap memory usage of the service, typically {@code "NORMAL"} unless the heap memory is
      * higher than 80%, in which case {@code "WARNING"} is returned
      */
+    @Nonnull
     public String getHeapStatus() {
         return getHeapUsedPercent() > 80 ? "WARNING" : "NORMAL";
     }
@@ -125,6 +133,7 @@ public class ServiceMemory implements Model, Comparable<ServiceMemory> {
      * @return the status of the non-heap memory usage of the service, typically {@code "NORMAL"} unless the non-heap
      * memory is higher than 80%, in which case {@code "WARNING"} is returned
      */
+    @Nonnull
     public String getNonHeapStatus() {
         return getNonHeapUsedPercent() > 80 ? "WARNING" : "NORMAL";
     }
@@ -133,7 +142,7 @@ public class ServiceMemory implements Model, Comparable<ServiceMemory> {
      * {@inheritDoc}
      */
     @Override
-    public int compareTo(final ServiceMemory other) {
+    public int compareTo(@Nullable final ServiceMemory other) {
         if (other == null) {
             return 1;
         }
@@ -154,7 +163,7 @@ public class ServiceMemory implements Model, Comparable<ServiceMemory> {
      * {@inheritDoc}
      */
     @Override
-    public boolean equals(final Object other) {
+    public boolean equals(@CheckForNull final Object other) {
         return (other instanceof ServiceMemory) && compareTo((ServiceMemory) other) == 0;
     }
 
@@ -179,6 +188,7 @@ public class ServiceMemory implements Model, Comparable<ServiceMemory> {
      * {@inheritDoc}
      */
     @Override
+    @Nonnull
     public String toString() {
         final ToStringBuilder str = new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE);
         str.append("units", getUnits());
@@ -197,6 +207,7 @@ public class ServiceMemory implements Model, Comparable<ServiceMemory> {
      * {@inheritDoc}
      */
     @Override
+    @Nonnull
     public JsonObject toJson() {
         final JsonObject heap = new JsonObject();
         heap.addProperty("units", getUnits());
@@ -226,7 +237,8 @@ public class ServiceMemory implements Model, Comparable<ServiceMemory> {
          * {@inheritDoc}
          */
         @Override
-        protected ServiceMemory doForward(final JsonObject jsonObject) {
+        @Nonnull
+        protected ServiceMemory doForward(@Nonnull final JsonObject jsonObject) {
             return new ServiceMemory(Objects.requireNonNull(jsonObject));
         }
 
@@ -234,8 +246,25 @@ public class ServiceMemory implements Model, Comparable<ServiceMemory> {
          * {@inheritDoc}
          */
         @Override
-        protected JsonObject doBackward(final ServiceMemory serviceMemory) {
+        @Nonnull
+        protected JsonObject doBackward(@Nonnull final ServiceMemory serviceMemory) {
             return Objects.requireNonNull(serviceMemory).toJson();
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public boolean equals(@CheckForNull final Object other) {
+            return (other instanceof ServiceMemoryConverter);
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public int hashCode() {
+            return getClass().getName().hashCode();
         }
     }
 }

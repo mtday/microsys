@@ -1,5 +1,7 @@
 package microsys.shell.command.service;
 
+import javax.annotation.Nonnull;
+
 /**
  * Used to create a summary line describing the services being displayed in the shell.
  */
@@ -28,6 +30,7 @@ class ServiceSummary {
      * @return a summary of the services that are displayed
      */
     @Override
+    @Nonnull
     public String toString() {
         if (getTotalServices() == 0) {
             return "No services are running";

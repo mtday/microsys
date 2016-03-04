@@ -9,17 +9,20 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import javax.annotation.Nonnull;
+
 /**
  * Responsible for performing tab-completions on service ports by using service discovery to find valid ports.
  */
 public class ServicePortCompleter implements Completer {
+    @Nonnull
     private final ShellEnvironment shellEnvironment;
 
     /**
      * @param shellEnvironment the {@link ShellEnvironment} that contains all of the necessary information for
      * performing the tab completion
      */
-    public ServicePortCompleter(final ShellEnvironment shellEnvironment) {
+    public ServicePortCompleter(@Nonnull final ShellEnvironment shellEnvironment) {
         this.shellEnvironment = Objects.requireNonNull(shellEnvironment);
     }
 
@@ -27,7 +30,7 @@ public class ServicePortCompleter implements Completer {
      * {@inheritDoc}
      */
     @Override
-    public int complete(final String buffer, final int cursor, final List<CharSequence> candidates) {
+    public int complete(@Nonnull final String buffer, final int cursor, @Nonnull final List<CharSequence> candidates) {
         try {
             final List<String> ports =
                     this.shellEnvironment.getDiscoveryManager().getAll().stream().map(Service::getPort).map(String

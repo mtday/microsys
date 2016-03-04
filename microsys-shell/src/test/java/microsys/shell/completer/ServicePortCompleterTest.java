@@ -1,23 +1,27 @@
 package microsys.shell.completer;
 
+import static org.junit.Assert.assertEquals;
+
+import org.junit.Test;
+import org.mockito.Mockito;
+
 import microsys.common.model.ServiceType;
 import microsys.service.discovery.DiscoveryManager;
 import microsys.service.model.Service;
 import microsys.shell.model.ShellEnvironment;
-import org.junit.Test;
-import org.mockito.Mockito;
 
 import java.util.LinkedList;
 import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
-import static org.junit.Assert.assertEquals;
+import javax.annotation.Nonnull;
 
 /**
  * Perform testing on the {@link ServicePortCompleter} class.
  */
 public class ServicePortCompleterTest {
+    @Nonnull
     protected ShellEnvironment getShellEnvironment() throws Exception {
         final SortedSet<Service> services = new TreeSet<>();
         services.add(new Service(ServiceType.CONFIG, "host1", 1234, false, "1.2.3"));

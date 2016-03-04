@@ -8,12 +8,17 @@ import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+
+import javax.annotation.Nonnull;
 
 /**
  * A utility class used to tokenize user input.
  */
 public class Tokenizer {
-    public static List<Token> tokenize(final String input) throws ParseException {
+    @Nonnull
+    public static List<Token> tokenize(@Nonnull final String input) throws ParseException {
+        Objects.requireNonNull(input);
         final List<Token> tokens = new ArrayList<>();
         boolean inQuote = false;
         boolean inEscapeSequence = false;

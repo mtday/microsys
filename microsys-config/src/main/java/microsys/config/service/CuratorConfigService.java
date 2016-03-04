@@ -20,6 +20,8 @@ import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
+import javax.annotation.Nonnull;
+
 /**
  * A {@link ConfigService} implementation that makes use of a {@link CuratorFramework} to
  * store dynamic system configuration information in zookeeper.
@@ -29,8 +31,11 @@ public class CuratorConfigService implements ConfigService, TreeCacheListener {
 
     private final static String PATH = "/dynamic-config";
 
+    @Nonnull
     private final ExecutorService executor;
+    @Nonnull
     private final CuratorFramework curator;
+    @Nonnull
     private final TreeCache treeCache;
 
     /**
@@ -38,7 +43,7 @@ public class CuratorConfigService implements ConfigService, TreeCacheListener {
      * @param curator the {@link CuratorFramework} used to communicate configuration information with zookeeper
      * @throws ConfigServiceException if there is a problem with zookeeper communications
      */
-    public CuratorConfigService(final ExecutorService executor, final CuratorFramework curator)
+    public CuratorConfigService(@Nonnull final ExecutorService executor, @Nonnull final CuratorFramework curator)
             throws ConfigServiceException {
         this.executor = Objects.requireNonNull(executor);
         this.curator = Objects.requireNonNull(curator);
@@ -65,6 +70,7 @@ public class CuratorConfigService implements ConfigService, TreeCacheListener {
     /**
      * @return the {@link ExecutorService} used to execute asynchronous processing of the configuration service
      */
+    @Nonnull
     protected ExecutorService getExecutor() {
         return this.executor;
     }
@@ -72,6 +78,7 @@ public class CuratorConfigService implements ConfigService, TreeCacheListener {
     /**
      * @return the {@link CuratorFramework} used to communicate configuration information with zookeeper
      */
+    @Nonnull
     protected CuratorFramework getCurator() {
         return this.curator;
     }
@@ -79,6 +86,7 @@ public class CuratorConfigService implements ConfigService, TreeCacheListener {
     /**
      * @return the {@link TreeCache} that is managing the dynamic system configuration information
      */
+    @Nonnull
     protected TreeCache getTreeCache() {
         return this.treeCache;
     }
@@ -87,7 +95,8 @@ public class CuratorConfigService implements ConfigService, TreeCacheListener {
      * @param key the configuration key for which a zookeeper path should be created
      * @return the zookeeper path representation of the provided key
      */
-    protected String getPath(final String key) {
+    @Nonnull
+    protected String getPath(@Nonnull final String key) {
         return String.format("%s/%s", PATH, Objects.requireNonNull(key));
     }
 
@@ -95,14 +104,16 @@ public class CuratorConfigService implements ConfigService, TreeCacheListener {
      * @param bytes the configuration value as bytes as stored in zookeeper
      * @return the String value of the bytes
      */
-    protected String getValue(final byte[] bytes) {
-        return new String(bytes, StandardCharsets.UTF_8);
+    @Nonnull
+    protected String getValue(@Nonnull final byte[] bytes) {
+        return new String(Objects.requireNonNull(bytes), StandardCharsets.UTF_8);
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
+    @Nonnull
     public Future<ConfigKeyValueCollection> getAll() {
         return getExecutor().submit(() -> {
             final Collection<ConfigKeyValue> coll = new LinkedList<>();
@@ -119,7 +130,8 @@ public class CuratorConfigService implements ConfigService, TreeCacheListener {
      * {@inheritDoc}
      */
     @Override
-    public Future<Optional<ConfigKeyValue>> get(final String key) {
+    @Nonnull
+    public Future<Optional<ConfigKeyValue>> get(@Nonnull final String key) {
         Objects.requireNonNull(key);
         return getExecutor().submit(() -> {
             final Optional<ChildData> existing = Optional.ofNullable(getTreeCache().getCurrentData(getPath(key)));
@@ -134,7 +146,8 @@ public class CuratorConfigService implements ConfigService, TreeCacheListener {
      * {@inheritDoc}
      */
     @Override
-    public Future<Optional<ConfigKeyValue>> set(final ConfigKeyValue kv) {
+    @Nonnull
+    public Future<Optional<ConfigKeyValue>> set(@Nonnull final ConfigKeyValue kv) {
         Objects.requireNonNull(kv);
         return getExecutor().submit(() -> {
             final Optional<ChildData> existing =
@@ -164,7 +177,8 @@ public class CuratorConfigService implements ConfigService, TreeCacheListener {
      * {@inheritDoc}
      */
     @Override
-    public Future<Optional<ConfigKeyValue>> unset(final String key) {
+    @Nonnull
+    public Future<Optional<ConfigKeyValue>> unset(@Nonnull final String key) {
         Objects.requireNonNull(key);
         return getExecutor().submit(() -> {
             final Optional<ChildData> existing = Optional.ofNullable(getTreeCache().getCurrentData(getPath(key)));
@@ -189,7 +203,8 @@ public class CuratorConfigService implements ConfigService, TreeCacheListener {
      * {@inheritDoc}
      */
     @Override
-    public void childEvent(final CuratorFramework client, final TreeCacheEvent event) throws Exception {
+    public void childEvent(@Nonnull final CuratorFramework client, @Nonnull final TreeCacheEvent event)
+            throws Exception {
         if (event.getData() != null) {
             if (event.getData().getData() != null) {
                 LOG.info("Configuration {}: {} => {}", event.getType(), event.getData().getPath(),

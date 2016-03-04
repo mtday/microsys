@@ -12,6 +12,8 @@ import microsys.service.model.Reservation;
 
 import java.util.Objects;
 
+import javax.annotation.Nonnull;
+
 /**
  * This manager is used to reserve a unique port for a service, and does so in such a way as to prevent two services
  * from attempting to simultaneously attempting to start on the same port.
@@ -19,8 +21,11 @@ import java.util.Objects;
 public class PortManager {
     private final static String PORT_RESERVATION_PATH = "/port-reservation";
 
+    @Nonnull
     private final Config config;
+    @Nonnull
     private final SharedCount portReservation;
+    @Nonnull
     private final PortTester portTester;
 
     /**
@@ -28,7 +33,8 @@ public class PortManager {
      * @param curator the {@link CuratorFramework} that is managing zookeeper operations
      * @throws PortReservationException if there is a problem with zookeeper communication
      */
-    public PortManager(final Config config, final CuratorFramework curator) throws PortReservationException {
+    public PortManager(@Nonnull final Config config, @Nonnull final CuratorFramework curator)
+            throws PortReservationException {
         this(config, curator, new DefaultPortTester());
     }
 
@@ -38,7 +44,8 @@ public class PortManager {
      * @param portTester the {@link PortTester} used to verify that each port is available
      * @throws PortReservationException if there is a problem with zookeeper communication
      */
-    public PortManager(final Config config, final CuratorFramework curator, final PortTester portTester)
+    public PortManager(
+            @Nonnull final Config config, @Nonnull final CuratorFramework curator, @Nonnull final PortTester portTester)
             throws PortReservationException {
         this.config = Objects.requireNonNull(config);
 
@@ -56,6 +63,7 @@ public class PortManager {
     /**
      * @return the static system configuration information
      */
+    @Nonnull
     protected Config getConfig() {
         return this.config;
     }
@@ -63,6 +71,7 @@ public class PortManager {
     /**
      * @return the {@link SharedCount} object that represents the available port information from zookeeper
      */
+    @Nonnull
     protected SharedCount getPortReservation() {
         return this.portReservation;
     }
@@ -70,6 +79,7 @@ public class PortManager {
     /**
      * @return the {@link PortTester} used to verify that each port is available
      */
+    @Nonnull
     protected PortTester getPortTester() {
         return this.portTester;
     }
@@ -92,11 +102,11 @@ public class PortManager {
      * @param currentValue the current shared port number value from zookeeper
      * @return the next port number to use
      */
-    protected int getNextPort(final VersionedValue<Integer> currentValue) {
+    protected int getNextPort(@Nonnull final VersionedValue<Integer> currentValue) {
         final int minPort = getMinPort();
         final int maxPort = getMaxPort();
 
-        int next = currentValue.getValue() + 1;
+        int next = Objects.requireNonNull(currentValue).getValue() + 1;
         if (next > maxPort) {
             next = minPort;
         }
@@ -109,7 +119,9 @@ public class PortManager {
      * @return a {@link Reservation} representing the available host and port information
      * @throws PortReservationException if there is a problem reserving the port
      */
-    public Reservation getReservation(final ServiceType type, final String host) throws PortReservationException {
+    @Nonnull
+    public Reservation getReservation(@Nonnull final ServiceType type, @Nonnull final String host)
+            throws PortReservationException {
         boolean successful = false;
 
         int totalAttempts = getMaxPort() - getMinPort() + 2;

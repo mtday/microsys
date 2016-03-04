@@ -9,18 +9,21 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import javax.annotation.Nonnull;
+
 /**
  * Responsible for performing tab-completions on service version values, using service discovery to determine what valid
  * versions are available.
  */
 public class ServiceVersionCompleter implements Completer {
+    @Nonnull
     private final ShellEnvironment shellEnvironment;
 
     /**
      * @param shellEnvironment the {@link ShellEnvironment} containing all of the necessary information for
      * performing the tab completion
      */
-    public ServiceVersionCompleter(final ShellEnvironment shellEnvironment) {
+    public ServiceVersionCompleter(@Nonnull final ShellEnvironment shellEnvironment) {
         this.shellEnvironment = Objects.requireNonNull(shellEnvironment);
     }
 
@@ -28,7 +31,7 @@ public class ServiceVersionCompleter implements Completer {
      * {@inheritDoc}
      */
     @Override
-    public int complete(final String buffer, final int cursor, final List<CharSequence> candidates) {
+    public int complete(@Nonnull final String buffer, final int cursor, @Nonnull final List<CharSequence> candidates) {
         try {
             final List<String> versions =
                     this.shellEnvironment.getDiscoveryManager().getAll().stream().map(Service::getVersion)

@@ -25,10 +25,13 @@ import java.util.Optional;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+import javax.annotation.Nonnull;
+
 /**
  * Perform testing of the {@link ListCommand} class.
  */
 public class ListCommandTest {
+    @Nonnull
     protected ShellEnvironment getShellEnvironment() throws Exception {
         final SortedSet<Service> services = new TreeSet<>();
         services.add(new Service(ServiceType.CONFIG, "host1", 1234, false, "1.2.3"));

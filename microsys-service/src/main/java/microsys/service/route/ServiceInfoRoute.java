@@ -12,24 +12,27 @@ import spark.Response;
 
 import java.util.Objects;
 
+import javax.annotation.Nonnull;
 import javax.servlet.http.HttpServletResponse;
 
 /**
  * A base route that provides some information about the service like the type and version.
  */
 public class ServiceInfoRoute extends BaseRoute {
+    @Nonnull
     private final ServiceType serviceType;
 
     /**
      * @param config the static system configuration information
      * @param serviceType the type of service for which this route has been deployed
      */
-    public ServiceInfoRoute(final Config config, final ServiceType serviceType) {
+    public ServiceInfoRoute(@Nonnull final Config config, @Nonnull final ServiceType serviceType) {
         super(config);
 
         this.serviceType = Objects.requireNonNull(serviceType);
     }
 
+    @Nonnull
     protected ServiceType getServiceType() {
         return this.serviceType;
     }
@@ -38,7 +41,8 @@ public class ServiceInfoRoute extends BaseRoute {
      * {@inheritDoc}
      */
     @Override
-    public Object handle(final Request request, final Response response) {
+    @Nonnull
+    public Object handle(@Nonnull final Request request, @Nonnull final Response response) {
         response.status(HttpServletResponse.SC_OK);
         response.type(MediaType.JSON_UTF_8.type());
 

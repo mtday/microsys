@@ -12,16 +12,25 @@ import okhttp3.OkHttpClient;
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 
+import javax.annotation.Nonnull;
+
 /**
  * Provides shell environmental configuration and utilities for use within commands.
  */
 public class ShellEnvironment {
+    @Nonnull
     private final Config config;
+    @Nonnull
     private final ExecutorService executor;
+    @Nonnull
     private final DiscoveryManager discoveryManager;
+    @Nonnull
     private final CuratorFramework curatorFramework;
+    @Nonnull
     private final RegistrationManager registrationManager;
+    @Nonnull
     private final OkHttpClient httpClient;
+    @Nonnull
     private final ServiceClient serviceClient;
 
     /**
@@ -33,9 +42,9 @@ public class ShellEnvironment {
      * @param httpClient the {@link OkHttpClient} used to make REST calls to other services
      */
     public ShellEnvironment(
-            final Config config, final ExecutorService executor, final DiscoveryManager discoveryManager,
-            final CuratorFramework curatorFramework, final RegistrationManager registrationManager,
-            final OkHttpClient httpClient) {
+            @Nonnull final Config config, @Nonnull final ExecutorService executor,
+            @Nonnull final DiscoveryManager discoveryManager, @Nonnull final CuratorFramework curatorFramework,
+            @Nonnull final RegistrationManager registrationManager, @Nonnull final OkHttpClient httpClient) {
         this.config = Objects.requireNonNull(config);
         this.executor = Objects.requireNonNull(executor);
         this.discoveryManager = Objects.requireNonNull(discoveryManager);
@@ -49,6 +58,7 @@ public class ShellEnvironment {
     /**
      * @return the static system configuration information
      */
+    @Nonnull
     protected Config getConfig() {
         return this.config;
     }
@@ -56,6 +66,7 @@ public class ShellEnvironment {
     /**
      * @return the {@link ExecutorService} used to perform asynchronous task processing
      */
+    @Nonnull
     protected ExecutorService getExecutor() {
         return this.executor;
     }
@@ -63,6 +74,7 @@ public class ShellEnvironment {
     /**
      * @return the service discovery manager used to find and manage available micro services
      */
+    @Nonnull
     public DiscoveryManager getDiscoveryManager() {
         return this.discoveryManager;
     }
@@ -70,6 +82,7 @@ public class ShellEnvironment {
     /**
      * @return the curator framework used to manage interactions with zookeeper
      */
+    @Nonnull
     public CuratorFramework getCuratorFramework() {
         return this.curatorFramework;
     }
@@ -77,6 +90,7 @@ public class ShellEnvironment {
     /**
      * @return the manager used to track the available command registrations
      */
+    @Nonnull
     public RegistrationManager getRegistrationManager() {
         return this.registrationManager;
     }
@@ -84,6 +98,7 @@ public class ShellEnvironment {
     /**
      * @return the {@link OkHttpClient} used to make REST calls to other services
      */
+    @Nonnull
     public OkHttpClient getHttpClient() {
         return this.httpClient;
     }
@@ -91,6 +106,7 @@ public class ShellEnvironment {
     /**
      * @return the {@link ServiceClient} used to make remote service calls to other services
      */
+    @Nonnull
     public ServiceClient getServiceClient() {
         return this.serviceClient;
     }

@@ -32,16 +32,23 @@ import java.util.Optional;
 import java.util.Scanner;
 import java.util.SortedSet;
 
+import javax.annotation.Nonnull;
+
 /**
  * Responsible for managing the console reader, along with user input and console output.
  */
 public class ConsoleManager {
     private final static String PROMPT = "shell> ";
 
+    @Nonnull
     private final Config config;
+    @Nonnull
     private final ShellEnvironment shellEnvironment;
+    @Nonnull
     private final ConsoleReader consoleReader;
+    @Nonnull
     private final Optional<FileHistory> fileHistory;
+    @Nonnull
     private final Optional<ShellCompleter> completer;
 
     /**
@@ -49,7 +56,8 @@ public class ConsoleManager {
      * @param shellEnvironment the shell environment
      * @throws IOException if there is a problem creating the console reader
      */
-    public ConsoleManager(final Config config, final ShellEnvironment shellEnvironment) throws IOException {
+    public ConsoleManager(@Nonnull final Config config, @Nonnull final ShellEnvironment shellEnvironment)
+            throws IOException {
         this.config = Objects.requireNonNull(config);
         this.shellEnvironment = Objects.requireNonNull(shellEnvironment);
 
@@ -72,7 +80,8 @@ public class ConsoleManager {
      */
     @VisibleForTesting
     public ConsoleManager(
-            final Config config, final ShellEnvironment shellEnvironment, final ConsoleReader consoleReader) {
+            @Nonnull final Config config, @Nonnull final ShellEnvironment shellEnvironment,
+            @Nonnull final ConsoleReader consoleReader) {
         this.config = Objects.requireNonNull(config);
         this.shellEnvironment = Objects.requireNonNull(shellEnvironment);
         this.consoleReader = Objects.requireNonNull(consoleReader);
@@ -83,6 +92,7 @@ public class ConsoleManager {
     /**
      * @return the static system configuration information
      */
+    @Nonnull
     protected Config getConfig() {
         return this.config;
     }
@@ -90,6 +100,7 @@ public class ConsoleManager {
     /**
      * @return the shell environment
      */
+    @Nonnull
     protected ShellEnvironment getShellEnvironment() {
         return this.shellEnvironment;
     }
@@ -97,6 +108,7 @@ public class ConsoleManager {
     /**
      * @return the console reader used to manage user input and console output
      */
+    @Nonnull
     protected ConsoleReader getConsoleReader() {
         return this.consoleReader;
     }
@@ -104,11 +116,13 @@ public class ConsoleManager {
     /**
      * @return the file history, possibly empty if history is not being managed
      */
+    @Nonnull
     protected Optional<FileHistory> getHistory() {
         return this.fileHistory;
     }
 
-    protected FileHistory createHistory(final Config config) throws IOException {
+    @Nonnull
+    protected FileHistory createHistory(@Nonnull final Config config) throws IOException {
         final String userHome = config.getString("user.home");
         final String systemName = config.getString(CommonConfig.SYSTEM_NAME.getKey());
         final String historyFileName = config.getString(CommonConfig.SHELL_HISTORY_FILE.getKey());
@@ -129,8 +143,8 @@ public class ConsoleManager {
      * @param command the command specified on the command line to be executed
      * @throws IOException if there is a problem reading from or writing to the console
      */
-    public void run(final String command) throws IOException {
-        handleInput(Optional.ofNullable(command), true);
+    public void run(@Nonnull final String command) throws IOException {
+        handleInput(Optional.of(command), true);
         stop();
     }
 
@@ -138,7 +152,7 @@ public class ConsoleManager {
      * @param file the input file from which commands should be read and processed
      * @throws IOException if there is a problem reading from or writing to the console
      */
-    public void run(final File file) throws IOException {
+    public void run(@Nonnull final File file) throws IOException {
         if (!Objects.requireNonNull(file).exists()) {
             // No file so no need to do anything.
             stop();
@@ -196,7 +210,8 @@ public class ConsoleManager {
         getShellEnvironment().close();
     }
 
-    protected CommandStatus handleInput(final Optional<String> input, final boolean printCommand) throws IOException {
+    @Nonnull
+    protected CommandStatus handleInput(@Nonnull final Optional<String> input, final boolean printCommand) throws IOException {
         if (!input.isPresent()) {
             // User typed Ctrl-D, terminate.
             return CommandStatus.TERMINATE;
@@ -223,7 +238,8 @@ public class ConsoleManager {
         }
     }
 
-    protected CommandStatus handleTokens(final List<Token> tokens) throws IOException {
+    @Nonnull
+    protected CommandStatus handleTokens(@Nonnull final List<Token> tokens) throws IOException {
         final CommandPath commandPath = new CommandPath(tokens);
         final SortedSet<Registration> registrations =
                 getShellEnvironment().getRegistrationManager().getRegistrations(commandPath);

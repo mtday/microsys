@@ -1,8 +1,5 @@
 package microsys.shell.completer;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import jline.console.completer.ArgumentCompleter;
 import jline.console.completer.Completer;
 import microsys.shell.RegistrationManager;
@@ -14,25 +11,26 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+import javax.annotation.Nonnull;
+
 /**
  * Responsible for managing tab-completion within the shell.
  */
 public class ShellCompleter implements Completer {
-    private final static Logger LOG = LoggerFactory.getLogger(ShellCompleter.class);
-
+    @Nonnull
     private final CompletionTree completions;
 
     /**
      * @param registrationManager the {@link RegistrationManager} that is tracking the supported shell commands
      */
-    public ShellCompleter(final RegistrationManager registrationManager) {
+    public ShellCompleter(@Nonnull final RegistrationManager registrationManager) {
         this(Objects.requireNonNull(registrationManager).getRegistrations());
     }
 
     /**
      * @param registrations the {@link Registration} objects that define the available completions
      */
-    public ShellCompleter(final Collection<Registration> registrations) {
+    public ShellCompleter(@Nonnull final Collection<Registration> registrations) {
         Objects.requireNonNull(registrations);
 
         this.completions = new CompletionTree();
@@ -43,7 +41,7 @@ public class ShellCompleter implements Completer {
      * {@inheritDoc}
      */
     @Override
-    public int complete(final String buffer, final int cursor, final List<CharSequence> candidates) {
+    public int complete(@Nonnull final String buffer, final int cursor, @Nonnull final List<CharSequence> candidates) {
         final ArgumentCompleter.ArgumentList argumentList =
                 new ArgumentCompleter.WhitespaceArgumentDelimiter().delimit(buffer, cursor);
 

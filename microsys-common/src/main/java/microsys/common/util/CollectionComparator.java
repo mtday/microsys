@@ -8,10 +8,14 @@ import java.util.Iterator;
 import java.util.Objects;
 import java.util.Optional;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
 /**
  * Perform comparisons between two {@link Collection} objects.
  */
 public class CollectionComparator<T> implements Comparator<Collection<T>> {
+    @Nonnull
     private final Optional<Comparator<T>> comparator;
 
     /**
@@ -24,7 +28,7 @@ public class CollectionComparator<T> implements Comparator<Collection<T>> {
     /**
      * @param comparator the {@link Comparator} used to perform comparisons on the objects within the collections
      */
-    public CollectionComparator(final Comparator<T> comparator) {
+    public CollectionComparator(@Nonnull final Comparator<T> comparator) {
         this.comparator = Optional.of(Objects.requireNonNull(comparator));
     }
 
@@ -32,6 +36,7 @@ public class CollectionComparator<T> implements Comparator<Collection<T>> {
      * @return the {@link Comparator} used to perform comparisons on the objects within the collections, possibly empty
      * in which case the natural ordering will be used
      */
+    @Nonnull
     public Optional<Comparator<T>> getComparator() {
         return this.comparator;
     }
@@ -40,7 +45,7 @@ public class CollectionComparator<T> implements Comparator<Collection<T>> {
      * {@inheritDoc}
      */
     @Override
-    public int compare(final Collection<T> a, final Collection<T> b) {
+    public int compare(@Nullable final Collection<T> a, @Nullable final Collection<T> b) {
         if (a != null && b != null) {
             final CompareToBuilder cmp = new CompareToBuilder();
             final Iterator<T> iterA = a.iterator();

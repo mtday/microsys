@@ -172,6 +172,10 @@
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
+            <artifactId>microsys-security</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
             <artifactId>microsys-shell</artifactId>
         </dependency>
     </dependencies>

@@ -24,6 +24,8 @@ import java.util.SortedSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import javax.annotation.Nonnull;
+
 /**
  * Perform testing on the {@link RegistrationManager} class.
  */
@@ -62,7 +64,7 @@ public class RegistrationManagerTest {
     }
 
     public static abstract class TestCommand extends Command {
-        public TestCommand(final ShellEnvironment shellEnvironment) {
+        public TestCommand(@Nonnull final ShellEnvironment shellEnvironment) {
             super(shellEnvironment);
         }
     }

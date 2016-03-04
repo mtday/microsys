@@ -21,6 +21,8 @@ import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 
+import javax.annotation.Nonnull;
+
 /**
  * The main class used to run this service.
  */
@@ -33,7 +35,7 @@ public class Runner extends BaseService {
      * @param serverStopLatch the {@link CountDownLatch} used to manage the running server process
      * @throws Exception if there is a problem during service initialization
      */
-    public Runner(final Config config, final CountDownLatch serverStopLatch) throws Exception {
+    public Runner(@Nonnull final Config config, @Nonnull final CountDownLatch serverStopLatch) throws Exception {
         super(Objects.requireNonNull(config), ServiceType.CONFIG, serverStopLatch);
         addRoutes(new CuratorConfigService(getExecutor(), getCurator()));
     }
@@ -49,13 +51,15 @@ public class Runner extends BaseService {
      * @throws Exception if there is a problem during service initialization
      */
     @VisibleForTesting
-    public Runner(final Config config, final ExecutorService executor, final CuratorFramework curator, final
-            DiscoveryManager discoveryManager) throws Exception {
+    public Runner(
+            @Nonnull final Config config, @Nonnull final ExecutorService executor,
+            @Nonnull final CuratorFramework curator, @Nonnull final DiscoveryManager discoveryManager)
+            throws Exception {
         super(config, executor, curator, discoveryManager, ServiceType.CONFIG);
         addRoutes(new CuratorConfigService(getExecutor(), getCurator()));
     }
 
-    protected void addRoutes(final ConfigService configService) {
+    protected void addRoutes(@Nonnull final ConfigService configService) {
         Spark.get("/", new GetAll(getConfig(), configService));
         Spark.get("/:key", new Get(getConfig(), configService));
         Spark.post("/", new Set(getConfig(), configService));
@@ -66,7 +70,7 @@ public class Runner extends BaseService {
      * @param args the command-line parameters
      * @throws Exception if there is a problem during service initialization
      */
-    public static void main(final String... args) throws Exception {
+    public static void main(@Nonnull final String... args) throws Exception {
         boolean restart;
         do {
             final CountDownLatch serverStopLatch = new CountDownLatch(1);
