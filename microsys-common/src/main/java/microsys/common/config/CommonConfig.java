@@ -11,8 +11,10 @@ public enum CommonConfig {
 
     SSL_ENABLED,
     SSL_KEYSTORE_FILE,
+    SSL_KEYSTORE_TYPE,
     SSL_KEYSTORE_PASSWORD,
     SSL_TRUSTSTORE_FILE,
+    SSL_TRUSTSTORE_TYPE,
     SSL_TRUSTSTORE_PASSWORD,
 
     SERVER_THREADS_MAX,
@@ -26,7 +28,9 @@ public enum CommonConfig {
 
     EXECUTOR_THREADS,
 
-    SHELL_HISTORY_FILE;
+    SHELL_HISTORY_FILE,
+
+    SHARED_SECRET_VARIABLE;
 
     /**
      * @return the key to use when retrieving the common configuration value from the system configuration file

@@ -19,6 +19,7 @@
     <modules>
         <module>microsys-common</module>
         <module>microsys-config</module>
+        <module>microsys-crypto</module>
         <module>microsys-dist</module>
         <module>microsys-security</module>
         <module>microsys-service</module>
@@ -153,6 +154,11 @@
             <dependency>
                 <groupId>${project.groupId}</groupId>
                 <artifactId>microsys-config</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>microsys-crypto</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
