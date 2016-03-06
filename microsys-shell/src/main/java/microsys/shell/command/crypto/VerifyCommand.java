@@ -1,25 +1,16 @@
 package microsys.shell.command.crypto;
 
+import microsys.crypto.CryptoFactory;
+import microsys.crypto.SymmetricKeyEncryption;
+import microsys.shell.model.*;
 import org.apache.commons.cli.CommandLine;
 
-import microsys.crypto.CryptoFactory;
-import microsys.crypto.EncryptionException;
-import microsys.crypto.SymmetricKeyEncryption;
-import microsys.shell.model.CommandPath;
-import microsys.shell.model.CommandStatus;
-import microsys.shell.model.Option;
-import microsys.shell.model.Options;
-import microsys.shell.model.Registration;
-import microsys.shell.model.ShellEnvironment;
-import microsys.shell.model.UserCommand;
-
+import javax.annotation.Nonnull;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-
-import javax.annotation.Nonnull;
 
 /**
  * This command implements the {@code crypto verify} command in the shell.
@@ -39,7 +30,7 @@ public class VerifyCommand extends BaseCryptoCommand {
     @Nonnull
     public List<Registration> getRegistrations() {
         final Option input = getInputOption("the user data to verify");
-        final Option signature = getInputOption("the known signature to verify");
+        final Option signature = getSignatureOption("the known signature to verify");
         final Optional<Options> verifyOptions = Optional.of(new Options(input, signature));
 
         final Optional<String> description = Optional.of("verify the provided input data");
@@ -63,7 +54,7 @@ public class VerifyCommand extends BaseCryptoCommand {
             final SymmetricKeyEncryption ske = cryptoFactory.getSymmetricKeyEncryption();
             final boolean verified = ske.verifyString(input, StandardCharsets.UTF_8, signature);
             writer.println("Verified Successfully: " + (verified ? "Yes" : "No"));
-        } catch (final EncryptionException exception) {
+        } catch (final Exception exception) {
             writer.println("Failed to verify input: " + exception.getMessage());
         }
 
