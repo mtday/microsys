@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 
 import ch.qos.logback.classic.Level;
 import microsys.common.config.CommonConfig;
+import microsys.crypto.CryptoFactory;
 import microsys.service.discovery.DiscoveryManager;
 import microsys.shell.model.ShellEnvironment;
 import okhttp3.OkHttpClient;
@@ -61,8 +62,10 @@ public class ConsoleManagerTest {
         final CuratorFramework curator = Mockito.mock(CuratorFramework.class);
         final RegistrationManager registrationManager = new RegistrationManager();
         final OkHttpClient httpClient = new OkHttpClient.Builder().build();
+        final CryptoFactory cryptoFactory = new CryptoFactory(config);
         final ShellEnvironment shellEnvironment =
-                new ShellEnvironment(config, executor, discovery, curator, registrationManager, httpClient);
+                new ShellEnvironment(config, executor, discovery, curator, registrationManager, httpClient,
+                        cryptoFactory);
         registrationManager.loadCommands(shellEnvironment);
 
         final CapturingConsoleReader consoleReader =
@@ -74,7 +77,7 @@ public class ConsoleManagerTest {
         assertTrue(consoleReader.isShutdown());
 
         final List<String> lines = consoleReader.getOutputLines();
-        assertEquals(23, lines.size());
+        assertEquals(27, lines.size());
 
         int line = 0;
         // Startup
@@ -90,6 +93,10 @@ public class ConsoleManagerTest {
         // blank and #comment
 
         // help
+        assertEquals("  crypto decrypt           decrypt the provided input data", lines.get(line++));
+        assertEquals("  crypto encrypt           encrypt the provided input data", lines.get(line++));
+        assertEquals("  crypto sign              sign the provided input data", lines.get(line++));
+        assertEquals("  crypto verify            verify the provided input data", lines.get(line++));
         assertEquals("  exit                     exit the shell", lines.get(line++));
         assertEquals("  help                     display usage information for available shell commands",
                 lines.get(line++));
@@ -133,8 +140,10 @@ public class ConsoleManagerTest {
         final CuratorFramework curator = Mockito.mock(CuratorFramework.class);
         final RegistrationManager registrationManager = new RegistrationManager();
         final OkHttpClient httpClient = new OkHttpClient.Builder().build();
+        final CryptoFactory cryptoFactory = new CryptoFactory(config);
         final ShellEnvironment shellEnvironment =
-                new ShellEnvironment(config, executor, discovery, curator, registrationManager, httpClient);
+                new ShellEnvironment(config, executor, discovery, curator, registrationManager, httpClient,
+                        cryptoFactory);
         registrationManager.loadCommands(shellEnvironment);
 
         final CapturingConsoleReader consoleReader = new CapturingConsoleReader("help");
@@ -171,8 +180,10 @@ public class ConsoleManagerTest {
         final CuratorFramework curator = Mockito.mock(CuratorFramework.class);
         final RegistrationManager registrationManager = new RegistrationManager();
         final OkHttpClient httpClient = new OkHttpClient.Builder().build();
+        final CryptoFactory cryptoFactory = new CryptoFactory(config);
         final ShellEnvironment shellEnvironment =
-                new ShellEnvironment(config, executor, discovery, curator, registrationManager, httpClient);
+                new ShellEnvironment(config, executor, discovery, curator, registrationManager, httpClient,
+                        cryptoFactory);
         registrationManager.loadCommands(shellEnvironment);
 
         final CapturingConsoleReader consoleReader = new CapturingConsoleReader("help");
@@ -183,7 +194,7 @@ public class ConsoleManagerTest {
         assertTrue(consoleReader.isShutdown());
 
         final List<String> lines = consoleReader.getOutputLines();
-        assertEquals(12, lines.size());
+        assertEquals(16, lines.size());
 
         int line = 0;
         // Startup
@@ -193,6 +204,10 @@ public class ConsoleManagerTest {
         assertEquals("Type 'help' to list the available commands", lines.get(line++));
 
         // help
+        assertEquals("  crypto decrypt           decrypt the provided input data", lines.get(line++));
+        assertEquals("  crypto encrypt           encrypt the provided input data", lines.get(line++));
+        assertEquals("  crypto sign              sign the provided input data", lines.get(line++));
+        assertEquals("  crypto verify            verify the provided input data", lines.get(line++));
         assertEquals("  exit                     exit the shell", lines.get(line++));
         assertEquals("  help                     display usage information for available shell commands",
                 lines.get(line++));
@@ -225,8 +240,10 @@ public class ConsoleManagerTest {
             final CuratorFramework curator = Mockito.mock(CuratorFramework.class);
             final RegistrationManager registrationManager = new RegistrationManager();
             final OkHttpClient httpClient = new OkHttpClient.Builder().build();
+            final CryptoFactory cryptoFactory = new CryptoFactory(config);
             final ShellEnvironment shellEnvironment =
-                    new ShellEnvironment(config, executor, discovery, curator, registrationManager, httpClient);
+                    new ShellEnvironment(config, executor, discovery, curator, registrationManager, httpClient,
+                            cryptoFactory);
             registrationManager.loadCommands(shellEnvironment);
 
             final CapturingConsoleReader consoleReader = new CapturingConsoleReader();
@@ -265,8 +282,10 @@ public class ConsoleManagerTest {
             final CuratorFramework curator = Mockito.mock(CuratorFramework.class);
             final RegistrationManager registrationManager = new RegistrationManager();
             final OkHttpClient httpClient = new OkHttpClient.Builder().build();
+            final CryptoFactory cryptoFactory = new CryptoFactory(config);
             final ShellEnvironment shellEnvironment =
-                    new ShellEnvironment(config, executor, discovery, curator, registrationManager, httpClient);
+                    new ShellEnvironment(config, executor, discovery, curator, registrationManager, httpClient,
+                            cryptoFactory);
             registrationManager.loadCommands(shellEnvironment);
 
             final CapturingConsoleReader consoleReader = new CapturingConsoleReader();
@@ -275,11 +294,15 @@ public class ConsoleManagerTest {
             assertTrue(consoleReader.isShutdown());
 
             final List<String> lines = consoleReader.getOutputLines();
-            assertEquals(11, lines.size());
+            assertEquals(15, lines.size());
 
             int line = 0;
             // help
             assertEquals("# help", lines.get(line++));
+            assertEquals("  crypto decrypt           decrypt the provided input data", lines.get(line++));
+            assertEquals("  crypto encrypt           encrypt the provided input data", lines.get(line++));
+            assertEquals("  crypto sign              sign the provided input data", lines.get(line++));
+            assertEquals("  crypto verify            verify the provided input data", lines.get(line++));
             assertEquals("  exit                     exit the shell", lines.get(line++));
             assertEquals("  help                     display usage information for available shell commands",
                     lines.get(line++));
@@ -313,8 +336,10 @@ public class ConsoleManagerTest {
         final CuratorFramework curator = Mockito.mock(CuratorFramework.class);
         final RegistrationManager registrationManager = new RegistrationManager();
         final OkHttpClient httpClient = new OkHttpClient.Builder().build();
+        final CryptoFactory cryptoFactory = new CryptoFactory(config);
         final ShellEnvironment shellEnvironment =
-                new ShellEnvironment(config, executor, discovery, curator, registrationManager, httpClient);
+                new ShellEnvironment(config, executor, discovery, curator, registrationManager, httpClient,
+                        cryptoFactory);
         registrationManager.loadCommands(shellEnvironment);
 
         final CapturingConsoleReader consoleReader = new CapturingConsoleReader();
@@ -324,11 +349,15 @@ public class ConsoleManagerTest {
         assertTrue(consoleReader.isShutdown());
 
         final List<String> lines = consoleReader.getOutputLines();
-        assertEquals(9, lines.size());
+        assertEquals(13, lines.size());
 
         int line = 0;
         // help
         assertEquals("# help", lines.get(line++));
+        assertEquals("  crypto decrypt           decrypt the provided input data", lines.get(line++));
+        assertEquals("  crypto encrypt           encrypt the provided input data", lines.get(line++));
+        assertEquals("  crypto sign              sign the provided input data", lines.get(line++));
+        assertEquals("  crypto verify            verify the provided input data", lines.get(line++));
         assertEquals("  exit                     exit the shell", lines.get(line++));
         assertEquals("  help                     display usage information for available shell commands",
                 lines.get(line++));
@@ -366,8 +395,10 @@ public class ConsoleManagerTest {
         final CuratorFramework curator = Mockito.mock(CuratorFramework.class);
         final RegistrationManager registrationManager = new RegistrationManager();
         final OkHttpClient httpClient = new OkHttpClient.Builder().build();
+        final CryptoFactory cryptoFactory = new CryptoFactory(config);
         final ShellEnvironment shellEnvironment =
-                new ShellEnvironment(config, executor, discovery, curator, registrationManager, httpClient);
+                new ShellEnvironment(config, executor, discovery, curator, registrationManager, httpClient,
+                        cryptoFactory);
         registrationManager.loadCommands(shellEnvironment);
 
         final CapturingConsoleReader consoleReader = new CapturingConsoleReader();

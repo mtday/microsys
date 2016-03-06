@@ -2,6 +2,7 @@ package microsys.crypto.impl;
 
 import microsys.crypto.EncryptionException;
 import microsys.crypto.PasswordBasedEncryption;
+import microsys.crypto.util.HexUtils;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -72,6 +73,7 @@ public class AESPasswordBasedEncryption implements PasswordBasedEncryption {
     @Nonnull
     protected SecretKey keygen(final int keyLength, @Nonnull final byte[] salt)
             throws NoSuchAlgorithmException, InvalidKeySpecException {
+        Objects.requireNonNull(salt);
         final SecretKeyFactory secretKeyFactory = SecretKeyFactory.getInstance(KEYGEN_SPEC);
         final KeySpec keySpec = new PBEKeySpec(this.password, salt, ITERATIONS, keyLength);
         final SecretKey secretKey = secretKeyFactory.generateSecret(keySpec);
@@ -85,6 +87,8 @@ public class AESPasswordBasedEncryption implements PasswordBasedEncryption {
     @Nonnull
     public void encrypt(@Nonnull final InputStream input, @Nonnull final OutputStream output)
             throws EncryptionException {
+        Objects.requireNonNull(input);
+        Objects.requireNonNull(output);
         try {
             // Generate salt and derive keys for authentication and encryption
             final int keyLength = 128; // The unlimited-strength jce not required for this.
@@ -122,7 +126,7 @@ public class AESPasswordBasedEncryption implements PasswordBasedEncryption {
     @Nonnull
     public byte[] encrypt(@Nonnull final byte[] data) throws EncryptionException {
         final ByteArrayOutputStream output = new ByteArrayOutputStream();
-        encrypt(new ByteArrayInputStream(data), output);
+        encrypt(new ByteArrayInputStream(Objects.requireNonNull(data)), output);
         return output.toByteArray();
     }
 
@@ -131,8 +135,8 @@ public class AESPasswordBasedEncryption implements PasswordBasedEncryption {
      */
     @Override
     @Nonnull
-    public byte[] encryptString(@Nonnull final String data, @Nonnull final Charset charset) throws EncryptionException {
-        return encrypt(Objects.requireNonNull(data).getBytes(charset));
+    public String encryptString(@Nonnull final String data, @Nonnull final Charset charset) throws EncryptionException {
+        return HexUtils.bytesToHex(encrypt(Objects.requireNonNull(data).getBytes(Objects.requireNonNull(charset))));
     }
 
     /**
@@ -142,6 +146,8 @@ public class AESPasswordBasedEncryption implements PasswordBasedEncryption {
     @Nonnull
     public void decrypt(@Nonnull final InputStream input, @Nonnull final OutputStream output)
             throws EncryptionException {
+        Objects.requireNonNull(input);
+        Objects.requireNonNull(output);
         try {
             final int keyLength = input.read() * 8;
 
@@ -182,7 +188,7 @@ public class AESPasswordBasedEncryption implements PasswordBasedEncryption {
     @Nonnull
     public byte[] decrypt(@Nonnull final byte[] data) throws EncryptionException {
         final ByteArrayOutputStream output = new ByteArrayOutputStream();
-        decrypt(new ByteArrayInputStream(data), output);
+        decrypt(new ByteArrayInputStream(Objects.requireNonNull(data)), output);
         return output.toByteArray();
     }
 
@@ -191,7 +197,7 @@ public class AESPasswordBasedEncryption implements PasswordBasedEncryption {
      */
     @Override
     @Nonnull
-    public String decryptString(@Nonnull final byte[] data, @Nonnull final Charset charset) throws EncryptionException {
-        return new String(decrypt(data), charset);
+    public String decryptString(@Nonnull final String data, @Nonnull final Charset charset) throws EncryptionException {
+        return new String(decrypt(HexUtils.hexToBytes(Objects.requireNonNull(data))), Objects.requireNonNull(charset));
     }
 }

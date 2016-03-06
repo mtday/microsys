@@ -8,6 +8,7 @@ import org.apache.curator.framework.CuratorFramework;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import microsys.crypto.CryptoFactory;
 import microsys.service.discovery.DiscoveryManager;
 import microsys.shell.RegistrationManager;
 import okhttp3.OkHttpClient;
@@ -27,9 +28,10 @@ public class ShellEnvironmentTest {
         final CuratorFramework curator = Mockito.mock(CuratorFramework.class);
         final RegistrationManager registration = Mockito.mock(RegistrationManager.class);
         final OkHttpClient httpClient = new OkHttpClient.Builder().build();
+        final CryptoFactory cryptoFactory = Mockito.mock(CryptoFactory.class);
 
         final ShellEnvironment env =
-                new ShellEnvironment(config, executor, discovery, curator, registration, httpClient);
+                new ShellEnvironment(config, executor, discovery, curator, registration, httpClient, cryptoFactory);
 
         assertEquals(config, env.getConfig());
         assertEquals(discovery, env.getDiscoveryManager());

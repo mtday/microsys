@@ -19,6 +19,7 @@ import org.slf4j.LoggerFactory;
 
 import ch.qos.logback.classic.Level;
 import microsys.common.config.CommonConfig;
+import microsys.crypto.CryptoFactory;
 import microsys.service.discovery.DiscoveryManager;
 import microsys.shell.CapturingConsoleReader;
 import microsys.shell.ConsoleManager;
@@ -149,8 +150,10 @@ public class RunnerTest {
                 final DiscoveryManager discovery = new DiscoveryManager(config, curator);
                 final RegistrationManager registrationManager = new RegistrationManager();
                 final OkHttpClient httpClient = new OkHttpClient.Builder().build();
+                final CryptoFactory cryptoFactory = new CryptoFactory(config);
                 final ShellEnvironment shellEnvironment =
-                        new ShellEnvironment(config, executor, discovery, curator, registrationManager, httpClient);
+                        new ShellEnvironment(config, executor, discovery, curator, registrationManager, httpClient,
+                                cryptoFactory);
                 registrationManager.loadCommands(shellEnvironment);
 
                 final CapturingConsoleReader consoleReader = new CapturingConsoleReader();
@@ -160,25 +163,32 @@ public class RunnerTest {
                 runner.setConsoleManager(consoleManager);
                 Runner.processCommandLine(runner, new String[] {"shell", "-f", file.getAbsolutePath()});
 
-                final List<String> o = consoleReader.getOutputLines();
-                assertEquals(13, o.size());
+                final List<String> lines = consoleReader.getOutputLines();
+                assertEquals(17, lines.size());
 
-                int i = 0;
-                assertEquals("# help", o.get(i++));
-                assertEquals("  exit                     exit the shell", o.get(i++));
+                int line = 0;
+                assertEquals("# help", lines.get(line++));
+                assertEquals("  crypto decrypt           decrypt the provided input data", lines.get(line++));
+                assertEquals("  crypto encrypt           encrypt the provided input data", lines.get(line++));
+                assertEquals("  crypto sign              sign the provided input data", lines.get(line++));
+                assertEquals("  crypto verify            verify the provided input data", lines.get(line++));
+                assertEquals("  exit                     exit the shell", lines.get(line++));
                 assertEquals("  help                     display usage information for available shell commands",
-                        o.get(i++));
-                assertEquals("  quit                     exit the shell", o.get(i++));
-                assertEquals("  service control restart  request the restart of one or more services", o.get(i++));
-                assertEquals("  service control stop     request the stop of one or more services", o.get(i++));
-                assertEquals("  service list             provides information about the available services", o.get(i++));
+                        lines.get(line++));
+                assertEquals("  quit                     exit the shell", lines.get(line++));
+                assertEquals(
+                        "  service control restart  request the restart of one or more services", lines.get(line++));
+                assertEquals("  service control stop     request the stop of one or more services", lines.get(line++));
+                assertEquals(
+                        "  service list             provides information about the available services",
+                        lines.get(line++));
                 assertEquals("  service memory           display memory usage information for one or more services",
-                        o.get(i++));
-                assertEquals("# service list -t CONFIG", o.get(i++));
-                assertEquals("No services are running", o.get(i++));
-                assertEquals("# quit", o.get(i++));
-                assertEquals("Terminating", o.get(i++));
-                assertEquals("\n", o.get(i));
+                        lines.get(line++));
+                assertEquals("# service list -t CONFIG", lines.get(line++));
+                assertEquals("No services are running", lines.get(line++));
+                assertEquals("# quit", lines.get(line++));
+                assertEquals("Terminating", lines.get(line++));
+                assertEquals("\n", lines.get(line));
             }
         } finally {
             assertTrue(file.delete());

@@ -12,6 +12,7 @@ import org.mockito.Mockito;
 import org.slf4j.LoggerFactory;
 
 import ch.qos.logback.classic.Level;
+import microsys.crypto.CryptoFactory;
 import microsys.service.discovery.DiscoveryManager;
 import microsys.shell.model.Command;
 import microsys.shell.model.CommandPath;
@@ -41,7 +42,9 @@ public class RegistrationManagerTest {
         final CuratorFramework curator = Mockito.mock(CuratorFramework.class);
         final RegistrationManager rm = new RegistrationManager();
         final OkHttpClient httpClient = new OkHttpClient.Builder().build();
-        final ShellEnvironment env = new ShellEnvironment(config, executor, discovery, curator, rm, httpClient);
+        final CryptoFactory cryptoFactory = new CryptoFactory(config);
+        final ShellEnvironment env =
+                new ShellEnvironment(config, executor, discovery, curator, rm, httpClient, cryptoFactory);
 
         rm.loadCommands(env);
 

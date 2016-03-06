@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 
 import ch.qos.logback.classic.Level;
 import microsys.common.model.ServiceType;
+import microsys.crypto.CryptoFactory;
 import microsys.service.discovery.DiscoveryManager;
 import microsys.service.model.Service;
 import microsys.shell.RegistrationManager;
@@ -50,8 +51,9 @@ public class ShellCompleterTest {
         final CuratorFramework curator = Mockito.mock(CuratorFramework.class);
         final RegistrationManager regMgr = new RegistrationManager();
         final OkHttpClient httpClient = new OkHttpClient.Builder().build();
+        final CryptoFactory cryptoFactory = new CryptoFactory(config);
         final ShellEnvironment shellEnvironment =
-                new ShellEnvironment(config, executor, discovery, curator, regMgr, httpClient);
+                new ShellEnvironment(config, executor, discovery, curator, regMgr, httpClient, cryptoFactory);
         regMgr.loadCommands(shellEnvironment);
 
         shellCompleter = new ShellCompleter(regMgr);
@@ -62,9 +64,9 @@ public class ShellCompleterTest {
         final List<CharSequence> candidates = new ArrayList<>();
         final int position = shellCompleter.complete("", 0, candidates);
 
-        assertEquals(4, candidates.size());
+        assertEquals(5, candidates.size());
         assertEquals(0, position);
-        assertEquals("[exit, help, quit, service]", candidates.toString());
+        assertEquals("[crypto, exit, help, quit, service]", candidates.toString());
     }
 
     @Test
@@ -72,9 +74,9 @@ public class ShellCompleterTest {
         final List<CharSequence> candidates = new ArrayList<>();
         final int position = shellCompleter.complete(" ", 1, candidates);
 
-        assertEquals(4, candidates.size());
+        assertEquals(5, candidates.size());
         assertEquals(1, position);
-        assertEquals("[exit, help, quit, service]", candidates.toString());
+        assertEquals("[crypto, exit, help, quit, service]", candidates.toString());
     }
 
     @Test

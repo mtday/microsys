@@ -2,6 +2,7 @@ package microsys.crypto.impl;
 
 import microsys.crypto.EncryptionException;
 import microsys.crypto.SymmetricKeyEncryption;
+import microsys.crypto.util.HexUtils;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -46,35 +47,6 @@ public class AESSymmetricKeyEncryption implements SymmetricKeyEncryption {
      */
     protected KeyPair getKeyPair() {
         return this.keyPair;
-    }
-
-    protected final static char[] HEX_ARRAY = "0123456789ABCDEF".toCharArray();
-
-    /**
-     * @param bytes the byte array to be converted into a string of hex characters
-     * @return the string of hex characters
-     */
-    protected static String bytesToHex(final byte[] bytes) {
-        final char[] hexChars = new char[bytes.length * 2];
-        for (int j = 0; j < bytes.length; j++) {
-            final int v = bytes[j] & 0xFF;
-            hexChars[j * 2] = HEX_ARRAY[v >>> 4];
-            hexChars[j * 2 + 1] = HEX_ARRAY[v & 0x0F];
-        }
-        return new String(hexChars);
-    }
-
-    /**
-     * @param hex the hex string to convert into a byte array
-     * @return the byte array represented by the hex string
-     */
-    protected static byte[] hexToBytes(final String hex) {
-        final int len = hex.length();
-        final byte[] data = new byte[len / 2];
-        for (int i = 0; i < len; i += 2) {
-            data[i / 2] = (byte) ((Character.digit(hex.charAt(i), 16) << 4) + Character.digit(hex.charAt(i + 1), 16));
-        }
-        return data;
     }
 
     /**
@@ -165,8 +137,8 @@ public class AESSymmetricKeyEncryption implements SymmetricKeyEncryption {
      */
     @Override
     @Nonnull
-    public byte[] encryptString(@Nonnull final String data, @Nonnull final Charset charset) throws EncryptionException {
-        return encrypt(Objects.requireNonNull(data).getBytes(Objects.requireNonNull(charset)));
+    public String encryptString(@Nonnull final String data, @Nonnull final Charset charset) throws EncryptionException {
+        return HexUtils.bytesToHex(encrypt(Objects.requireNonNull(data).getBytes(Objects.requireNonNull(charset))));
     }
 
     /**
@@ -220,8 +192,8 @@ public class AESSymmetricKeyEncryption implements SymmetricKeyEncryption {
      */
     @Override
     @Nonnull
-    public String decryptString(@Nonnull final byte[] data, @Nonnull final Charset charset) throws EncryptionException {
-        return new String(decrypt(data), Objects.requireNonNull(charset));
+    public String decryptString(@Nonnull final String data, @Nonnull final Charset charset) throws EncryptionException {
+        return new String(decrypt(HexUtils.hexToBytes(Objects.requireNonNull(data))), Objects.requireNonNull(charset));
     }
 
     /**
@@ -248,7 +220,7 @@ public class AESSymmetricKeyEncryption implements SymmetricKeyEncryption {
     @Override
     @Nonnull
     public String signString(@Nonnull final String data, @Nonnull final Charset charset) throws EncryptionException {
-        return bytesToHex(sign(Objects.requireNonNull(data).getBytes(Objects.requireNonNull(charset))));
+        return HexUtils.bytesToHex(sign(Objects.requireNonNull(data).getBytes(Objects.requireNonNull(charset))));
     }
 
     /**
@@ -278,6 +250,6 @@ public class AESSymmetricKeyEncryption implements SymmetricKeyEncryption {
             @Nonnull final String data, @Nonnull final Charset charset, @Nonnull final String signatureData)
             throws EncryptionException {
         final byte[] dataBytes = Objects.requireNonNull(data).getBytes(Objects.requireNonNull(charset));
-        return verify(dataBytes, hexToBytes(signatureData));
+        return verify(dataBytes, HexUtils.hexToBytes(signatureData));
     }
 }

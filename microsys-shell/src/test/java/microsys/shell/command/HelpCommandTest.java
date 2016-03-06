@@ -13,6 +13,7 @@ import org.mockito.Mockito;
 import org.slf4j.LoggerFactory;
 
 import ch.qos.logback.classic.Level;
+import microsys.crypto.CryptoFactory;
 import microsys.service.discovery.DiscoveryManager;
 import microsys.shell.RegistrationManager;
 import microsys.shell.model.CommandPath;
@@ -63,8 +64,10 @@ public class HelpCommandTest {
         final CuratorFramework curator = Mockito.mock(CuratorFramework.class);
         final RegistrationManager registrationManager = new RegistrationManager();
         final OkHttpClient httpClient = new OkHttpClient.Builder().build();
+        final CryptoFactory cryptoFactory = new CryptoFactory(config);
         final ShellEnvironment shellEnvironment =
-                new ShellEnvironment(config, executor, discovery, curator, registrationManager, httpClient);
+                new ShellEnvironment(config, executor, discovery, curator, registrationManager, httpClient,
+                        cryptoFactory);
         registrationManager.loadCommands(shellEnvironment);
         final HelpCommand helpCommand = new HelpCommand(shellEnvironment);
 
@@ -100,8 +103,10 @@ public class HelpCommandTest {
         final CuratorFramework curator = Mockito.mock(CuratorFramework.class);
         final RegistrationManager registrationManager = new RegistrationManager();
         final OkHttpClient httpClient = new OkHttpClient.Builder().build();
+        final CryptoFactory cryptoFactory = new CryptoFactory(config);
         final ShellEnvironment shellEnvironment =
-                new ShellEnvironment(config, executor, discovery, curator, registrationManager, httpClient);
+                new ShellEnvironment(config, executor, discovery, curator, registrationManager, httpClient,
+                        cryptoFactory);
         registrationManager.loadCommands(shellEnvironment);
         final HelpCommand helpCommand = new HelpCommand(shellEnvironment);
 
@@ -139,8 +144,10 @@ public class HelpCommandTest {
         final CuratorFramework curator = Mockito.mock(CuratorFramework.class);
         final RegistrationManager registrationManager = new RegistrationManager();
         final OkHttpClient httpClient = new OkHttpClient.Builder().build();
+        final CryptoFactory cryptoFactory = new CryptoFactory(config);
         final ShellEnvironment shellEnvironment =
-                new ShellEnvironment(config, executor, discovery, curator, registrationManager, httpClient);
+                new ShellEnvironment(config, executor, discovery, curator, registrationManager, httpClient,
+                        cryptoFactory);
         registrationManager.loadCommands(shellEnvironment);
         final HelpCommand helpCommand = new HelpCommand(shellEnvironment);
 
@@ -155,18 +162,21 @@ public class HelpCommandTest {
 
         assertEquals(CommandStatus.SUCCESS, status);
 
-        final List<String> output = Arrays.asList(stringWriter.getBuffer().toString().split(System.lineSeparator()));
-        assertEquals(7, output.size());
+        final List<String> lines = Arrays.asList(stringWriter.getBuffer().toString().split(System.lineSeparator()));
+        assertEquals(11, lines.size());
 
         int line = 0;
-        assertEquals("  exit                     exit the shell", output.get(line++));
-        assertEquals(
-                "  help                     display usage information for available shell commands",
-                output.get(line++));
-        assertEquals("  quit                     exit the shell", output.get(line++));
-        assertEquals("  service control restart  request the restart of one or more services", output.get(line++));
-        assertEquals("  service control stop     request the stop of one or more services", output.get(line++));
-        assertEquals("  service list             provides information about the available services", output.get(line));
+        assertEquals("  crypto decrypt           decrypt the provided input data", lines.get(line++));
+        assertEquals("  crypto encrypt           encrypt the provided input data", lines.get(line++));
+        assertEquals("  crypto sign              sign the provided input data", lines.get(line++));
+        assertEquals("  crypto verify            verify the provided input data", lines.get(line++));
+        assertEquals("  exit                     exit the shell", lines.get(line++));
+        assertEquals("  help                     display usage information for available shell commands",
+                lines.get(line++));
+        assertEquals("  quit                     exit the shell", lines.get(line++));
+        assertEquals("  service control restart  request the restart of one or more services", lines.get(line++));
+        assertEquals("  service control stop     request the stop of one or more services", lines.get(line++));
+        assertEquals("  service list             provides information about the available services", lines.get(line));
     }
 
     @Test

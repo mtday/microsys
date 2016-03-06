@@ -11,6 +11,7 @@ import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.retry.ExponentialBackoffRetry;
 
 import microsys.common.config.CommonConfig;
+import microsys.crypto.CryptoFactory;
 import microsys.service.discovery.DiscoveryException;
 import microsys.service.discovery.DiscoveryManager;
 import microsys.shell.ConsoleManager;
@@ -88,21 +89,24 @@ public class Runner {
     }
 
     @Nonnull
-    protected ShellEnvironment getShellEnvironment(@Nonnull final Config config, @Nonnull final CuratorFramework curator)
-            throws DiscoveryException {
+    protected ShellEnvironment getShellEnvironment(
+            @Nonnull final Config config, @Nonnull final CuratorFramework curator) throws DiscoveryException {
         final ExecutorService executor =
                 Executors.newFixedThreadPool(config.getInt(CommonConfig.EXECUTOR_THREADS.getKey()));
         final DiscoveryManager discoveryManager = new DiscoveryManager(config, curator);
         final RegistrationManager registrationManager = new RegistrationManager();
         final OkHttpClient httpClient = new OkHttpClient.Builder().build();
+        final CryptoFactory cryptoFactory = new CryptoFactory(config);
         final ShellEnvironment shellEnvironment =
-                new ShellEnvironment(config, executor, discoveryManager, curator, registrationManager, httpClient);
+                new ShellEnvironment(config, executor, discoveryManager, curator, registrationManager, httpClient,
+                        cryptoFactory);
         registrationManager.loadCommands(shellEnvironment);
         return shellEnvironment;
     }
 
     @Nonnull
-    protected CuratorFramework createCurator(@Nonnull final Config config) throws TimeoutException, InterruptedException {
+    protected CuratorFramework createCurator(@Nonnull final Config config)
+            throws TimeoutException, InterruptedException {
         final String zookeepers = config.getString(CommonConfig.ZOOKEEPER_HOSTS.getKey());
         final String namespace = config.getString(CommonConfig.SYSTEM_NAME.getKey());
         final CuratorFramework curator =
@@ -115,7 +119,8 @@ public class Runner {
         return curator;
     }
 
-    protected static void processCommandLine(@Nonnull final Runner runner, @Nonnull final String[] args) throws IOException {
+    protected static void processCommandLine(@Nonnull final Runner runner, @Nonnull final String[] args)
+            throws IOException {
         final Option fileOption =
                 new Option("run shell commands provided by a file", "f", Optional.of("file"), Optional.of("file"), 1,
                         false, false, Optional.empty());

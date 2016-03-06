@@ -36,7 +36,7 @@ public class CryptoFactoryTest {
         assertNotNull(pbe);
 
         final String original = "original data";
-        final byte[] encrypted = pbe.encryptString(original, StandardCharsets.UTF_8);
+        final String encrypted = pbe.encryptString(original, StandardCharsets.UTF_8);
         final String decrypted = pbe.decryptString(encrypted, StandardCharsets.UTF_8);
         assertEquals(original, decrypted);
     }
@@ -53,7 +53,7 @@ public class CryptoFactoryTest {
         assertNotNull(pbe);
 
         final String original = "original data";
-        final byte[] encrypted = pbe.encryptString(original, StandardCharsets.UTF_8);
+        final String encrypted = pbe.encryptString(original, StandardCharsets.UTF_8);
         final String decrypted = pbe.decryptString(encrypted, StandardCharsets.UTF_8);
         assertEquals(original, decrypted);
     }

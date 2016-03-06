@@ -31,10 +31,10 @@ public interface PasswordBasedEncryption {
      *
      * @param data the data to be encrypted as a string
      * @param charset the {@link Charset} to use when retrieving bytes from the string
-     * @return the encrypted data
+     * @return the encrypted data as a hex string
      * @throws EncryptionException if there is a problem performing the encryption
      */
-    byte[] encryptString(String data, Charset charset) throws EncryptionException;
+    String encryptString(String data, Charset charset) throws EncryptionException;
 
     /**
      * Decrypt data from the provided input stream and write to the provided output stream.
@@ -57,10 +57,10 @@ public interface PasswordBasedEncryption {
     /**
      * Decrypt the provided data string and return the unencrypted data.
      *
-     * @param data the data to be decrypted
+     * @param data the data to be decrypted as a hex string
      * @param charset the {@link Charset} to use when recreating the string value
      * @return the decrypted data as a string
      * @throws EncryptionException if there is a problem performing the decryption
      */
-    String decryptString(byte[] data, Charset charset) throws EncryptionException;
+    String decryptString(String data, Charset charset) throws EncryptionException;
 }

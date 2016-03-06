@@ -148,7 +148,7 @@ public class AESSymmetricKeyEncryptionTest {
         final AESSymmetricKeyEncryption ske = new AESSymmetricKeyEncryption(getKeyPair());
 
         final String original = "original data";
-        final byte[] encrypted = ske.encryptString(original, StandardCharsets.UTF_8);
+        final String encrypted = ske.encryptString(original, StandardCharsets.UTF_8);
         final String decrypted = ske.decryptString(encrypted, StandardCharsets.UTF_8);
 
         assertEquals(original, decrypted);
@@ -161,7 +161,7 @@ public class AESSymmetricKeyEncryptionTest {
         final AESSymmetricKeyEncryption ske2 = new AESSymmetricKeyEncryption(keyPair);
 
         final String original = "original data";
-        final byte[] encrypted = ske1.encryptString(original, StandardCharsets.UTF_8);
+        final String encrypted = ske1.encryptString(original, StandardCharsets.UTF_8);
         final String decrypted = ske2.decryptString(encrypted, StandardCharsets.UTF_8);
 
         assertEquals(original, decrypted);
@@ -183,8 +183,8 @@ public class AESSymmetricKeyEncryptionTest {
         final AESSymmetricKeyEncryption ske = new AESSymmetricKeyEncryption(getKeyPair());
 
         final String original = "original data";
-        final byte[] encrypted = ske.encryptString(original, StandardCharsets.UTF_8);
-        final ByteArrayInputStream input = new ByteArrayInputStream(encrypted);
+        final String encrypted = ske.encryptString(original, StandardCharsets.UTF_8);
+        final ByteArrayInputStream input = new ByteArrayInputStream(encrypted.getBytes());
         final ByteArrayOutputStream output = Mockito.mock(ByteArrayOutputStream.class);
         Mockito.doThrow(new IOException("Failed")).when(output).write(Mockito.any());
 

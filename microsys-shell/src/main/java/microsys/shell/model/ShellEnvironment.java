@@ -4,6 +4,7 @@ import com.typesafe.config.Config;
 
 import org.apache.curator.framework.CuratorFramework;
 
+import microsys.crypto.CryptoFactory;
 import microsys.service.client.ServiceClient;
 import microsys.service.discovery.DiscoveryManager;
 import microsys.shell.RegistrationManager;
@@ -32,6 +33,8 @@ public class ShellEnvironment {
     private final OkHttpClient httpClient;
     @Nonnull
     private final ServiceClient serviceClient;
+    @Nonnull
+    private final CryptoFactory cryptoFactory;
 
     /**
      * @param config the static system configuration information
@@ -40,17 +43,20 @@ public class ShellEnvironment {
      * @param curatorFramework the curator framework used to manage interactions with zookeeper
      * @param registrationManager the manager used to track the available command registrations
      * @param httpClient the {@link OkHttpClient} used to make REST calls to other services
+     * @param cryptoFactory the {@link CryptoFactory} used to perform encryption operations
      */
     public ShellEnvironment(
             @Nonnull final Config config, @Nonnull final ExecutorService executor,
             @Nonnull final DiscoveryManager discoveryManager, @Nonnull final CuratorFramework curatorFramework,
-            @Nonnull final RegistrationManager registrationManager, @Nonnull final OkHttpClient httpClient) {
+            @Nonnull final RegistrationManager registrationManager, @Nonnull final OkHttpClient httpClient,
+            @Nonnull final CryptoFactory cryptoFactory) {
         this.config = Objects.requireNonNull(config);
         this.executor = Objects.requireNonNull(executor);
         this.discoveryManager = Objects.requireNonNull(discoveryManager);
         this.curatorFramework = Objects.requireNonNull(curatorFramework);
         this.registrationManager = Objects.requireNonNull(registrationManager);
         this.httpClient = Objects.requireNonNull(httpClient);
+        this.cryptoFactory = Objects.requireNonNull(cryptoFactory);
 
         this.serviceClient = new ServiceClient(executor, httpClient);
     }
@@ -109,6 +115,14 @@ public class ShellEnvironment {
     @Nonnull
     public ServiceClient getServiceClient() {
         return this.serviceClient;
+    }
+
+    /**
+     * @return the {@link CryptoFactory} used to perform encryption operations
+     */
+    @Nonnull
+    public CryptoFactory getCryptoFactory() {
+        return this.cryptoFactory;
     }
 
     /**

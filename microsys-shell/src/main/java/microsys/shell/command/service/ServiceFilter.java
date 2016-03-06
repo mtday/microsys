@@ -15,7 +15,7 @@ import javax.annotation.Nonnull;
  * Responsible for performing filtering operations on {@link Service} objects based on user-provided command-line
  * parameters from the shell.
  */
-public class ServiceFilter {
+class ServiceFilter {
     @Nonnull
     private final Optional<ServiceType> type;
     @Nonnull
