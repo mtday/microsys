@@ -46,10 +46,10 @@ _start() {
     _set_classpath ${SERVICE_NAME}
 
     LOG_CONFIG="-Dlogback.configurationFile=${CONFIG_DIR}/logback-${SERVICE_NAME}.xml"
+    APP_CONFIG="-Dconfig.file=${CONFIG_DIR}/application.conf"
     STDOUT="${LOG_DIR}/${SERVICE_NAME}-stdout.log"
 
-    #java ${JAVA_OPTS} ${LOG_CONFIG} -cp "${CLASSPATH}" ${SERVICE_CLASS} 2>&1 >${STDOUT} &
-    java ${JAVA_OPTS} ${LOG_CONFIG} ${SERVICE_CLASS} 2>&1 >${STDOUT} &
+    java ${JAVA_OPTS} ${LOG_CONFIG} ${APP_CONFIG} ${SERVICE_CLASS} 2>&1 >${STDOUT} &
 
     PID=$!
     STARTED=$?

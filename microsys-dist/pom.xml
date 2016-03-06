@@ -28,6 +28,7 @@
                     <name>${project.groupId}</name>
                     <!-- From https://fedoraproject.org/wiki/RPMGroups. -->
                     <group>Applications/System</group>
+                    <targetOS>linux</targetOS>
 
                     <mappings>
                         <mapping>

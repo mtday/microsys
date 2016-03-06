@@ -38,8 +38,9 @@ _start() {
 
     SHELL_CLASS="microsys.shell.runner.Runner"
     LOG_CONFIG="-Dlogback.configurationFile=${CONFIG_DIR}/logback-shell.xml"
+    APP_CONFIG="-Dconfig.file=${CONFIG_DIR}/application.conf"
 
-    java ${JAVA_OPTS} ${LOG_CONFIG} ${SHELL_CLASS}
+    java ${JAVA_OPTS} ${LOG_CONFIG} ${APP_CONFIG} ${SHELL_CLASS}
     return $?
 }
 

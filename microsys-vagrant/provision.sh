@@ -24,7 +24,9 @@ sudo mv /tmp/java.sh /etc/profile.d/java.sh
 
 echo "Starting zookeeper"
 if [[ ! -d /var/lib/zookeeper/data ]]; then
-    sudo mkdir /var/lib/zookeeper
+    if [[ ! -d /var/lib/zookeeper ]]; then
+        sudo mkdir /var/lib/zookeeper
+    fi
     sudo chown zookeeper:zookeeper /var/lib/zookeeper
     sudo -u zookeeper zookeeper-server-initialize
 fi
