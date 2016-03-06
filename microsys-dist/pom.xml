@@ -119,6 +119,14 @@
                             <!-- No sources, just defining the directory permissions and owner -->
                         </mapping>
                         <mapping>
+                            <!-- Stores the user PKI files for the service user. -->
+                            <directory>/home/${project.groupId}/pki</directory>
+                            <filemode>750</filemode>
+                            <username>${project.user}</username>
+                            <groupname>${project.group}</groupname>
+                            <!-- No sources, just defining the directory permissions and owner -->
+                        </mapping>
+                        <mapping>
                             <!-- Stores the service dependency jar files. -->
                             <directory>/opt/${project.groupId}/${project.version}/lib</directory>
                             <filemode>640</filemode>
