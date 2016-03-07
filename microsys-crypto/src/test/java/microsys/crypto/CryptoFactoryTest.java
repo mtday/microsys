@@ -7,6 +7,9 @@ import static microsys.common.config.CommonConfig.SSL_ENABLED;
 import static microsys.common.config.CommonConfig.SSL_KEYSTORE_FILE;
 import static microsys.common.config.CommonConfig.SSL_KEYSTORE_PASSWORD;
 import static microsys.common.config.CommonConfig.SSL_KEYSTORE_TYPE;
+import static microsys.common.config.CommonConfig.SSL_TRUSTSTORE_FILE;
+import static microsys.common.config.CommonConfig.SSL_TRUSTSTORE_PASSWORD;
+import static microsys.common.config.CommonConfig.SSL_TRUSTSTORE_TYPE;
 
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
@@ -14,6 +17,7 @@ import com.typesafe.config.ConfigValue;
 import com.typesafe.config.ConfigValueFactory;
 
 import org.junit.Test;
+import org.mockito.Mockito;
 
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -96,6 +100,23 @@ public class CryptoFactoryTest {
     }
 
     @Test(expected = EncryptionException.class)
+    public void testSKEWrongType() throws EncryptionException {
+        final Optional<URL> url = Optional.ofNullable(getClass().getClassLoader().getResource("keystore.jks"));
+        if (url.isPresent()) {
+            final Map<String, ConfigValue> map = new HashMap<>();
+            map.put(SSL_ENABLED.getKey(), ConfigValueFactory.fromAnyRef("true"));
+            map.put(SSL_KEYSTORE_FILE.getKey(), ConfigValueFactory.fromAnyRef(url.get().getFile()));
+            map.put(SSL_KEYSTORE_TYPE.getKey(), ConfigValueFactory.fromAnyRef("WRONG"));
+            map.put(SSL_KEYSTORE_PASSWORD.getKey(), ConfigValueFactory.fromAnyRef("changeit"));
+            final Config config = ConfigFactory.parseMap(map);
+            final CryptoFactory crypto = new CryptoFactory(config);
+
+            final SymmetricKeyEncryption ske = crypto.getSymmetricKeyEncryption();
+            assertNotNull(ske);
+        }
+    }
+
+    @Test(expected = EncryptionException.class)
     public void testSKEMissingKeyStoreFile() throws EncryptionException {
         final Map<String, ConfigValue> map = new HashMap<>();
         map.put(SSL_ENABLED.getKey(), ConfigValueFactory.fromAnyRef("true"));
@@ -158,5 +179,78 @@ public class CryptoFactoryTest {
             final SymmetricKeyEncryption ske = crypto.getSymmetricKeyEncryption();
             assertNotNull(ske);
         }
+    }
+
+    @Test
+    public void testGetTrustStore() throws EncryptionException {
+        final Optional<URL> url = Optional.ofNullable(getClass().getClassLoader().getResource("keystore.jks"));
+        if (url.isPresent()) {
+            final Map<String, ConfigValue> map = new HashMap<>();
+            map.put(SSL_ENABLED.getKey(), ConfigValueFactory.fromAnyRef("true"));
+            map.put(SSL_TRUSTSTORE_FILE.getKey(), ConfigValueFactory.fromAnyRef(url.get().getFile()));
+            map.put(SSL_TRUSTSTORE_TYPE.getKey(), ConfigValueFactory.fromAnyRef("JKS"));
+            map.put(SSL_TRUSTSTORE_PASSWORD.getKey(), ConfigValueFactory.fromAnyRef("changeit"));
+            final Config config = ConfigFactory.parseMap(map);
+            final CryptoFactory crypto = new CryptoFactory(config);
+
+            assertNotNull(crypto.getTrustStore());
+        }
+    }
+
+    @Test
+    public void testGetSSLContext() throws EncryptionException {
+        final Optional<URL> url = Optional.ofNullable(getClass().getClassLoader().getResource("keystore.jks"));
+        if (url.isPresent()) {
+            final Map<String, ConfigValue> map = new HashMap<>();
+            map.put(SSL_ENABLED.getKey(), ConfigValueFactory.fromAnyRef("true"));
+            map.put(SSL_KEYSTORE_FILE.getKey(), ConfigValueFactory.fromAnyRef(url.get().getFile()));
+            map.put(SSL_KEYSTORE_TYPE.getKey(), ConfigValueFactory.fromAnyRef("JKS"));
+            map.put(SSL_KEYSTORE_PASSWORD.getKey(), ConfigValueFactory.fromAnyRef("changeit"));
+            map.put(SSL_TRUSTSTORE_FILE.getKey(), ConfigValueFactory.fromAnyRef(url.get().getFile()));
+            map.put(SSL_TRUSTSTORE_TYPE.getKey(), ConfigValueFactory.fromAnyRef("JKS"));
+            map.put(SSL_TRUSTSTORE_PASSWORD.getKey(), ConfigValueFactory.fromAnyRef("changeit"));
+            final Config config = ConfigFactory.parseMap(map);
+            final CryptoFactory crypto = new CryptoFactory(config);
+
+            assertNotNull(crypto.getSSLContext());
+        }
+    }
+
+    @Test
+    public void testGetSSLContextSSLDisabled() throws EncryptionException {
+        final Map<String, ConfigValue> map = new HashMap<>();
+        map.put(SSL_ENABLED.getKey(), ConfigValueFactory.fromAnyRef("false"));
+        final Config config = ConfigFactory.parseMap(map);
+        final CryptoFactory crypto = new CryptoFactory(config);
+
+        assertNotNull(crypto.getSSLContext());
+    }
+
+    @Test(expected = EncryptionException.class)
+    public void testGetSSLContextWrongType() throws EncryptionException {
+        final Optional<URL> url = Optional.ofNullable(getClass().getClassLoader().getResource("keystore.jks"));
+        if (url.isPresent()) {
+            final Map<String, ConfigValue> map = new HashMap<>();
+            map.put(SSL_ENABLED.getKey(), ConfigValueFactory.fromAnyRef("true"));
+            map.put(SSL_KEYSTORE_FILE.getKey(), ConfigValueFactory.fromAnyRef(url.get().getFile()));
+            map.put(SSL_KEYSTORE_TYPE.getKey(), ConfigValueFactory.fromAnyRef("WRONG"));
+            map.put(SSL_KEYSTORE_PASSWORD.getKey(), ConfigValueFactory.fromAnyRef("changeit"));
+            map.put(SSL_TRUSTSTORE_FILE.getKey(), ConfigValueFactory.fromAnyRef(url.get().getFile()));
+            map.put(SSL_TRUSTSTORE_TYPE.getKey(), ConfigValueFactory.fromAnyRef("WRONG"));
+            map.put(SSL_TRUSTSTORE_PASSWORD.getKey(), ConfigValueFactory.fromAnyRef("changeit"));
+            final Config config = ConfigFactory.parseMap(map);
+            final CryptoFactory crypto = new CryptoFactory(config);
+
+            crypto.getSSLContext();
+        }
+    }
+
+    @Test(expected = EncryptionException.class)
+    public void testGetSSLContextException() throws EncryptionException {
+        final CryptoFactory crypto = Mockito.mock(CryptoFactory.class);
+        Mockito.when(crypto.getSSLContext()).thenCallRealMethod();
+        Mockito.when(crypto.getConfig()).thenThrow(new RuntimeException("Fake"));
+
+        crypto.getSSLContext();
     }
 }

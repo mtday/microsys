@@ -130,8 +130,8 @@ _stop_service() {
         echo -n "${SERVICE}-$(printf "%-8s" ${SERVICE_NAME}) is not running"; success; echo
         return 0
     else
-        # Kill gracefully with SIGINT, which will usually be sufficient.
-        kill -s SIGINT ${PID}
+        # Kill gracefully with SIGTERM, which will usually be sufficient.
+        kill -1 ${PID}
 
         # No longer running so remove the pid file.
         PID_FILE="${VAR_DIR}/${SERVICE}-${SERVICE_NAME}.pid"

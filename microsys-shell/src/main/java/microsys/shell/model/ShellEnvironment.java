@@ -4,6 +4,7 @@ import com.typesafe.config.Config;
 
 import org.apache.curator.framework.CuratorFramework;
 
+import microsys.config.client.ConfigClient;
 import microsys.crypto.CryptoFactory;
 import microsys.service.client.ServiceClient;
 import microsys.service.discovery.DiscoveryManager;
@@ -32,8 +33,6 @@ public class ShellEnvironment {
     @Nonnull
     private final OkHttpClient httpClient;
     @Nonnull
-    private final ServiceClient serviceClient;
-    @Nonnull
     private final CryptoFactory cryptoFactory;
 
     /**
@@ -57,15 +56,13 @@ public class ShellEnvironment {
         this.registrationManager = Objects.requireNonNull(registrationManager);
         this.httpClient = Objects.requireNonNull(httpClient);
         this.cryptoFactory = Objects.requireNonNull(cryptoFactory);
-
-        this.serviceClient = new ServiceClient(executor, httpClient);
     }
 
     /**
      * @return the static system configuration information
      */
     @Nonnull
-    protected Config getConfig() {
+    public Config getConfig() {
         return this.config;
     }
 
@@ -73,7 +70,7 @@ public class ShellEnvironment {
      * @return the {@link ExecutorService} used to perform asynchronous task processing
      */
     @Nonnull
-    protected ExecutorService getExecutor() {
+    public ExecutorService getExecutor() {
         return this.executor;
     }
 
@@ -110,19 +107,27 @@ public class ShellEnvironment {
     }
 
     /**
-     * @return the {@link ServiceClient} used to make remote service calls to other services
-     */
-    @Nonnull
-    public ServiceClient getServiceClient() {
-        return this.serviceClient;
-    }
-
-    /**
      * @return the {@link CryptoFactory} used to perform encryption operations
      */
     @Nonnull
     public CryptoFactory getCryptoFactory() {
         return this.cryptoFactory;
+    }
+
+    /**
+     * @return a {@link ServiceClient} used to make remote service calls to other services
+     */
+    @Nonnull
+    public ServiceClient getServiceClient() {
+        return new ServiceClient(getExecutor(), getHttpClient());
+    }
+
+    /**
+     * @return a {@link ConfigClient} used to make remote calls to the dynamic configuration services
+     */
+    @Nonnull
+    public ConfigClient getConfigClient() {
+        return new ConfigClient(getExecutor(), getDiscoveryManager(), getHttpClient());
     }
 
     /**

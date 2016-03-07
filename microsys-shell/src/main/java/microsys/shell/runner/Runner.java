@@ -12,6 +12,7 @@ import org.apache.curator.retry.ExponentialBackoffRetry;
 
 import microsys.common.config.CommonConfig;
 import microsys.crypto.CryptoFactory;
+import microsys.crypto.EncryptionException;
 import microsys.service.discovery.DiscoveryException;
 import microsys.service.discovery.DiscoveryManager;
 import microsys.shell.ConsoleManager;
@@ -42,13 +43,9 @@ public class Runner {
     private ShellEnvironment shellEnvironment;
 
     /**
-     * @throws TimeoutException if there is a problem connecting with zookeeper
-     * @throws InterruptedException if communications with zookeeper are interrupted
-     * @throws DiscoveryException if there is a problem starting service discovery
-     * @throws IOException if there is a problem starting the shell console
+     * @throws Exception if there is a problem running the shell
      */
-    protected Runner(@Nonnull final Config config)
-            throws TimeoutException, InterruptedException, DiscoveryException, IOException {
+    protected Runner(@Nonnull final Config config) throws Exception {
         this.shellEnvironment = getShellEnvironment(config, createCurator(config));
         this.consoleManager = new ConsoleManager(config, shellEnvironment);
     }
@@ -89,14 +86,22 @@ public class Runner {
     }
 
     @Nonnull
+    protected OkHttpClient getHttpClient(@Nonnull final CryptoFactory cryptoFactory) throws EncryptionException {
+        final OkHttpClient.Builder builder = new OkHttpClient.Builder();
+        builder.sslSocketFactory(cryptoFactory.getSSLContext().getSocketFactory());
+        return builder.build();
+    }
+
+    @Nonnull
     protected ShellEnvironment getShellEnvironment(
-            @Nonnull final Config config, @Nonnull final CuratorFramework curator) throws DiscoveryException {
+            @Nonnull final Config config, @Nonnull final CuratorFramework curator)
+            throws DiscoveryException, EncryptionException {
         final ExecutorService executor =
                 Executors.newFixedThreadPool(config.getInt(CommonConfig.EXECUTOR_THREADS.getKey()));
         final DiscoveryManager discoveryManager = new DiscoveryManager(config, curator);
         final RegistrationManager registrationManager = new RegistrationManager();
-        final OkHttpClient httpClient = new OkHttpClient.Builder().build();
         final CryptoFactory cryptoFactory = new CryptoFactory(config);
+        final OkHttpClient httpClient = getHttpClient(cryptoFactory);
         final ShellEnvironment shellEnvironment =
                 new ShellEnvironment(config, executor, discoveryManager, curator, registrationManager, httpClient,
                         cryptoFactory);
@@ -154,13 +159,9 @@ public class Runner {
 
     /**
      * @param args the command-line arguments
-     * @throws TimeoutException if there is a problem connecting with zookeeper
-     * @throws InterruptedException if communications with zookeeper are interrupted
-     * @throws DiscoveryException if there is a problem starting service discovery
-     * @throws IOException if there is a problem starting the shell console
+     * @throws Exception if there is a problem running the shell
      */
-    public static void main(@Nonnull final String... args)
-            throws InterruptedException, TimeoutException, DiscoveryException, IOException {
+    public static void main(@Nonnull final String... args) throws Exception {
         Runner.processCommandLine(new Runner(ConfigFactory.load()), args);
     }
 }

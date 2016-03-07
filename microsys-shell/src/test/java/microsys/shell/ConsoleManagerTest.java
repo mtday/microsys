@@ -77,7 +77,7 @@ public class ConsoleManagerTest {
         assertTrue(consoleReader.isShutdown());
 
         final List<String> lines = consoleReader.getOutputLines();
-        assertEquals(27, lines.size());
+        assertEquals(28, lines.size());
 
         int line = 0;
         // Startup
@@ -93,6 +93,7 @@ public class ConsoleManagerTest {
         // blank and #comment
 
         // help
+        assertEquals("  config list              display system configuration information", lines.get(line++));
         assertEquals("  crypto decrypt           decrypt the provided input data", lines.get(line++));
         assertEquals("  crypto encrypt           encrypt the provided input data", lines.get(line++));
         assertEquals("  crypto sign              sign the provided input data", lines.get(line++));
@@ -194,7 +195,7 @@ public class ConsoleManagerTest {
         assertTrue(consoleReader.isShutdown());
 
         final List<String> lines = consoleReader.getOutputLines();
-        assertEquals(16, lines.size());
+        assertEquals(17, lines.size());
 
         int line = 0;
         // Startup
@@ -204,6 +205,7 @@ public class ConsoleManagerTest {
         assertEquals("Type 'help' to list the available commands", lines.get(line++));
 
         // help
+        assertEquals("  config list              display system configuration information", lines.get(line++));
         assertEquals("  crypto decrypt           decrypt the provided input data", lines.get(line++));
         assertEquals("  crypto encrypt           encrypt the provided input data", lines.get(line++));
         assertEquals("  crypto sign              sign the provided input data", lines.get(line++));
@@ -294,11 +296,12 @@ public class ConsoleManagerTest {
             assertTrue(consoleReader.isShutdown());
 
             final List<String> lines = consoleReader.getOutputLines();
-            assertEquals(15, lines.size());
+            assertEquals(16, lines.size());
 
             int line = 0;
             // help
             assertEquals("# help", lines.get(line++));
+            assertEquals("  config list              display system configuration information", lines.get(line++));
             assertEquals("  crypto decrypt           decrypt the provided input data", lines.get(line++));
             assertEquals("  crypto encrypt           encrypt the provided input data", lines.get(line++));
             assertEquals("  crypto sign              sign the provided input data", lines.get(line++));
@@ -349,11 +352,12 @@ public class ConsoleManagerTest {
         assertTrue(consoleReader.isShutdown());
 
         final List<String> lines = consoleReader.getOutputLines();
-        assertEquals(13, lines.size());
+        assertEquals(14, lines.size());
 
         int line = 0;
         // help
         assertEquals("# help", lines.get(line++));
+        assertEquals("  config list              display system configuration information", lines.get(line++));
         assertEquals("  crypto decrypt           decrypt the provided input data", lines.get(line++));
         assertEquals("  crypto encrypt           encrypt the provided input data", lines.get(line++));
         assertEquals("  crypto sign              sign the provided input data", lines.get(line++));

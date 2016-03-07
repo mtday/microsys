@@ -1,6 +1,7 @@
 package microsys.shell.model;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 import com.typesafe.config.Config;
 
@@ -38,5 +39,9 @@ public class ShellEnvironmentTest {
         assertEquals(curator, env.getCuratorFramework());
         assertEquals(registration, env.getRegistrationManager());
         assertEquals(httpClient, env.getHttpClient());
+        assertEquals(cryptoFactory, env.getCryptoFactory());
+
+        assertNotNull(env.getServiceClient());
+        assertNotNull(env.getConfigClient());
     }
 }

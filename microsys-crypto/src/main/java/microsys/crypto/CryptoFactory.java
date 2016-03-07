@@ -11,9 +11,13 @@ import java.security.Key;
 import java.security.KeyPair;
 import java.security.KeyStore;
 import java.security.PrivateKey;
+import java.security.SecureRandom;
 import java.util.Objects;
 
 import javax.annotation.Nonnull;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManagerFactory;
 
 /**
  * Provides access to the cryptography implementations used throughout this system.
@@ -63,29 +67,47 @@ public class CryptoFactory {
     }
 
     /**
-     * @return the {@link KeyStore} from which the system public and private keys will be retrieved
+     * @param file the file from which the key store should be loaded
+     * @param type the type of key store contained in the file
+     * @param pass the key store password
+     * @return the {@link KeyStore} from retrieved from the provided file
      * @throws EncryptionException if there is a problem retrieving the key store
      */
     @Nonnull
-    protected KeyStore getKeyStore() throws EncryptionException {
-        final boolean sslEnabled = getConfig().getBoolean(CommonConfig.SSL_ENABLED.getKey());
-        if (!sslEnabled) {
-            throw new EncryptionException(
-                    "SSL is disabled, so unable to retrieve key store for symmetric key encryption");
-        }
-
-        final String file = getConfig().getString(CommonConfig.SSL_KEYSTORE_FILE.getKey());
-        final String type = getConfig().getString(CommonConfig.SSL_KEYSTORE_TYPE.getKey());
-        final char[] pass = getConfig().getString(CommonConfig.SSL_KEYSTORE_PASSWORD.getKey()).toCharArray();
-
-        try (final FileInputStream fis = new FileInputStream(file)) {
-            final KeyStore keyStore = KeyStore.getInstance(type);
-            keyStore.load(fis, pass);
+    protected KeyStore getStore(@Nonnull final String file, @Nonnull final String type, @Nonnull final char[] pass)
+            throws EncryptionException {
+        try (final FileInputStream fis = new FileInputStream(Objects.requireNonNull(file))) {
+            final KeyStore keyStore = KeyStore.getInstance(Objects.requireNonNull(type));
+            keyStore.load(fis, Objects.requireNonNull(pass));
             return keyStore;
         } catch (final Exception exception) {
             throw new EncryptionException("Failed to load key store from file " + file + " (with type " + type + ")",
                     exception);
         }
+    }
+
+    /**
+     * @return the {@link KeyStore} from which the system public and private keys will be retrieved
+     * @throws EncryptionException if there is a problem retrieving the key store
+     */
+    @Nonnull
+    protected KeyStore getKeyStore() throws EncryptionException {
+        final String file = getConfig().getString(CommonConfig.SSL_KEYSTORE_FILE.getKey());
+        final String type = getConfig().getString(CommonConfig.SSL_KEYSTORE_TYPE.getKey());
+        final char[] pass = getConfig().getString(CommonConfig.SSL_KEYSTORE_PASSWORD.getKey()).toCharArray();
+        return getStore(file, type, pass);
+    }
+
+    /**
+     * @return the {@link KeyStore} from which the system trusted certificates will be retrieved
+     * @throws EncryptionException if there is a problem retrieving the trust store
+     */
+    @Nonnull
+    protected KeyStore getTrustStore() throws EncryptionException {
+        final String file = getConfig().getString(CommonConfig.SSL_TRUSTSTORE_FILE.getKey());
+        final String type = getConfig().getString(CommonConfig.SSL_TRUSTSTORE_TYPE.getKey());
+        final char[] pass = getConfig().getString(CommonConfig.SSL_TRUSTSTORE_PASSWORD.getKey()).toCharArray();
+        return getStore(file, type, pass);
     }
 
     /**
@@ -116,9 +138,44 @@ public class CryptoFactory {
 
     /**
      * @return the {@link SymmetricKeyEncryption} to use when encrypting, decrypting, and signing system data
+     * @throws EncryptionException if there is a problem creating the symmetric-key encryption implementation
      */
     @Nonnull
     public SymmetricKeyEncryption getSymmetricKeyEncryption() throws EncryptionException {
         return new AESSymmetricKeyEncryption(getSymmetricKeyPair());
+    }
+
+    /**
+     * @return a configured {@link SSLContext} based on the static SSL configuration
+     * @throws EncryptionException if there is a problem creating or initializing the {@link SSLContext}
+     */
+    @Nonnull
+    public SSLContext getSSLContext() throws EncryptionException {
+        try {
+            if (!getConfig().getBoolean(CommonConfig.SSL_ENABLED.getKey())) {
+                return SSLContext.getDefault();
+            }
+
+            final KeyStore keyStore = getKeyStore();
+            final KeyStore trustStore = getTrustStore();
+
+            final char[] keyPass = getConfig().getString(CommonConfig.SSL_KEYSTORE_PASSWORD.getKey()).toCharArray();
+            final KeyManagerFactory keyManagerFactory =
+                    KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+            keyManagerFactory.init(keyStore, keyPass);
+
+            final TrustManagerFactory trustManagerFactory =
+                    TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+            trustManagerFactory.init(trustStore);
+
+            final SSLContext sslContext = SSLContext.getInstance("TLS");
+            sslContext.init(keyManagerFactory.getKeyManagers(), trustManagerFactory.getTrustManagers(),
+                    new SecureRandom());
+            return sslContext;
+        } catch (final EncryptionException exception) {
+            throw exception;
+        } catch (final Exception exception) {
+            throw new EncryptionException("Failed to create SSLContext", exception);
+        }
     }
 }

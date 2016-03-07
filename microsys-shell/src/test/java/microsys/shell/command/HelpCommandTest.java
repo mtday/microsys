@@ -163,9 +163,10 @@ public class HelpCommandTest {
         assertEquals(CommandStatus.SUCCESS, status);
 
         final List<String> lines = Arrays.asList(stringWriter.getBuffer().toString().split(System.lineSeparator()));
-        assertEquals(11, lines.size());
+        assertEquals(12, lines.size());
 
         int line = 0;
+        assertEquals("  config list              display system configuration information", lines.get(line++));
         assertEquals("  crypto decrypt           decrypt the provided input data", lines.get(line++));
         assertEquals("  crypto encrypt           encrypt the provided input data", lines.get(line++));
         assertEquals("  crypto sign              sign the provided input data", lines.get(line++));

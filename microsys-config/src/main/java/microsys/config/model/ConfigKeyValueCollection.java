@@ -37,7 +37,7 @@ public class ConfigKeyValueCollection implements Model, Comparable<ConfigKeyValu
      * @param values the configuration key
      */
     public ConfigKeyValueCollection(@Nonnull final Collection<ConfigKeyValue> values) {
-        Objects.requireNonNull(values).forEach(kv -> map.put(kv.getKey(), kv));
+        Objects.requireNonNull(values).forEach(kv -> getMap().put(kv.getKey(), kv));
     }
 
     /**
@@ -60,8 +60,16 @@ public class ConfigKeyValueCollection implements Model, Comparable<ConfigKeyValu
         arr.forEach(element -> {
             Preconditions.checkArgument(element.isJsonObject(), "Config element must be an object");
             final ConfigKeyValue kv = new ConfigKeyValue(element.getAsJsonObject());
-            this.map.put(kv.getKey(), kv);
+            getMap().put(kv.getKey(), kv);
         });
+    }
+
+    /**
+     * @return the internal map that holds the configuration data
+     */
+    @Nonnull
+    protected Map<String, ConfigKeyValue> getMap() {
+        return this.map;
     }
 
     /**
@@ -70,7 +78,7 @@ public class ConfigKeyValueCollection implements Model, Comparable<ConfigKeyValu
      */
     @Nonnull
     public Optional<ConfigKeyValue> get(@Nonnull final String key) {
-        return Optional.ofNullable(this.map.get(Objects.requireNonNull(key)));
+        return Optional.ofNullable(getMap().get(Objects.requireNonNull(key)));
     }
 
     /**
@@ -78,7 +86,7 @@ public class ConfigKeyValueCollection implements Model, Comparable<ConfigKeyValu
      */
     @Nonnull
     public Map<String, ConfigKeyValue> asMap() {
-        return Collections.unmodifiableMap(this.map);
+        return Collections.unmodifiableMap(getMap());
     }
 
     /**
@@ -86,14 +94,14 @@ public class ConfigKeyValueCollection implements Model, Comparable<ConfigKeyValu
      */
     @Nonnull
     public SortedSet<ConfigKeyValue> asSet() {
-        return new TreeSet<>(this.map.values());
+        return new TreeSet<>(getMap().values());
     }
 
     /**
      * @return the number of configuration key/value pairs in this collection
      */
     public int size() {
-        return this.map.size();
+        return getMap().size();
     }
 
     /**

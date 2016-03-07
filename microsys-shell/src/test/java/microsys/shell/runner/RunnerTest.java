@@ -164,10 +164,11 @@ public class RunnerTest {
                 Runner.processCommandLine(runner, new String[] {"shell", "-f", file.getAbsolutePath()});
 
                 final List<String> lines = consoleReader.getOutputLines();
-                assertEquals(17, lines.size());
+                assertEquals(18, lines.size());
 
                 int line = 0;
                 assertEquals("# help", lines.get(line++));
+                assertEquals("  config list              display system configuration information", lines.get(line++));
                 assertEquals("  crypto decrypt           decrypt the provided input data", lines.get(line++));
                 assertEquals("  crypto encrypt           encrypt the provided input data", lines.get(line++));
                 assertEquals("  crypto sign              sign the provided input data", lines.get(line++));

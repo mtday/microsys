@@ -64,9 +64,9 @@ public class ShellCompleterTest {
         final List<CharSequence> candidates = new ArrayList<>();
         final int position = shellCompleter.complete("", 0, candidates);
 
-        assertEquals(5, candidates.size());
+        assertEquals(6, candidates.size());
         assertEquals(0, position);
-        assertEquals("[crypto, exit, help, quit, service]", candidates.toString());
+        assertEquals("[config, crypto, exit, help, quit, service]", candidates.toString());
     }
 
     @Test
@@ -74,9 +74,9 @@ public class ShellCompleterTest {
         final List<CharSequence> candidates = new ArrayList<>();
         final int position = shellCompleter.complete(" ", 1, candidates);
 
-        assertEquals(5, candidates.size());
+        assertEquals(6, candidates.size());
         assertEquals(1, position);
-        assertEquals("[crypto, exit, help, quit, service]", candidates.toString());
+        assertEquals("[config, crypto, exit, help, quit, service]", candidates.toString());
     }
 
     @Test
