@@ -19,6 +19,7 @@ import microsys.service.discovery.DiscoveryManager;
 import microsys.service.discovery.port.PortManager;
 import microsys.service.discovery.port.PortReservationException;
 import microsys.service.filter.RequestLoggingFilter;
+import microsys.service.filter.RequestSigningFilter;
 import microsys.service.model.Reservation;
 import microsys.service.model.Service;
 import microsys.service.route.ServiceControlRoute;
@@ -221,7 +222,7 @@ public abstract class BaseService {
         builder.defaultData(new byte[0]);
         if (secure) {
             final String user = config.getString(CommonConfig.ZOOKEEPER_AUTH_USER.getKey());
-            final String pass = cryptoFactory.getDecryptedConfig(CommonConfig.ZOOKEEPER_AUTH_PASSWORD.getKey());
+            final String pass = getCryptoFactory().getDecryptedConfig(CommonConfig.ZOOKEEPER_AUTH_PASSWORD.getKey());
             final byte[] authData = String.format("%s:%s", user, pass).getBytes(StandardCharsets.UTF_8);
             final AuthInfo authInfo = new AuthInfo("digest", authData);
             builder.authorization(Collections.singletonList(authInfo));
@@ -269,6 +270,10 @@ public abstract class BaseService {
         Spark.before(new RequestLoggingFilter());
     }
 
+    protected void configureRequestSigner(@Nonnull final Config config, @Nonnull final CryptoFactory cryptoFactory) {
+        Spark.before(new RequestSigningFilter(config, cryptoFactory));
+    }
+
     protected void configureRoutes() {
         Spark.get("/service/info", new ServiceInfoRoute(getConfig(), getServiceType()));
         Spark.get("/service/memory", new ServiceMemoryRoute(getConfig()));
@@ -290,6 +295,7 @@ public abstract class BaseService {
         configureThreading();
         configureSecurity();
         configureRequestLogger();
+        configureRequestSigner(getConfig(), getCryptoFactory());
         configureRoutes();
 
         final boolean ssl = getConfig().getBoolean(CommonConfig.SSL_ENABLED.getKey());

@@ -3,7 +3,9 @@ package microsys.service.client;
 import com.google.common.base.Converter;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.typesafe.config.Config;
 
+import microsys.crypto.CryptoFactory;
 import microsys.service.model.Service;
 import microsys.service.model.ServiceControlStatus;
 import microsys.service.model.ServiceControlStatus.ServiceControlStatusConverter;
@@ -11,6 +13,8 @@ import microsys.service.model.ServiceInfo;
 import microsys.service.model.ServiceInfo.ServiceInfoConverter;
 import microsys.service.model.ServiceMemory;
 import microsys.service.model.ServiceMemory.ServiceMemoryConverter;
+import microsys.service.model.ServiceRequest;
+import microsys.service.model.ServiceResponse;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Request.Builder;
@@ -36,17 +40,35 @@ import javax.servlet.http.HttpServletResponse;
  */
 public class ServiceClient {
     @Nonnull
+    private final Config config;
+    @Nonnull
     private final ExecutorService executor;
     @Nonnull
     private final OkHttpClient httpClient;
+    @Nonnull
+    private final CryptoFactory cryptoFactory;
 
     /**
-     * @param executor   used to execute asynchronous processing of the client
-     * @param httpClient the HTTP client used to perform REST communication
+     * @param config        the static system configuration information
+     * @param executor      used to execute asynchronous processing of the client
+     * @param httpClient    the HTTP client used to perform REST communication
+     * @param cryptoFactory the {@link CryptoFactory} used to verify remote service response signatures
      */
-    public ServiceClient(@Nonnull final ExecutorService executor, @Nonnull final OkHttpClient httpClient) {
+    public ServiceClient(
+            @Nonnull final Config config, @Nonnull final ExecutorService executor,
+            @Nonnull final OkHttpClient httpClient, @Nonnull final CryptoFactory cryptoFactory) {
+        this.config = Objects.requireNonNull(config);
         this.executor = Objects.requireNonNull(executor);
         this.httpClient = Objects.requireNonNull(httpClient);
+        this.cryptoFactory = Objects.requireNonNull(cryptoFactory);
+    }
+
+    /**
+     * @return the static system configuration information
+     */
+    @Nonnull
+    protected Config getConfig() {
+        return this.config;
     }
 
     /**
@@ -66,6 +88,14 @@ public class ServiceClient {
     }
 
     /**
+     * @return the {@link CryptoFactory} used to verify remote service response signatures
+     */
+    @Nonnull
+    protected CryptoFactory getCryptoFactory() {
+        return this.cryptoFactory;
+    }
+
+    /**
      * Retrieve a {@link JsonObject} by calling the specified {@link Service} at the specified url path
      *
      * @param service   the {@link Service} to call with a REST request
@@ -79,11 +109,14 @@ public class ServiceClient {
     protected <T> T get(
             @Nonnull final Service service, @Nonnull final String url,
             @Nonnull final Converter<JsonObject, T> converter) throws IOException, ServiceException {
-        final Request request = new Builder().url(service.asUrl() + url).get().build();
+        final ServiceRequest serviceRequest = new ServiceRequest();
+        final Request request = new Builder().url(service.asUrl() + url)
+                .header(ServiceRequest.SERVICE_REQUEST_HEADER, serviceRequest.toJson().toString()).get().build();
         final Response response = getHttpClient().newCall(request).execute();
         final String responseBody = response.body().string();
         switch (response.code()) {
             case HttpServletResponse.SC_OK:
+                ServiceResponse.verify(getConfig(), getCryptoFactory(), serviceRequest, response);
                 final T ret = converter.convert(new JsonParser().parse(responseBody).getAsJsonObject());
                 if (ret != null) {
                     return ret;
@@ -193,7 +226,8 @@ public class ServiceClient {
      * from the individual controlled services, wrapped in a {@link Future}
      */
     @Nonnull
-    protected Future<Map<Service, ServiceControlStatus>> control(@Nonnull final Collection<Service> services, @Nonnull final String url) {
+    protected Future<Map<Service, ServiceControlStatus>> control(
+            @Nonnull final Collection<Service> services, @Nonnull final String url) {
         Objects.requireNonNull(services);
         return getExecutor()
                 .submit(() -> getMap(services, url, new ServiceControlStatusConverter()).get(10, TimeUnit.SECONDS));

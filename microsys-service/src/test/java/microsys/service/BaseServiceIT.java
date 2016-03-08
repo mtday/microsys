@@ -27,7 +27,7 @@ import microsys.service.discovery.DiscoveryException;
 import microsys.service.discovery.DiscoveryManager;
 import spark.webserver.JettySparkServer;
 
-import java.io.File;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
@@ -49,6 +49,9 @@ public class BaseServiceIT {
         try (final TestingServer zookeeper = new TestingServer()) {
             final Map<String, ConfigValue> map = new HashMap<>();
             map.put(CommonConfig.ZOOKEEPER_HOSTS.getKey(), ConfigValueFactory.fromAnyRef(zookeeper.getConnectString()));
+            map.put(CommonConfig.ZOOKEEPER_AUTH_ENABLED.getKey(), ConfigValueFactory.fromAnyRef(true));
+            map.put(CommonConfig.ZOOKEEPER_AUTH_USER.getKey(), ConfigValueFactory.fromAnyRef("user"));
+            map.put(CommonConfig.ZOOKEEPER_AUTH_PASSWORD.getKey(), ConfigValueFactory.fromAnyRef("password"));
             final Config config = ConfigFactory.parseMap(map).withFallback(ConfigFactory.load());
 
             baseService = new BaseService(config, ServiceType.CONFIG, new CountDownLatch(1)) {
@@ -178,17 +181,18 @@ public class BaseServiceIT {
         ((ch.qos.logback.classic.Logger) LoggerFactory.getLogger(JettySparkServer.class)).setLevel(Level.OFF);
         ((ch.qos.logback.classic.Logger) LoggerFactory.getLogger(BaseService.class)).setLevel(Level.OFF);
 
-        final File keystore = new File("src/test/resources/keystore.jks");
-        final File truststore = new File("src/test/resources/truststore.jks");
+        final URL keystore = getClass().getClassLoader().getResource("keystore.jks");
+        final URL truststore = getClass().getClassLoader().getResource("truststore.jks");
 
         BaseService baseService = null;
         try (final TestingServer zookeeper = new TestingServer()) {
             final Map<String, ConfigValue> map = new HashMap<>();
             map.put(CommonConfig.SSL_ENABLED.getKey(), ConfigValueFactory.fromAnyRef("true"));
-            map.put(CommonConfig.SSL_KEYSTORE_FILE.getKey(), ConfigValueFactory.fromAnyRef(keystore.getAbsolutePath()));
+            map.put(CommonConfig.SSL_KEYSTORE_FILE.getKey(), ConfigValueFactory.fromAnyRef(keystore.getFile()));
+            map.put(CommonConfig.SSL_KEYSTORE_TYPE.getKey(), ConfigValueFactory.fromAnyRef("JKS"));
             map.put(CommonConfig.SSL_KEYSTORE_PASSWORD.getKey(), ConfigValueFactory.fromAnyRef("changeit"));
-            map.put(CommonConfig.SSL_TRUSTSTORE_FILE.getKey(),
-                    ConfigValueFactory.fromAnyRef(truststore.getAbsolutePath()));
+            map.put(CommonConfig.SSL_TRUSTSTORE_FILE.getKey(), ConfigValueFactory.fromAnyRef(truststore.getFile()));
+            map.put(CommonConfig.SSL_TRUSTSTORE_TYPE.getKey(), ConfigValueFactory.fromAnyRef("JKS"));
             map.put(CommonConfig.SSL_TRUSTSTORE_PASSWORD.getKey(), ConfigValueFactory.fromAnyRef("changeit"));
             map.put(CommonConfig.ZOOKEEPER_HOSTS.getKey(), ConfigValueFactory.fromAnyRef(zookeeper.getConnectString()));
             final Config config = ConfigFactory.parseMap(map).withFallback(ConfigFactory.load());

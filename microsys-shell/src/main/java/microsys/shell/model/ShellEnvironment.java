@@ -119,7 +119,7 @@ public class ShellEnvironment {
      */
     @Nonnull
     public ServiceClient getServiceClient() {
-        return new ServiceClient(getExecutor(), getHttpClient());
+        return new ServiceClient(getConfig(), getExecutor(), getHttpClient(), getCryptoFactory());
     }
 
     /**
@@ -127,7 +127,7 @@ public class ShellEnvironment {
      */
     @Nonnull
     public ConfigClient getConfigClient() {
-        return new ConfigClient(getExecutor(), getDiscoveryManager(), getHttpClient());
+        return new ConfigClient(getConfig(), getExecutor(), getDiscoveryManager(), getHttpClient(), getCryptoFactory());
     }
 
     /**

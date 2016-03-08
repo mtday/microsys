@@ -52,6 +52,7 @@ import javax.servlet.http.HttpServletResponse;
  */
 public class ConfigClientIT {
     private static TestingServer testingServer;
+    private static Config config;
     private static ExecutorService executor;
     private static CuratorFramework curator;
     private static DiscoveryManager discovery;
@@ -73,7 +74,7 @@ public class ConfigClientIT {
 
         final Map<String, ConfigValue> map = new HashMap<>();
         map.put(CommonConfig.ZOOKEEPER_HOSTS.getKey(), ConfigValueFactory.fromAnyRef(testingServer.getConnectString()));
-        final Config config = ConfigFactory.parseMap(map).withFallback(ConfigFactory.load());
+        config = ConfigFactory.parseMap(map).withFallback(ConfigFactory.load());
 
         executor = Executors.newFixedThreadPool(3);
         curator =
@@ -118,7 +119,7 @@ public class ConfigClientIT {
 
     @Test
     public void test() throws Exception {
-        final ConfigClient client = new ConfigClient(executor, discovery, httpClient);
+        final ConfigClient client = new ConfigClient(config, executor, discovery, httpClient, crypto);
 
         final ConfigKeyValueCollection coll = client.getAll().get();
         assertEquals(0, coll.size());
@@ -159,7 +160,7 @@ public class ConfigClientIT {
         final DiscoveryManager mockDiscovery = Mockito.mock(DiscoveryManager.class);
         Mockito.when(mockDiscovery.getRandom(ServiceType.CONFIG)).thenReturn(Optional.empty());
 
-        final ConfigClient client = new ConfigClient(executor, mockDiscovery, httpClient);
+        final ConfigClient client = new ConfigClient(config, executor, mockDiscovery, httpClient, crypto);
         client.getAll().get();
     }
 
@@ -168,7 +169,7 @@ public class ConfigClientIT {
         final DiscoveryManager mockDiscovery = Mockito.mock(DiscoveryManager.class);
         Mockito.when(mockDiscovery.getRandom(ServiceType.CONFIG)).thenReturn(Optional.empty());
 
-        final ConfigClient client = new ConfigClient(executor, mockDiscovery, httpClient);
+        final ConfigClient client = new ConfigClient(config, executor, mockDiscovery, httpClient, crypto);
         client.get("key").get();
     }
 
@@ -177,7 +178,7 @@ public class ConfigClientIT {
         final DiscoveryManager mockDiscovery = Mockito.mock(DiscoveryManager.class);
         Mockito.when(mockDiscovery.getRandom(ServiceType.CONFIG)).thenReturn(Optional.empty());
 
-        final ConfigClient client = new ConfigClient(executor, mockDiscovery, httpClient);
+        final ConfigClient client = new ConfigClient(config, executor, mockDiscovery, httpClient, crypto);
         client.set(new ConfigKeyValue("key", "value")).get();
     }
 
@@ -186,7 +187,7 @@ public class ConfigClientIT {
         final DiscoveryManager mockDiscovery = Mockito.mock(DiscoveryManager.class);
         Mockito.when(mockDiscovery.getRandom(ServiceType.CONFIG)).thenReturn(Optional.empty());
 
-        final ConfigClient client = new ConfigClient(executor, mockDiscovery, httpClient);
+        final ConfigClient client = new ConfigClient(config, executor, mockDiscovery, httpClient, crypto);
         client.unset("key").get();
     }
 
@@ -200,7 +201,7 @@ public class ConfigClientIT {
         Mockito.when(mockDiscovery.getRandom(ServiceType.CONFIG)).thenReturn(Optional.of(
                 new Service(ServiceType.CONFIG, mockServer.getHostName(), mockServer.getPort(), false, "1.2.3")));
 
-        final ConfigClient client = new ConfigClient(executor, mockDiscovery, httpClient);
+        final ConfigClient client = new ConfigClient(config, executor, mockDiscovery, httpClient, crypto);
         client.getAll().get();
     }
 
@@ -214,7 +215,7 @@ public class ConfigClientIT {
         Mockito.when(mockDiscovery.getRandom(ServiceType.CONFIG)).thenReturn(Optional.of(
                 new Service(ServiceType.CONFIG, mockServer.getHostName(), mockServer.getPort(), false, "1.2.3")));
 
-        final ConfigClient client = new ConfigClient(executor, mockDiscovery, httpClient);
+        final ConfigClient client = new ConfigClient(config, executor, mockDiscovery, httpClient, crypto);
         client.get("key").get();
     }
 
@@ -228,7 +229,7 @@ public class ConfigClientIT {
         Mockito.when(mockDiscovery.getRandom(ServiceType.CONFIG)).thenReturn(Optional.of(
                 new Service(ServiceType.CONFIG, mockServer.getHostName(), mockServer.getPort(), false, "1.2.3")));
 
-        final ConfigClient client = new ConfigClient(executor, mockDiscovery, httpClient);
+        final ConfigClient client = new ConfigClient(config, executor, mockDiscovery, httpClient, crypto);
         client.set(new ConfigKeyValue("key", "value")).get();
     }
 
@@ -242,7 +243,7 @@ public class ConfigClientIT {
         Mockito.when(mockDiscovery.getRandom(ServiceType.CONFIG)).thenReturn(Optional.of(
                 new Service(ServiceType.CONFIG, mockServer.getHostName(), mockServer.getPort(), false, "1.2.3")));
 
-        final ConfigClient client = new ConfigClient(executor, mockDiscovery, httpClient);
+        final ConfigClient client = new ConfigClient(config, executor, mockDiscovery, httpClient, crypto);
         client.unset("key").get();
     }
 }

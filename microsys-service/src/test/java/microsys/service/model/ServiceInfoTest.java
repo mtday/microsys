@@ -157,4 +157,25 @@ public class ServiceInfoTest {
         final ServiceInfo copy = converter.doForward(json);
         assertEquals(original, copy);
     }
+
+    @Test
+    public void testConverterEquals() {
+        final ServiceInfo.ServiceInfoConverter a = new ServiceInfo.ServiceInfoConverter();
+        final ServiceInfo.ServiceInfoConverter b = new ServiceInfo.ServiceInfoConverter();
+        final Object c = 5;
+
+        assertNotEquals(a, null);
+        assertEquals(a, a);
+        assertEquals(a, b);
+        assertNotEquals(a, c);
+        assertEquals(b, a);
+        assertEquals(b, b);
+        assertNotEquals(b, c);
+    }
+
+    @Test
+    public void testConverterHashCode() {
+        final ServiceInfo.ServiceInfoConverter a = new ServiceInfo.ServiceInfoConverter();
+        assertEquals(1800635297, a.hashCode());
+    }
 }

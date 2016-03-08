@@ -107,4 +107,28 @@ public class ServiceControlStatusTest {
         final ServiceControlStatus copy = converter.doForward(json);
         assertEquals(original, copy);
     }
+
+    @Test
+    public void testConverterEquals() {
+        final ServiceControlStatus.ServiceControlStatusConverter a =
+                new ServiceControlStatus.ServiceControlStatusConverter();
+        final ServiceControlStatus.ServiceControlStatusConverter b =
+                new ServiceControlStatus.ServiceControlStatusConverter();
+        final Object c = 5;
+
+        assertNotEquals(a, null);
+        assertEquals(a, a);
+        assertEquals(a, b);
+        assertNotEquals(a, c);
+        assertEquals(b, a);
+        assertEquals(b, b);
+        assertNotEquals(b, c);
+    }
+
+    @Test
+    public void testConverterHashCode() {
+        final ServiceControlStatus.ServiceControlStatusConverter a =
+                new ServiceControlStatus.ServiceControlStatusConverter();
+        assertEquals(815372127, a.hashCode());
+    }
 }

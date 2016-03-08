@@ -52,6 +52,7 @@ import javax.servlet.http.HttpServletResponse;
  */
 public class ServiceClientIT {
     private static TestingServer testingServer;
+    private static Config config;
     private static ExecutorService executor;
     private static CuratorFramework curator;
     private static DiscoveryManager discovery;
@@ -74,7 +75,7 @@ public class ServiceClientIT {
         map.put(CommonConfig.ZOOKEEPER_HOSTS.getKey(), ConfigValueFactory.fromAnyRef(testingServer.getConnectString()));
         map.put(CommonConfig.SYSTEM_NAME.getKey(), ConfigValueFactory.fromAnyRef("system-name"));
         map.put(CommonConfig.SYSTEM_VERSION.getKey(), ConfigValueFactory.fromAnyRef("1.2.3"));
-        final Config config = ConfigFactory.parseMap(map).withFallback(ConfigFactory.load());
+        config = ConfigFactory.parseMap(map).withFallback(ConfigFactory.load());
 
         executor = Executors.newFixedThreadPool(4);
         curator =
@@ -119,7 +120,7 @@ public class ServiceClientIT {
 
     @Test
     public void test() throws Exception {
-        final ServiceClient client = new ServiceClient(executor, httpClient);
+        final ServiceClient client = new ServiceClient(config, executor, httpClient, crypto);
 
         final Optional<Service> service = baseService.getService();
         assertTrue(service.isPresent());
@@ -155,7 +156,7 @@ public class ServiceClientIT {
         final DiscoveryManager mockDiscovery = Mockito.mock(DiscoveryManager.class);
         Mockito.when(mockDiscovery.getRandom(ServiceType.CONFIG)).thenReturn(Optional.of(service));
 
-        final ServiceClient client = new ServiceClient(executor, httpClient);
+        final ServiceClient client = new ServiceClient(config, executor, httpClient, crypto);
         client.stop(service).get();
     }
 
@@ -171,7 +172,7 @@ public class ServiceClientIT {
         final DiscoveryManager mockDiscovery = Mockito.mock(DiscoveryManager.class);
         Mockito.when(mockDiscovery.getRandom(ServiceType.CONFIG)).thenReturn(Optional.of(service));
 
-        final ServiceClient client = new ServiceClient(executor, httpClient);
+        final ServiceClient client = new ServiceClient(config, executor, httpClient, crypto);
         client.stop(Collections.singletonList(service)).get();
     }
 
@@ -187,7 +188,7 @@ public class ServiceClientIT {
         final DiscoveryManager mockDiscovery = Mockito.mock(DiscoveryManager.class);
         Mockito.when(mockDiscovery.getRandom(ServiceType.CONFIG)).thenReturn(Optional.of(service));
 
-        final ServiceClient client = new ServiceClient(executor, httpClient);
+        final ServiceClient client = new ServiceClient(config, executor, httpClient, crypto);
         client.restart(service).get();
     }
 
@@ -203,7 +204,7 @@ public class ServiceClientIT {
         final DiscoveryManager mockDiscovery = Mockito.mock(DiscoveryManager.class);
         Mockito.when(mockDiscovery.getRandom(ServiceType.CONFIG)).thenReturn(Optional.of(service));
 
-        final ServiceClient client = new ServiceClient(executor, httpClient);
+        final ServiceClient client = new ServiceClient(config, executor, httpClient, crypto);
         client.restart(Collections.singletonList(service)).get();
     }
 
@@ -218,7 +219,7 @@ public class ServiceClientIT {
         final DiscoveryManager mockDiscovery = Mockito.mock(DiscoveryManager.class);
         Mockito.when(mockDiscovery.getRandom(ServiceType.CONFIG)).thenReturn(Optional.of(service));
 
-        final ServiceClient client = new ServiceClient(executor, httpClient);
+        final ServiceClient client = new ServiceClient(config, executor, httpClient, crypto);
         client.stop(service).get();
     }
 
@@ -233,7 +234,7 @@ public class ServiceClientIT {
         final DiscoveryManager mockDiscovery = Mockito.mock(DiscoveryManager.class);
         Mockito.when(mockDiscovery.getRandom(ServiceType.CONFIG)).thenReturn(Optional.of(service));
 
-        final ServiceClient client = new ServiceClient(executor, httpClient);
+        final ServiceClient client = new ServiceClient(config, executor, httpClient, crypto);
         client.stop(Collections.singletonList(service)).get();
     }
 
@@ -248,7 +249,7 @@ public class ServiceClientIT {
         final DiscoveryManager mockDiscovery = Mockito.mock(DiscoveryManager.class);
         Mockito.when(mockDiscovery.getRandom(ServiceType.CONFIG)).thenReturn(Optional.of(service));
 
-        final ServiceClient client = new ServiceClient(executor, httpClient);
+        final ServiceClient client = new ServiceClient(config, executor, httpClient, crypto);
         client.restart(service).get();
     }
 
@@ -263,7 +264,7 @@ public class ServiceClientIT {
         final DiscoveryManager mockDiscovery = Mockito.mock(DiscoveryManager.class);
         Mockito.when(mockDiscovery.getRandom(ServiceType.CONFIG)).thenReturn(Optional.of(service));
 
-        final ServiceClient client = new ServiceClient(executor, httpClient);
+        final ServiceClient client = new ServiceClient(config, executor, httpClient, crypto);
         client.restart(Collections.singletonList(service)).get();
     }
 
@@ -278,7 +279,7 @@ public class ServiceClientIT {
         final DiscoveryManager mockDiscovery = Mockito.mock(DiscoveryManager.class);
         Mockito.when(mockDiscovery.getRandom(ServiceType.CONFIG)).thenReturn(Optional.of(service));
 
-        final ServiceClient client = new ServiceClient(executor, httpClient);
+        final ServiceClient client = new ServiceClient(config, executor, httpClient, crypto);
         client.getMemory(service).get();
     }
 
@@ -293,7 +294,7 @@ public class ServiceClientIT {
         final DiscoveryManager mockDiscovery = Mockito.mock(DiscoveryManager.class);
         Mockito.when(mockDiscovery.getRandom(ServiceType.CONFIG)).thenReturn(Optional.of(service));
 
-        final ServiceClient client = new ServiceClient(executor, httpClient);
+        final ServiceClient client = new ServiceClient(config, executor, httpClient, crypto);
         client.getMemory(Collections.singletonList(service)).get();
     }
 }

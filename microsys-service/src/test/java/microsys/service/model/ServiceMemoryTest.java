@@ -86,4 +86,25 @@ public class ServiceMemoryTest {
         final ServiceMemory copy = converter.doForward(json);
         assertEquals(original, copy);
     }
+
+    @Test
+    public void testConverterEquals() {
+        final ServiceMemory.ServiceMemoryConverter a = new ServiceMemory.ServiceMemoryConverter();
+        final ServiceMemory.ServiceMemoryConverter b = new ServiceMemory.ServiceMemoryConverter();
+        final Object c = 5;
+
+        assertNotEquals(a, null);
+        assertEquals(a, a);
+        assertEquals(a, b);
+        assertNotEquals(a, c);
+        assertEquals(b, a);
+        assertEquals(b, b);
+        assertNotEquals(b, c);
+    }
+
+    @Test
+    public void testConverterHashCode() {
+        final ServiceMemory.ServiceMemoryConverter a = new ServiceMemory.ServiceMemoryConverter();
+        assertEquals(-1396013125, a.hashCode());
+    }
 }
