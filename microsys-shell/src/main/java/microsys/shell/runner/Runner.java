@@ -6,11 +6,13 @@ import com.typesafe.config.ConfigFactory;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.ParseException;
+import org.apache.curator.framework.AuthInfo;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.retry.ExponentialBackoffRetry;
 
 import microsys.common.config.CommonConfig;
+import microsys.common.curator.CuratorACLProvider;
 import microsys.crypto.CryptoFactory;
 import microsys.crypto.EncryptionException;
 import microsys.service.discovery.DiscoveryException;
@@ -24,6 +26,8 @@ import okhttp3.OkHttpClient;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
@@ -46,7 +50,7 @@ public class Runner {
      * @throws Exception if there is a problem running the shell
      */
     protected Runner(@Nonnull final Config config) throws Exception {
-        this.shellEnvironment = getShellEnvironment(config, createCurator(config));
+        this.shellEnvironment = getShellEnvironment(config);
         this.consoleManager = new ConsoleManager(config, shellEnvironment);
     }
 
@@ -93,14 +97,15 @@ public class Runner {
     }
 
     @Nonnull
-    protected ShellEnvironment getShellEnvironment(
-            @Nonnull final Config config, @Nonnull final CuratorFramework curator)
-            throws DiscoveryException, EncryptionException {
+    protected ShellEnvironment getShellEnvironment(@Nonnull final Config config)
+            throws DiscoveryException, EncryptionException, TimeoutException, InterruptedException {
+        Objects.requireNonNull(config);
         final ExecutorService executor =
                 Executors.newFixedThreadPool(config.getInt(CommonConfig.EXECUTOR_THREADS.getKey()));
+        final CryptoFactory cryptoFactory = new CryptoFactory(config);
+        final CuratorFramework curator = createCurator(config, cryptoFactory);
         final DiscoveryManager discoveryManager = new DiscoveryManager(config, curator);
         final RegistrationManager registrationManager = new RegistrationManager();
-        final CryptoFactory cryptoFactory = new CryptoFactory(config);
         final OkHttpClient httpClient = getHttpClient(cryptoFactory);
         final ShellEnvironment shellEnvironment =
                 new ShellEnvironment(config, executor, discoveryManager, curator, registrationManager, httpClient,
@@ -110,13 +115,28 @@ public class Runner {
     }
 
     @Nonnull
-    protected CuratorFramework createCurator(@Nonnull final Config config)
-            throws TimeoutException, InterruptedException {
+    protected CuratorFramework createCurator(@Nonnull final Config config, @Nonnull final CryptoFactory cryptoFactory)
+            throws TimeoutException, InterruptedException, EncryptionException {
+        Objects.requireNonNull(config);
+        Objects.requireNonNull(cryptoFactory);
+
         final String zookeepers = config.getString(CommonConfig.ZOOKEEPER_HOSTS.getKey());
+        final boolean secure = config.getBoolean(CommonConfig.ZOOKEEPER_AUTH_ENABLED.getKey());
         final String namespace = config.getString(CommonConfig.SYSTEM_NAME.getKey());
-        final CuratorFramework curator =
-                CuratorFrameworkFactory.builder().connectString(zookeepers).namespace(namespace)
-                        .retryPolicy(new ExponentialBackoffRetry(1000, 3)).build();
+        final CuratorFrameworkFactory.Builder builder = CuratorFrameworkFactory.builder();
+        builder.connectString(zookeepers);
+        builder.namespace(namespace);
+        builder.retryPolicy(new ExponentialBackoffRetry(1000, 3));
+        builder.defaultData(new byte[0]);
+        if (secure) {
+            final String user = config.getString(CommonConfig.ZOOKEEPER_AUTH_USER.getKey());
+            final String pass = cryptoFactory.getDecryptedConfig(CommonConfig.ZOOKEEPER_AUTH_PASSWORD.getKey());
+            final byte[] authData = String.format("%s:%s", user, pass).getBytes(StandardCharsets.UTF_8);
+            final AuthInfo authInfo = new AuthInfo("digest", authData);
+            builder.authorization(Collections.singletonList(authInfo));
+            builder.aclProvider(new CuratorACLProvider());
+        }
+        final CuratorFramework curator = builder.build();
         curator.start();
         if (!curator.blockUntilConnected(2, TimeUnit.SECONDS)) {
             throw new TimeoutException("Failed to connect to zookeeper");

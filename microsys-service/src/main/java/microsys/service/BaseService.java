@@ -2,6 +2,7 @@ package microsys.service;
 
 import com.typesafe.config.Config;
 
+import org.apache.curator.framework.AuthInfo;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.retry.ExponentialBackoffRetry;
@@ -9,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import microsys.common.config.CommonConfig;
+import microsys.common.curator.CuratorACLProvider;
 import microsys.common.model.ServiceType;
 import microsys.crypto.CryptoFactory;
 import microsys.crypto.EncryptionException;
@@ -24,6 +26,8 @@ import microsys.service.route.ServiceInfoRoute;
 import microsys.service.route.ServiceMemoryRoute;
 import spark.Spark;
 
+import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
@@ -72,10 +76,10 @@ public abstract class BaseService {
         this.serviceType = Objects.requireNonNull(serviceType);
         this.serverStopLatch = Optional.of(Objects.requireNonNull(serverStopLatch));
 
-        this.executor = createExecutor(config);
-        this.curator = createCurator(config);
-        this.discoveryManager = createDiscoveryManager(this.config, this.curator);
         this.cryptoFactory = createCryptoFactory(this.config);
+        this.executor = createExecutor(config);
+        this.curator = createCurator(config, cryptoFactory);
+        this.discoveryManager = createDiscoveryManager(this.config, this.curator);
 
         this.service = Optional.empty();
 
@@ -202,15 +206,30 @@ public abstract class BaseService {
     }
 
     @Nonnull
-    protected CuratorFramework createCurator(@Nonnull final Config config)
-            throws InterruptedException, TimeoutException {
+    protected CuratorFramework createCurator(@Nonnull final Config config, @Nonnull final CryptoFactory cryptoFactory)
+            throws InterruptedException, TimeoutException, EncryptionException {
+        Objects.requireNonNull(config);
+        Objects.requireNonNull(cryptoFactory);
+
         final String zookeepers = config.getString(CommonConfig.ZOOKEEPER_HOSTS.getKey());
+        final boolean secure = config.getBoolean(CommonConfig.ZOOKEEPER_AUTH_ENABLED.getKey());
         final String namespace = config.getString(CommonConfig.SYSTEM_NAME.getKey());
-        final CuratorFramework curator =
-                CuratorFrameworkFactory.builder().connectString(zookeepers).namespace(namespace)
-                        .defaultData(new byte[0]).retryPolicy(new ExponentialBackoffRetry(1000, 3)).build();
+        final CuratorFrameworkFactory.Builder builder = CuratorFrameworkFactory.builder();
+        builder.connectString(zookeepers);
+        builder.namespace(namespace);
+        builder.retryPolicy(new ExponentialBackoffRetry(1000, 3));
+        builder.defaultData(new byte[0]);
+        if (secure) {
+            final String user = config.getString(CommonConfig.ZOOKEEPER_AUTH_USER.getKey());
+            final String pass = cryptoFactory.getDecryptedConfig(CommonConfig.ZOOKEEPER_AUTH_PASSWORD.getKey());
+            final byte[] authData = String.format("%s:%s", user, pass).getBytes(StandardCharsets.UTF_8);
+            final AuthInfo authInfo = new AuthInfo("digest", authData);
+            builder.authorization(Collections.singletonList(authInfo));
+            builder.aclProvider(new CuratorACLProvider());
+        }
+        final CuratorFramework curator = builder.build();
         curator.start();
-        if (!curator.blockUntilConnected(1500, TimeUnit.MILLISECONDS)) {
+        if (!curator.blockUntilConnected(2, TimeUnit.SECONDS)) {
             throw new TimeoutException("Failed to connect to zookeeper");
         }
         return curator;

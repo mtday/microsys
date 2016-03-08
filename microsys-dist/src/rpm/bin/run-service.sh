@@ -53,7 +53,7 @@ _start() {
     APP_CONFIG="-Dconfig.file=${CONFIG_DIR}/application.conf"
     STDOUT="${LOG_DIR}/${SERVICE_NAME}-stdout.log"
 
-    java ${JAVA_OPTS} ${LOG_CONFIG} ${APP_CONFIG} ${SERVICE_CLASS} 2>&1 >${STDOUT} &
+    java ${JAVA_OPTS} ${LOG_CONFIG} ${APP_CONFIG} ${SERVICE_CLASS} &>${STDOUT} &
 
     PID=$!
     STARTED=$?

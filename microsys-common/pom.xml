@@ -32,6 +32,12 @@
             <artifactId>gson</artifactId>
         </dependency>
 
+        <!-- Curator used to interact with zookeeper -->
+        <dependency>
+            <groupId>org.apache.curator</groupId>
+            <artifactId>curator-framework</artifactId>
+        </dependency>
+
         <!-- System configuration management -->
         <dependency>
             <groupId>com.typesafe</groupId>

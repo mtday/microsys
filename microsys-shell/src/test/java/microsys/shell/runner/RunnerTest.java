@@ -114,11 +114,13 @@ public class RunnerTest {
     @Test(expected = Exception.class)
     public void testCreateCurator() throws Exception {
         final Runner runner = Mockito.mock(Runner.class);
-        Mockito.when(runner.createCurator(Mockito.any())).thenCallRealMethod();
+        Mockito.when(runner.createCurator(Mockito.any(), Mockito.any())).thenCallRealMethod();
 
         final Map<String, ConfigValue> map = new HashMap<>();
         map.put(CommonConfig.ZOOKEEPER_HOSTS.getKey(), ConfigValueFactory.fromAnyRef("localhost:12345"));
-        runner.createCurator(ConfigFactory.parseMap(map).withFallback(ConfigFactory.load()));
+        map.put(CommonConfig.ZOOKEEPER_AUTH_ENABLED.getKey(), ConfigValueFactory.fromAnyRef(false));
+        final Config config = ConfigFactory.parseMap(map).withFallback(ConfigFactory.load());
+        runner.createCurator(config, new CryptoFactory(config));
     }
 
     @Test
