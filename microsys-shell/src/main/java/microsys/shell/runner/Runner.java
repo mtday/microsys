@@ -162,6 +162,8 @@ public class Runner {
      * @throws Exception if there is a problem running the shell
      */
     public static void main(@Nonnull final String... args) throws Exception {
-        Runner.processCommandLine(new Runner(ConfigFactory.load()), args);
+        final Config config = ConfigFactory.load().withFallback(ConfigFactory.systemProperties())
+                .withFallback(ConfigFactory.systemEnvironment());
+        Runner.processCommandLine(new Runner(config), args);
     }
 }

@@ -25,6 +25,10 @@
             <groupId>${project.groupId}</groupId>
             <artifactId>microsys-common</artifactId>
         </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>microsys-crypto</artifactId>
+        </dependency>
 
         <!-- Service discovery with zookeeper -->
         <dependency>

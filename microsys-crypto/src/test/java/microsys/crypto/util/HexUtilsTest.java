@@ -11,7 +11,7 @@ public class HexUtilsTest {
     @Test
     public void testConstructor() {
         // Just for 100% coverage.
-        assertEquals("012a7f", new HexUtils().bytesToHex(new byte[] { 0x01, 0x2A, 0x7F }));
+        new HexUtils();
     }
 
     @Test

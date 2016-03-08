@@ -67,7 +67,8 @@ public class MemoryCommand extends BaseServiceCommand {
             final SortedSet<Service> services = getShellEnvironment().getDiscoveryManager().getAll();
             final ServiceFilter filter = new ServiceFilter(userCommand.getCommandLine());
 
-            final List<Service> filtered = services.stream().filter(filter::matches).collect(Collectors.toList());
+            final List<Service> filtered =
+                    services.stream().filter(filter::matches).sorted().collect(Collectors.toList());
 
             writer.println(new ServiceSummary(services.size(), filtered.size()));
 

@@ -17,6 +17,10 @@ if [ "$(whoami)" != "${SERVICE_USER}" ]; then
     exit 4
 fi
 
+if [[ -f "/home/${SERVICE_USER}/.bashrc" ]]; then
+    source "/home/${SERVICE_USER}/.bashrc"
+fi
+
 # Determine the service class given a service name.
 _set_service_class() {
     SERVICE_NAME="$1"

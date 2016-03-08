@@ -13,6 +13,7 @@ import microsys.config.route.Set;
 import microsys.config.route.Unset;
 import microsys.config.service.ConfigService;
 import microsys.config.service.CuratorConfigService;
+import microsys.crypto.CryptoFactory;
 import microsys.service.BaseService;
 import microsys.service.discovery.DiscoveryManager;
 import spark.Spark;
@@ -48,14 +49,15 @@ public class Runner extends BaseService {
      * @param executor the {@link ExecutorService} used to process asynchronous tasks
      * @param curator the {@link CuratorFramework} used to perform communication with zookeeper
      * @param discoveryManager the {@link DiscoveryManager} used to manage available services
+     * @param cryptoFactory the {@link CryptoFactory} used to manage encryption and decryption operations
      * @throws Exception if there is a problem during service initialization
      */
     @VisibleForTesting
     public Runner(
             @Nonnull final Config config, @Nonnull final ExecutorService executor,
-            @Nonnull final CuratorFramework curator, @Nonnull final DiscoveryManager discoveryManager)
-            throws Exception {
-        super(config, executor, curator, discoveryManager, ServiceType.CONFIG);
+            @Nonnull final CuratorFramework curator, @Nonnull final DiscoveryManager discoveryManager,
+            @Nonnull final CryptoFactory cryptoFactory) throws Exception {
+        super(config, executor, curator, discoveryManager, cryptoFactory, ServiceType.CONFIG);
         addRoutes(new CuratorConfigService(getExecutor(), getCurator()));
     }
 
@@ -73,8 +75,10 @@ public class Runner extends BaseService {
     public static void main(@Nonnull final String... args) throws Exception {
         boolean restart;
         do {
+            final Config config = ConfigFactory.load().withFallback(ConfigFactory.systemProperties())
+                    .withFallback(ConfigFactory.systemEnvironment());
             final CountDownLatch serverStopLatch = new CountDownLatch(1);
-            final Runner runner = new Runner(ConfigFactory.load(), serverStopLatch);
+            final Runner runner = new Runner(config, serverStopLatch);
             serverStopLatch.await();
 
             restart = runner.getShouldRestart();

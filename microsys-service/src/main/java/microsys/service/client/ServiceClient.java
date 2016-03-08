@@ -18,10 +18,10 @@ import okhttp3.Response;
 
 import java.io.IOException;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.TreeMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -84,7 +84,13 @@ public class ServiceClient {
         final String responseBody = response.body().string();
         switch (response.code()) {
             case HttpServletResponse.SC_OK:
-                return converter.convert(new JsonParser().parse(responseBody).getAsJsonObject());
+                final T ret = converter.convert(new JsonParser().parse(responseBody).getAsJsonObject());
+                if (ret != null) {
+                    return ret;
+                }
+                // The Converter.convert method is defined as returning @Nullable, which is true if a null value is
+                // passed in. But we will never pass in a null value so we don't expect to get here.
+                throw new ServiceException("Unexpected null conversion");
             default:
                 throw new ServiceException(responseBody);
         }
@@ -104,11 +110,11 @@ public class ServiceClient {
             @Nonnull final Collection<Service> services, @Nonnull final String url,
             @Nonnull final Converter<JsonObject, T> converter) {
         return getExecutor().submit(() -> {
-            final Map<Service, Future<T>> futureMap = new HashMap<>();
+            final Map<Service, Future<T>> futureMap = new TreeMap<>();
             services.forEach(
                     service -> futureMap.put(service, getExecutor().submit(() -> get(service, url, converter))));
 
-            final Map<Service, T> map = new HashMap<>();
+            final Map<Service, T> map = new TreeMap<>();
             for (final Entry<Service, Future<T>> entry : futureMap.entrySet()) {
                 try {
                     map.put(entry.getKey(), entry.getValue().get(10, TimeUnit.SECONDS));

@@ -33,7 +33,8 @@ public class CryptoFactoryTest {
     public void testPBEFromSystemEnvironment() throws EncryptionException {
         final Map<String, ConfigValue> map = new HashMap<>();
         map.put(SHARED_SECRET_VARIABLE.getKey(), ConfigValueFactory.fromAnyRef("USER"));
-        final Config config = ConfigFactory.parseMap(map);
+        final Config config = ConfigFactory.parseMap(map).withFallback(ConfigFactory.systemProperties())
+                .withFallback(ConfigFactory.systemEnvironment());
         final CryptoFactory crypto = new CryptoFactory(config);
 
         final PasswordBasedEncryption pbe = crypto.getPasswordBasedEncryption();
@@ -50,7 +51,8 @@ public class CryptoFactoryTest {
         System.setProperty("SHARED_SECRET", "secret");
         final Map<String, ConfigValue> map = new HashMap<>();
         map.put(SHARED_SECRET_VARIABLE.getKey(), ConfigValueFactory.fromAnyRef("SHARED_SECRET"));
-        final Config config = ConfigFactory.parseMap(map);
+        final Config config = ConfigFactory.parseMap(map).withFallback(ConfigFactory.systemProperties())
+                .withFallback(ConfigFactory.systemEnvironment());
         final CryptoFactory crypto = new CryptoFactory(config);
 
         final PasswordBasedEncryption pbe = crypto.getPasswordBasedEncryption();
@@ -252,5 +254,59 @@ public class CryptoFactoryTest {
         Mockito.when(crypto.getConfig()).thenThrow(new RuntimeException("Fake"));
 
         crypto.getSSLContext();
+    }
+
+    @Test
+    public void testGetDecryptedConfigPBE() throws EncryptionException {
+        final Map<String, ConfigValue> map = new HashMap<>();
+        map.put("SHARED_SECRET", ConfigValueFactory.fromAnyRef("secret"));
+        map.put(SHARED_SECRET_VARIABLE.getKey(), ConfigValueFactory.fromAnyRef("SHARED_SECRET"));
+        final String encrypted = "PBE{" + new CryptoFactory(ConfigFactory.parseMap(map)).getPasswordBasedEncryption()
+                .encryptString("hello", StandardCharsets.UTF_8) + "}";
+        map.put("key", ConfigValueFactory.fromAnyRef(encrypted));
+
+        final Config config = ConfigFactory.parseMap(map).withFallback(ConfigFactory.systemProperties())
+                .withFallback(ConfigFactory.systemEnvironment());
+        final CryptoFactory crypto = new CryptoFactory(config);
+        assertEquals("hello", crypto.getDecryptedConfig("key"));
+    }
+
+    @Test
+    public void testGetDecryptedConfigSKE() throws EncryptionException {
+        final Optional<URL> url = Optional.ofNullable(getClass().getClassLoader().getResource("keystore.jks"));
+        if (url.isPresent()) {
+            final Map<String, ConfigValue> map = new HashMap<>();
+            map.put(SSL_ENABLED.getKey(), ConfigValueFactory.fromAnyRef("true"));
+            map.put(SSL_KEYSTORE_FILE.getKey(), ConfigValueFactory.fromAnyRef(url.get().getFile()));
+            map.put(SSL_KEYSTORE_TYPE.getKey(), ConfigValueFactory.fromAnyRef("JKS"));
+            map.put(SSL_KEYSTORE_PASSWORD.getKey(), ConfigValueFactory.fromAnyRef("changeit"));
+            final String encrypted = "SKE{" + new CryptoFactory(ConfigFactory.parseMap(map)).getSymmetricKeyEncryption()
+                    .encryptString("hello", StandardCharsets.UTF_8) + "}";
+            map.put("key", ConfigValueFactory.fromAnyRef(encrypted));
+
+            final CryptoFactory crypto = new CryptoFactory(ConfigFactory.parseMap(map));
+            assertEquals("hello", crypto.getDecryptedConfig("key"));
+        }
+    }
+
+    @Test
+    public void testGetDecryptedConfigNotEncrypted() throws EncryptionException {
+        final Map<String, ConfigValue> map = new HashMap<>();
+        map.put("key", ConfigValueFactory.fromAnyRef("hello"));
+        final CryptoFactory crypto = new CryptoFactory(ConfigFactory.parseMap(map));
+        assertEquals("hello", crypto.getDecryptedConfig("key"));
+    }
+
+    @Test(expected = EncryptionException.class)
+    public void testGetDecryptedConfigException() throws EncryptionException {
+        final Map<String, ConfigValue> map = new HashMap<>();
+        map.put(SSL_ENABLED.getKey(), ConfigValueFactory.fromAnyRef("true"));
+        map.put(SSL_KEYSTORE_FILE.getKey(), ConfigValueFactory.fromAnyRef("/tmp/does-not-exist.jks"));
+        map.put(SSL_KEYSTORE_TYPE.getKey(), ConfigValueFactory.fromAnyRef("JKS"));
+        map.put(SSL_KEYSTORE_PASSWORD.getKey(), ConfigValueFactory.fromAnyRef("changeit"));
+        map.put("key", ConfigValueFactory.fromAnyRef("SKE{012}"));
+
+        final CryptoFactory crypto = new CryptoFactory(ConfigFactory.parseMap(map));
+        assertEquals("hello", crypto.getDecryptedConfig("key"));
     }
 }

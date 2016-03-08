@@ -22,6 +22,7 @@ import org.slf4j.LoggerFactory;
 import ch.qos.logback.classic.Level;
 import microsys.common.config.CommonConfig;
 import microsys.common.model.ServiceType;
+import microsys.crypto.CryptoFactory;
 import microsys.security.model.User;
 import microsys.security.runner.Runner;
 import microsys.service.BaseService;
@@ -53,6 +54,7 @@ public class SecurityClientIT {
     private static ExecutorService executor;
     private static CuratorFramework curator;
     private static DiscoveryManager discovery;
+    private static CryptoFactory crypto;
     private static Runner runner;
     private static OkHttpClient httpClient;
     private static MockWebServer mockServer;
@@ -77,7 +79,8 @@ public class SecurityClientIT {
                 .retryPolicy(new ExponentialBackoffRetry(1000, 3)).build();
         curator.start();
         discovery = new DiscoveryManager(config, curator);
-        runner = new Runner(config, executor, curator, discovery);
+        crypto = new CryptoFactory(config);
+        runner = new Runner(config, executor, curator, discovery, crypto);
 
         // Wait for the server to start.
         TimeUnit.MILLISECONDS.sleep(500);

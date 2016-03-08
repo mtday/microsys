@@ -2,11 +2,14 @@ package microsys.crypto;
 
 import com.typesafe.config.Config;
 
+import org.apache.commons.lang3.StringUtils;
+
 import microsys.common.config.CommonConfig;
 import microsys.crypto.impl.AESPasswordBasedEncryption;
 import microsys.crypto.impl.AESSymmetricKeyEncryption;
 
 import java.io.FileInputStream;
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.security.KeyPair;
 import java.security.KeyStore;
@@ -41,21 +44,16 @@ public class CryptoFactory {
     }
 
     /**
-     * @return the shared secret defined for the system, if available
+     * @return the shared secret defined for the system
      * @throws EncryptionException if there is a problem retrieving the shared secret value
      */
     @Nonnull
     protected String getSharedSecret() throws EncryptionException {
         final String sharedSecretVar = getConfig().getString(CommonConfig.SHARED_SECRET_VARIABLE.getKey());
-        final String sharedSecretFromEnv = System.getenv(sharedSecretVar);
-        if (sharedSecretFromEnv == null) {
-            final String sharedSecretFromProps = System.getProperty(sharedSecretVar);
-            if (sharedSecretFromProps == null) {
-                throw new EncryptionException("Failed to retrieve shared secret from variable " + sharedSecretVar);
-            }
-            return sharedSecretFromProps;
+        if (getConfig().hasPath(sharedSecretVar)) {
+            return getConfig().getString(sharedSecretVar);
         }
-        return sharedSecretFromEnv;
+        throw new EncryptionException("Failed to retrieve shared secret from variable " + sharedSecretVar);
     }
 
     /**
@@ -94,7 +92,7 @@ public class CryptoFactory {
     protected KeyStore getKeyStore() throws EncryptionException {
         final String file = getConfig().getString(CommonConfig.SSL_KEYSTORE_FILE.getKey());
         final String type = getConfig().getString(CommonConfig.SSL_KEYSTORE_TYPE.getKey());
-        final char[] pass = getConfig().getString(CommonConfig.SSL_KEYSTORE_PASSWORD.getKey()).toCharArray();
+        final char[] pass = getDecryptedConfig(CommonConfig.SSL_KEYSTORE_PASSWORD.getKey()).toCharArray();
         return getStore(file, type, pass);
     }
 
@@ -106,7 +104,7 @@ public class CryptoFactory {
     protected KeyStore getTrustStore() throws EncryptionException {
         final String file = getConfig().getString(CommonConfig.SSL_TRUSTSTORE_FILE.getKey());
         final String type = getConfig().getString(CommonConfig.SSL_TRUSTSTORE_TYPE.getKey());
-        final char[] pass = getConfig().getString(CommonConfig.SSL_TRUSTSTORE_PASSWORD.getKey()).toCharArray();
+        final char[] pass = getDecryptedConfig(CommonConfig.SSL_TRUSTSTORE_PASSWORD.getKey()).toCharArray();
         return getStore(file, type, pass);
     }
 
@@ -123,7 +121,7 @@ public class CryptoFactory {
             }
             final String alias = keyStore.aliases().nextElement();
             if (keyStore.isKeyEntry(alias)) {
-                final char[] pass = getConfig().getString(CommonConfig.SSL_KEYSTORE_PASSWORD.getKey()).toCharArray();
+                final char[] pass = getDecryptedConfig(CommonConfig.SSL_KEYSTORE_PASSWORD.getKey()).toCharArray();
                 final Key key = keyStore.getKey(alias, pass);
                 return new KeyPair(keyStore.getCertificate(alias).getPublicKey(), (PrivateKey) key);
             } else {
@@ -159,10 +157,10 @@ public class CryptoFactory {
             final KeyStore keyStore = getKeyStore();
             final KeyStore trustStore = getTrustStore();
 
-            final char[] keyPass = getConfig().getString(CommonConfig.SSL_KEYSTORE_PASSWORD.getKey()).toCharArray();
+            final char[] pass = getDecryptedConfig(CommonConfig.SSL_KEYSTORE_PASSWORD.getKey()).toCharArray();
             final KeyManagerFactory keyManagerFactory =
                     KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-            keyManagerFactory.init(keyStore, keyPass);
+            keyManagerFactory.init(keyStore, pass);
 
             final TrustManagerFactory trustManagerFactory =
                     TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
@@ -176,6 +174,25 @@ public class CryptoFactory {
             throw exception;
         } catch (final Exception exception) {
             throw new EncryptionException("Failed to create SSLContext", exception);
+        }
+    }
+
+    /**
+     * @param key the key within the static system configuration for which the value should be retrieved
+     * @return the requested configuration value, decrypting it if necessary
+     * @throws EncryptionException if there is a problem performing the decryption
+     */
+    @Nonnull
+    public String getDecryptedConfig(@Nonnull final String key) throws EncryptionException {
+        final String value = Objects.requireNonNull(getConfig()).getString(Objects.requireNonNull(key));
+        if (StringUtils.startsWith(value, "PBE{") && StringUtils.endsWith(value, "}")) {
+            return getPasswordBasedEncryption()
+                    .decryptString(value.substring(4, value.length() - 1), StandardCharsets.UTF_8);
+        } else if (StringUtils.startsWith(value, "SKE{") && StringUtils.endsWith(value, "}")) {
+            return getSymmetricKeyEncryption()
+                    .decryptString(value.substring(4, value.length() - 1), StandardCharsets.UTF_8);
+        } else {
+            return value;
         }
     }
 }

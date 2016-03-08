@@ -10,6 +10,8 @@ import org.slf4j.LoggerFactory;
 
 import microsys.common.config.CommonConfig;
 import microsys.common.model.ServiceType;
+import microsys.crypto.CryptoFactory;
+import microsys.crypto.EncryptionException;
 import microsys.service.discovery.DiscoveryException;
 import microsys.service.discovery.DiscoveryManager;
 import microsys.service.discovery.port.PortManager;
@@ -51,6 +53,8 @@ public abstract class BaseService {
     private final CuratorFramework curator;
     @Nonnull
     private final DiscoveryManager discoveryManager;
+    @Nonnull
+    private final CryptoFactory cryptoFactory;
 
     @Nonnull
     private Optional<Service> service;
@@ -63,8 +67,7 @@ public abstract class BaseService {
      */
     public BaseService(
             @Nonnull final Config config, @Nonnull final ServiceType serviceType,
-            @Nonnull final CountDownLatch serverStopLatch)
-            throws DiscoveryException, TimeoutException, InterruptedException, PortReservationException {
+            @Nonnull final CountDownLatch serverStopLatch) throws Exception {
         this.config = Objects.requireNonNull(config);
         this.serviceType = Objects.requireNonNull(serviceType);
         this.serverStopLatch = Optional.of(Objects.requireNonNull(serverStopLatch));
@@ -72,6 +75,7 @@ public abstract class BaseService {
         this.executor = createExecutor(config);
         this.curator = createCurator(config);
         this.discoveryManager = createDiscoveryManager(this.config, this.curator);
+        this.cryptoFactory = createCryptoFactory(this.config);
 
         this.service = Optional.empty();
 
@@ -83,20 +87,21 @@ public abstract class BaseService {
      * @param executor         the {@link ExecutorService} used to perform asynchronous task processing
      * @param curator          the {@link CuratorFramework} used to perform communication with zookeeper
      * @param discoveryManager the {@link DiscoveryManager} used to manage available services
+     * @param cryptoFactory    the {@link CryptoFactory} used to manage encryption and decryption operations
      * @param serviceType      the type of this service
      */
     public BaseService(
             @Nonnull final Config config, @Nonnull final ExecutorService executor,
             @Nonnull final CuratorFramework curator, @Nonnull final DiscoveryManager discoveryManager,
-            @Nonnull final ServiceType serviceType)
-            throws DiscoveryException, TimeoutException, InterruptedException, PortReservationException {
+            @Nonnull final CryptoFactory cryptoFactory, @Nonnull final ServiceType serviceType) throws Exception {
         this.config = Objects.requireNonNull(config);
         this.executor = Objects.requireNonNull(executor);
         this.curator = Objects.requireNonNull(curator);
         this.discoveryManager = Objects.requireNonNull(discoveryManager);
+        this.cryptoFactory = Objects.requireNonNull(cryptoFactory);
         this.serviceType = Objects.requireNonNull(serviceType);
-        this.serverStopLatch = Optional.empty();
 
+        this.serverStopLatch = Optional.empty();
         this.service = Optional.empty();
 
         start();
@@ -132,6 +137,14 @@ public abstract class BaseService {
     @Nonnull
     public DiscoveryManager getDiscoveryManager() {
         return this.discoveryManager;
+    }
+
+    /**
+     * @return the {@link CryptoFactory} used to manage encryption and decryption operations
+     */
+    @Nonnull
+    public CryptoFactory getCryptoFactory() {
+        return this.cryptoFactory;
     }
 
     /**
@@ -203,6 +216,11 @@ public abstract class BaseService {
         return curator;
     }
 
+    @Nonnull
+    protected CryptoFactory createCryptoFactory(@Nonnull final Config config) throws DiscoveryException {
+        return new CryptoFactory(Objects.requireNonNull(config));
+    }
+
     protected void configurePort(@Nonnull final Reservation reservation) {
         Spark.port(reservation.getPort());
     }
@@ -215,13 +233,15 @@ public abstract class BaseService {
         Spark.threadPool(maxThreads, minThreads, (int) timeout);
     }
 
-    protected void configureSecurity() {
+    protected void configureSecurity() throws EncryptionException {
         final boolean ssl = getConfig().getBoolean(CommonConfig.SSL_ENABLED.getKey());
         if (ssl) {
             final String keystoreFile = getConfig().getString(CommonConfig.SSL_KEYSTORE_FILE.getKey());
-            final String keystorePass = getConfig().getString(CommonConfig.SSL_KEYSTORE_PASSWORD.getKey());
+            final String keystorePass =
+                    getCryptoFactory().getDecryptedConfig(CommonConfig.SSL_KEYSTORE_PASSWORD.getKey());
             final String truststoreFile = getConfig().getString(CommonConfig.SSL_TRUSTSTORE_FILE.getKey());
-            final String truststorePass = getConfig().getString(CommonConfig.SSL_TRUSTSTORE_PASSWORD.getKey());
+            final String truststorePass =
+                    getCryptoFactory().getDecryptedConfig(CommonConfig.SSL_TRUSTSTORE_PASSWORD.getKey());
             Spark.secure(keystoreFile, keystorePass, truststoreFile, truststorePass);
         }
     }
@@ -239,8 +259,9 @@ public abstract class BaseService {
     /**
      * Start the service.
      * @throws PortReservationException if there is a problem reserving the port for the service
+     * @throws EncryptionException if there is a problem decrypting the SSL key store or trust store passwords
      */
-    public void start() throws PortReservationException {
+    public void start() throws PortReservationException, EncryptionException {
         // Configure the service.
         final PortManager portManager = new PortManager(getConfig(), getCurator());
         final Reservation reservation = portManager.getReservation(getServiceType(), getHostName());

@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 
 import ch.qos.logback.classic.Level;
 import microsys.common.config.CommonConfig;
+import microsys.crypto.CryptoFactory;
 import microsys.service.BaseService;
 import microsys.service.discovery.DiscoveryManager;
 import spark.webserver.JettySparkServer;
@@ -59,8 +60,9 @@ public class RunnerTest {
                     .retryPolicy(new ExponentialBackoffRetry(1000, 3)).build();
             curator.start();
             final DiscoveryManager discovery = new DiscoveryManager(config, curator);
+            final CryptoFactory crypto = new CryptoFactory(config);
 
-            new Runner(config, executor, curator, discovery).stop();
+            new Runner(config, executor, curator, discovery, crypto).stop();
         }
     }
 }

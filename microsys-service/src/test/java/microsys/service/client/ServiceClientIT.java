@@ -1,12 +1,28 @@
 package microsys.service.client;
 
-import ch.qos.logback.classic.Level;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigValue;
 import com.typesafe.config.ConfigValueFactory;
+
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.CuratorFrameworkFactory;
+import org.apache.curator.retry.ExponentialBackoffRetry;
+import org.apache.curator.test.TestingServer;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.mockito.Mockito;
+import org.slf4j.LoggerFactory;
+
+import ch.qos.logback.classic.Level;
 import microsys.common.config.CommonConfig;
 import microsys.common.model.ServiceType;
+import microsys.crypto.CryptoFactory;
 import microsys.service.BaseService;
 import microsys.service.discovery.DiscoveryManager;
 import microsys.service.filter.RequestLoggingFilter;
@@ -17,18 +33,8 @@ import microsys.service.model.ServiceMemory;
 import okhttp3.OkHttpClient;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
-import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.framework.CuratorFrameworkFactory;
-import org.apache.curator.retry.ExponentialBackoffRetry;
-import org.apache.curator.test.TestingServer;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.mockito.Mockito;
-import org.slf4j.LoggerFactory;
 import spark.webserver.JettySparkServer;
 
-import javax.servlet.http.HttpServletResponse;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -39,7 +45,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.LogManager;
 
-import static org.junit.Assert.*;
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * Perform testing of the {@link ServiceClient} class.
@@ -49,6 +55,7 @@ public class ServiceClientIT {
     private static ExecutorService executor;
     private static CuratorFramework curator;
     private static DiscoveryManager discovery;
+    private static CryptoFactory crypto;
     private static OkHttpClient httpClient;
     private static MockWebServer mockServer;
     private static BaseService baseService;
@@ -75,7 +82,8 @@ public class ServiceClientIT {
                         .defaultData(new byte[0]).retryPolicy(new ExponentialBackoffRetry(1000, 3)).build();
         curator.start();
         discovery = new DiscoveryManager(config, curator);
-        baseService = new BaseService(config, executor, curator, discovery, ServiceType.CONFIG) {
+        crypto = new CryptoFactory(config);
+        baseService = new BaseService(config, executor, curator, discovery, crypto, ServiceType.CONFIG) {
         };
 
         // Wait for the server to start.

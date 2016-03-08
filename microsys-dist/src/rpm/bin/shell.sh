@@ -16,6 +16,10 @@ if [ "$(whoami)" != "${SERVICE_USER}" ]; then
     exit 4
 fi
 
+if [[ -f "/home/${SERVICE_USER}/.bashrc" ]]; then
+    source "/home/${SERVICE_USER}/.bashrc"
+fi
+
 # Set the classpath to be used when launching the shell.
 _set_classpath() {
     export CLASSPATH="${CONFIG_DIR}/*:${LIB_DIR}/*"

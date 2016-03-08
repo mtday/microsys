@@ -22,6 +22,7 @@ import org.slf4j.LoggerFactory;
 import ch.qos.logback.classic.Level;
 import microsys.common.config.CommonConfig;
 import microsys.common.model.ServiceType;
+import microsys.crypto.CryptoFactory;
 import microsys.service.discovery.DiscoveryException;
 import microsys.service.discovery.DiscoveryManager;
 import spark.webserver.JettySparkServer;
@@ -92,8 +93,9 @@ public class BaseServiceIT {
 
             final ExecutorService executor = Executors.newFixedThreadPool(2);
             final DiscoveryManager discovery = new DiscoveryManager(config, curator);
+            final CryptoFactory crypto = new CryptoFactory(config);
 
-            baseService = new BaseService(config, executor, curator, discovery, ServiceType.CONFIG) {
+            baseService = new BaseService(config, executor, curator, discovery, crypto, ServiceType.CONFIG) {
             };
 
             assertEquals(config, baseService.getConfig());
@@ -130,8 +132,9 @@ public class BaseServiceIT {
             final DiscoveryManager discovery = Mockito.mock(DiscoveryManager.class);
             Mockito.doThrow(new DiscoveryException("Fake")).when(discovery).register(Mockito.any());
             Mockito.doThrow(new DiscoveryException("Fake")).when(discovery).unregister(Mockito.any());
+            final CryptoFactory crypto = Mockito.mock(CryptoFactory.class);
 
-            baseService = new BaseService(config, executor, curator, discovery, ServiceType.CONFIG) {
+            baseService = new BaseService(config, executor, curator, discovery, crypto, ServiceType.CONFIG) {
             };
 
             assertEquals(config, baseService.getConfig());

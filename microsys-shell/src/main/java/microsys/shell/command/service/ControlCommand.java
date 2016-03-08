@@ -74,7 +74,8 @@ public class ControlCommand extends BaseServiceCommand {
             final SortedSet<Service> services = getShellEnvironment().getDiscoveryManager().getAll();
             final ServiceFilter filter = new ServiceFilter(userCommand.getCommandLine());
 
-            final List<Service> filtered = services.stream().filter(filter::matches).collect(Collectors.toList());
+            final List<Service> filtered =
+                    services.stream().filter(filter::matches).sorted().collect(Collectors.toList());
 
             writer.println(new ServiceSummary(services.size(), filtered.size()));
             if (!filtered.isEmpty()) {
@@ -104,7 +105,8 @@ public class ControlCommand extends BaseServiceCommand {
     }
 
     @Nonnull
-    protected CommandStatus control(@Nonnull final Future<Map<Service, ServiceControlStatus>> future, @Nonnull final PrintWriter writer)
+    protected CommandStatus control(
+            @Nonnull final Future<Map<Service, ServiceControlStatus>> future, @Nonnull final PrintWriter writer)
             throws ExecutionException, InterruptedException, TimeoutException {
         final Map<Service, ServiceControlStatus> map = future.get(10, TimeUnit.SECONDS);
         final Stringer stringer = new Stringer(map.keySet());

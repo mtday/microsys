@@ -26,6 +26,7 @@ import microsys.config.model.ConfigKeyValue;
 import microsys.config.model.ConfigKeyValueCollection;
 import microsys.config.runner.Runner;
 import microsys.config.service.CuratorConfigService;
+import microsys.crypto.CryptoFactory;
 import microsys.service.BaseService;
 import microsys.service.discovery.DiscoveryManager;
 import microsys.service.filter.RequestLoggingFilter;
@@ -54,6 +55,7 @@ public class ConfigClientIT {
     private static ExecutorService executor;
     private static CuratorFramework curator;
     private static DiscoveryManager discovery;
+    private static CryptoFactory crypto;
     private static Runner runner;
     private static OkHttpClient httpClient;
     private static MockWebServer mockServer;
@@ -79,7 +81,8 @@ public class ConfigClientIT {
                         .defaultData(new byte[0]).retryPolicy(new ExponentialBackoffRetry(1000, 3)).build();
         curator.start();
         discovery = new DiscoveryManager(config, curator);
-        runner = new Runner(config, executor, curator, discovery);
+        crypto = new CryptoFactory(config);
+        runner = new Runner(config, executor, curator, discovery, crypto);
 
         // Wait for the server to start.
         TimeUnit.MILLISECONDS.sleep(500);

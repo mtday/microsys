@@ -1,26 +1,38 @@
 package microsys.shell.command.crypto;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigValue;
 import com.typesafe.config.ConfigValueFactory;
+
+import org.junit.Test;
+import org.mockito.Mockito;
+
 import microsys.common.config.CommonConfig;
 import microsys.crypto.CryptoFactory;
 import microsys.crypto.EncryptionType;
 import microsys.service.client.ServiceClient;
 import microsys.service.discovery.DiscoveryManager;
-import microsys.shell.model.*;
-import org.junit.Test;
-import org.mockito.Mockito;
+import microsys.shell.model.CommandPath;
+import microsys.shell.model.CommandStatus;
+import microsys.shell.model.Option;
+import microsys.shell.model.Registration;
+import microsys.shell.model.ShellEnvironment;
+import microsys.shell.model.UserCommand;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.SortedSet;
 
 /**
  * Perform testing of the {@link EncryptCommand} class.
@@ -30,8 +42,8 @@ public class EncryptCommandTest {
     protected ShellEnvironment getShellEnvironment() throws Exception {
         final Optional<URL> keystore = Optional.ofNullable(getClass().getClassLoader().getResource("keystore.jks"));
 
-        System.setProperty("SHARED_SECRET", "secret");
         final Map<String, ConfigValue> map = new HashMap<>();
+        map.put("SHARED_SECRET", ConfigValueFactory.fromAnyRef("secret"));
         map.put(CommonConfig.SHARED_SECRET_VARIABLE.getKey(), ConfigValueFactory.fromAnyRef("SHARED_SECRET"));
         if (keystore.isPresent()) {
             map.put(CommonConfig.SSL_ENABLED.getKey(), ConfigValueFactory.fromAnyRef("true"));
@@ -39,7 +51,8 @@ public class EncryptCommandTest {
             map.put(CommonConfig.SSL_KEYSTORE_TYPE.getKey(), ConfigValueFactory.fromAnyRef("JKS"));
             map.put(CommonConfig.SSL_KEYSTORE_PASSWORD.getKey(), ConfigValueFactory.fromAnyRef("changeit"));
         }
-        final Config config = ConfigFactory.parseMap(map);
+        final Config config = ConfigFactory.parseMap(map).withFallback(ConfigFactory.systemProperties())
+                .withFallback(ConfigFactory.systemEnvironment());
         final CryptoFactory cryptoFactory = new CryptoFactory(config);
 
         final DiscoveryManager discoveryManager = Mockito.mock(DiscoveryManager.class);
