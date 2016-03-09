@@ -23,14 +23,45 @@ ln -sf /var/log/${project.groupId} /opt/${project.groupId}/current/logs
 # Create the keystore and truststore if they do not exist.
 KEYSTORE="/home/${project.groupId}/pki/keystore.jks"
 TRUSTSTORE="/home/${project.groupId}/pki/truststore.jks"
+CERTIFICATE="/home/${project.groupId}/pki/localhost.crt"
 if [[ ! -f ${KEYSTORE} ]]; then
-    keytool -genkey -alias localhost -keyalg RSA -keystore ${KEYSTORE} -storepass changeit \
-        -dname "CN=localhost" -keypass changeit
+    # Create a self signed key pair root CA certificate.
+    keytool -genkeypair -v \
+      -alias localhost \
+      -dname "CN=localhost, OU=microsys, O=mtday, C=US" \
+      -keystore ${KEYSTORE} \
+      -keypass changeit \
+      -storepass changeit \
+      -keyalg RSA \
+      -keysize 4096 \
+      -ext KeyUsage="keyCertSign" \
+      -ext BasicConstraints:"critical=ca:true" \
+      -validity 9999
+
     chown ${project.groupId}:${project.groupId} ${KEYSTORE}
     chmod 640 ${KEYSTORE}
 fi
 if [[ ! -f ${TRUSTSTORE} ]]; then
-    cp ${KEYSTORE} ${TRUSTSTORE}
+    # Export the public certificate so that it can be used in the trust store.
+    keytool -export -v \
+      -alias localhost \
+      -file ${CERTIFICATE} \
+      -keypass changeit \
+      -storepass changeit \
+      -keystore ${KEYSTORE} \
+      -rfc
+
+    # Import the public certificate into a trust store.
+    keytool -importcert \
+      -file ${CERTIFICATE} \
+      -keystore ${TRUSTSTORE} \
+      -storepass changeit \
+      -alias localhost \
+      -noprompt
+
+    chown ${project.groupId}:${project.groupId} ${CERTIFICATE}
+    chmod 640 ${CERTIFICATE}
+
     chown ${project.groupId}:${project.groupId} ${TRUSTSTORE}
     chmod 640 ${TRUSTSTORE}
 fi

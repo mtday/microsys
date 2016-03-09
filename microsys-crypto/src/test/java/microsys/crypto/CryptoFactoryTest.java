@@ -168,7 +168,7 @@ public class CryptoFactoryTest {
 
     @Test(expected = EncryptionException.class)
     public void testSKEImportKeyStoreFile() throws EncryptionException {
-        final Optional<URL> url = Optional.ofNullable(getClass().getClassLoader().getResource("certificate.jks"));
+        final Optional<URL> url = Optional.ofNullable(getClass().getClassLoader().getResource("truststore.jks"));
         if (url.isPresent()) {
             final Map<String, ConfigValue> map = new HashMap<>();
             map.put(SSL_ENABLED.getKey(), ConfigValueFactory.fromAnyRef("true"));

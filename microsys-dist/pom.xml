@@ -152,6 +152,10 @@
                         <scriptFile>${project.build.directory}/classes/scripts/postinstall.sh</scriptFile>
                         <fileEncoding>${project.build.sourceEncoding}</fileEncoding>
                     </postinstallScriptlet>
+                    <preremoveScriptlet>
+                        <scriptFile>${project.build.directory}/classes/scripts/preremove.sh</scriptFile>
+                        <fileEncoding>${project.build.sourceEncoding}</fileEncoding>
+                    </preremoveScriptlet>
                     <postremoveScriptlet>
                         <scriptFile>${project.build.directory}/classes/scripts/postremove.sh</scriptFile>
                         <fileEncoding>${project.build.sourceEncoding}</fileEncoding>

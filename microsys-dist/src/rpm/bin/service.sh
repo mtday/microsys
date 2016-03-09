@@ -137,7 +137,7 @@ _stop_service() {
         PID_FILE="${VAR_DIR}/${SERVICE}-${SERVICE_NAME}.pid"
         rm -f ${PID_FILE}
 
-        echo -n "${SERVICE}-$(printf "%-8s" ${SERVICE_NAME}) stopped"; success; echo
+        echo -n "${SERVICE}-$(printf "%-8s" ${SERVICE_NAME}) stopped pid ${PID}"; success; echo
         return 0
     fi
 }
