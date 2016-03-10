@@ -280,6 +280,12 @@ public abstract class BaseService {
         Spark.get("/service/control/:action", new ServiceControlRoute(this));
     }
 
+    protected Reservation getPortReservation() throws PortReservationException {
+        try (final PortManager portManager = new PortManager(getConfig(), getCurator())) {
+            return portManager.getReservation(getServiceType(), getHostName());
+        }
+    }
+
     /**
      * Start the service.
      * @throws PortReservationException if there is a problem reserving the port for the service
@@ -287,9 +293,7 @@ public abstract class BaseService {
      */
     public void start() throws PortReservationException, EncryptionException {
         // Configure the service.
-        final PortManager portManager = new PortManager(getConfig(), getCurator());
-        final Reservation reservation = portManager.getReservation(getServiceType(), getHostName());
-        portManager.close();
+        final Reservation reservation = getPortReservation();
 
         configurePort(reservation);
         configureThreading();

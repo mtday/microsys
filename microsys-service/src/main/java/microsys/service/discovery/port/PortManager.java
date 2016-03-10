@@ -18,7 +18,7 @@ import javax.annotation.Nonnull;
  * This manager is used to reserve a unique port for a service, and does so in such a way as to prevent two services
  * from attempting to simultaneously attempting to start on the same port.
  */
-public class PortManager {
+public class PortManager implements AutoCloseable {
     private final static String PORT_RESERVATION_PATH = "/port-reservation";
 
     @Nonnull
