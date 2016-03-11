@@ -11,7 +11,7 @@ import com.typesafe.config.ConfigValueFactory;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import microsys.common.config.CommonConfig;
+import microsys.common.config.ConfigKeys;
 import microsys.config.client.ConfigClient;
 import microsys.config.model.ConfigKeyValue;
 import microsys.config.model.ConfigKeyValueCollection;
@@ -39,11 +39,11 @@ public class ListCommandTest {
     @SuppressWarnings("unchecked")
     protected ShellEnvironment getShellEnvironment() throws Exception {
         final Map<String, ConfigValue> map = new HashMap<>();
-        map.put(CommonConfig.SERVER_HOSTNAME.getKey(), ConfigValueFactory.fromAnyRef("")); // empty value
-        map.put(CommonConfig.SSL_ENABLED.getKey(), ConfigValueFactory.fromAnyRef(true));
-        map.put(CommonConfig.SSL_KEYSTORE_FILE.getKey(), ConfigValueFactory.fromAnyRef("file"));
-        map.put(CommonConfig.SSL_KEYSTORE_TYPE.getKey(), ConfigValueFactory.fromAnyRef("JKS"));
-        map.put(CommonConfig.SSL_KEYSTORE_PASSWORD.getKey(), ConfigValueFactory.fromAnyRef("changeit"));
+        map.put(ConfigKeys.SERVER_HOSTNAME.getKey(), ConfigValueFactory.fromAnyRef("")); // empty value
+        map.put(ConfigKeys.SSL_ENABLED.getKey(), ConfigValueFactory.fromAnyRef(true));
+        map.put(ConfigKeys.SSL_KEYSTORE_FILE.getKey(), ConfigValueFactory.fromAnyRef("file"));
+        map.put(ConfigKeys.SSL_KEYSTORE_TYPE.getKey(), ConfigValueFactory.fromAnyRef("JKS"));
+        map.put(ConfigKeys.SSL_KEYSTORE_PASSWORD.getKey(), ConfigValueFactory.fromAnyRef("changeit"));
         final Config config = ConfigFactory.parseMap(map);
 
         final ConfigKeyValueCollection collection =

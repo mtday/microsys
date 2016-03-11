@@ -5,9 +5,9 @@ import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import microsys.common.model.ServiceType;
-import microsys.service.discovery.DiscoveryManager;
-import microsys.service.model.Service;
+import microsys.common.model.service.Service;
+import microsys.common.model.service.ServiceType;
+import microsys.discovery.DiscoveryManager;
 import microsys.shell.model.ShellEnvironment;
 
 import java.util.LinkedList;

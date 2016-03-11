@@ -6,7 +6,7 @@ import com.typesafe.config.Config;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import microsys.common.config.CommonConfig;
+import microsys.common.config.ConfigKeys;
 import microsys.crypto.CryptoFactory;
 import microsys.crypto.EncryptionException;
 import microsys.service.model.ServiceRequest;
@@ -38,7 +38,7 @@ public class RequestSigningFilter implements Filter {
      */
     public RequestSigningFilter(@Nonnull final Config config, @Nonnull final CryptoFactory cryptoFactory) {
         this.cryptoFactory = Objects.requireNonNull(cryptoFactory);
-        this.secureMode = config.getBoolean(CommonConfig.SSL_ENABLED.getKey());
+        this.secureMode = config.getBoolean(ConfigKeys.SSL_ENABLED.getKey());
     }
 
     /**

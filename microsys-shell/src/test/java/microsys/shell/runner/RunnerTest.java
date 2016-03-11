@@ -18,9 +18,11 @@ import org.mockito.Mockito;
 import org.slf4j.LoggerFactory;
 
 import ch.qos.logback.classic.Level;
-import microsys.common.config.CommonConfig;
+import microsys.common.config.ConfigKeys;
 import microsys.crypto.CryptoFactory;
-import microsys.service.discovery.DiscoveryManager;
+import microsys.crypto.impl.DefaultCryptoFactory;
+import microsys.discovery.DiscoveryManager;
+import microsys.discovery.impl.CuratorDiscoveryManager;
 import microsys.shell.CapturingConsoleReader;
 import microsys.shell.ConsoleManager;
 import microsys.shell.RegistrationManager;
@@ -47,7 +49,8 @@ public class RunnerTest {
 
         try (final TestingServer testServer = new TestingServer(true)) {
             final Map<String, ConfigValue> map = new HashMap<>();
-            map.put(CommonConfig.ZOOKEEPER_HOSTS.getKey(),
+            map.put(
+                    ConfigKeys.ZOOKEEPER_HOSTS.getKey(),
                     ConfigValueFactory.fromAnyRef(testServer.getConnectString()));
             final Config config = ConfigFactory.parseMap(map).withFallback(ConfigFactory.load());
 
@@ -111,18 +114,6 @@ public class RunnerTest {
         Mockito.verify(runner).shutdown();
     }
 
-    @Test(expected = Exception.class)
-    public void testCreateCurator() throws Exception {
-        final Runner runner = Mockito.mock(Runner.class);
-        Mockito.when(runner.createCurator(Mockito.any(), Mockito.any())).thenCallRealMethod();
-
-        final Map<String, ConfigValue> map = new HashMap<>();
-        map.put(CommonConfig.ZOOKEEPER_HOSTS.getKey(), ConfigValueFactory.fromAnyRef("localhost:12345"));
-        map.put(CommonConfig.ZOOKEEPER_AUTH_ENABLED.getKey(), ConfigValueFactory.fromAnyRef(false));
-        final Config config = ConfigFactory.parseMap(map).withFallback(ConfigFactory.load());
-        runner.createCurator(config, new CryptoFactory(config));
-    }
-
     @Test
     public void testRunWithFile() throws Exception {
         final TemporaryFolder tmp = new TemporaryFolder();
@@ -141,7 +132,8 @@ public class RunnerTest {
 
             try (final TestingServer testServer = new TestingServer(true)) {
                 final Map<String, ConfigValue> map = new HashMap<>();
-                map.put(CommonConfig.ZOOKEEPER_HOSTS.getKey(),
+                map.put(
+                        ConfigKeys.ZOOKEEPER_HOSTS.getKey(),
                         ConfigValueFactory.fromAnyRef(testServer.getConnectString()));
                 final Config config = ConfigFactory.parseMap(map).withFallback(ConfigFactory.load());
                 final ExecutorService executor = Executors.newFixedThreadPool(3);
@@ -149,10 +141,10 @@ public class RunnerTest {
                         CuratorFrameworkFactory.builder().connectString(testServer.getConnectString()).namespace("test")
                                 .retryPolicy(new ExponentialBackoffRetry(1000, 3)).build();
                 curator.start();
-                final DiscoveryManager discovery = new DiscoveryManager(config, curator);
+                final DiscoveryManager discovery = new CuratorDiscoveryManager(config, curator);
                 final RegistrationManager registrationManager = new RegistrationManager();
                 final OkHttpClient httpClient = new OkHttpClient.Builder().build();
-                final CryptoFactory cryptoFactory = new CryptoFactory(config);
+                final CryptoFactory cryptoFactory = new DefaultCryptoFactory(config);
                 final ShellEnvironment shellEnvironment =
                         new ShellEnvironment(config, executor, discovery, curator, registrationManager, httpClient,
                                 cryptoFactory);

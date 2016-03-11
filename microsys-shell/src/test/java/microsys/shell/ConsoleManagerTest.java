@@ -16,9 +16,10 @@ import org.mockito.Mockito;
 import org.slf4j.LoggerFactory;
 
 import ch.qos.logback.classic.Level;
-import microsys.common.config.CommonConfig;
+import microsys.common.config.ConfigKeys;
 import microsys.crypto.CryptoFactory;
-import microsys.service.discovery.DiscoveryManager;
+import microsys.crypto.impl.DefaultCryptoFactory;
+import microsys.discovery.DiscoveryManager;
 import microsys.shell.model.ShellEnvironment;
 import okhttp3.OkHttpClient;
 
@@ -55,14 +56,14 @@ public class ConsoleManagerTest {
         ((ch.qos.logback.classic.Logger) LoggerFactory.getLogger(RegistrationManager.class)).setLevel(Level.OFF);
 
         final Config config =
-                ConfigFactory.parseString(String.format("%s = 1.2.3", CommonConfig.SYSTEM_VERSION.getKey()))
+                ConfigFactory.parseString(String.format("%s = 1.2.3", ConfigKeys.SYSTEM_VERSION.getKey()))
                         .withFallback(ConfigFactory.load());
         final ExecutorService executor = Executors.newFixedThreadPool(3);
         final DiscoveryManager discovery = Mockito.mock(DiscoveryManager.class);
         final CuratorFramework curator = Mockito.mock(CuratorFramework.class);
         final RegistrationManager registrationManager = new RegistrationManager();
         final OkHttpClient httpClient = new OkHttpClient.Builder().build();
-        final CryptoFactory cryptoFactory = new CryptoFactory(config);
+        final CryptoFactory cryptoFactory = new DefaultCryptoFactory(config);
         final ShellEnvironment shellEnvironment =
                 new ShellEnvironment(config, executor, discovery, curator, registrationManager, httpClient,
                         cryptoFactory);
@@ -134,14 +135,14 @@ public class ConsoleManagerTest {
         ((ch.qos.logback.classic.Logger) LoggerFactory.getLogger(RegistrationManager.class)).setLevel(Level.OFF);
 
         final Config config =
-                ConfigFactory.parseString(String.format("%s = 1.2.3", CommonConfig.SYSTEM_VERSION.getKey()))
+                ConfigFactory.parseString(String.format("%s = 1.2.3", ConfigKeys.SYSTEM_VERSION.getKey()))
                         .withFallback(ConfigFactory.load());
         final ExecutorService executor = Executors.newFixedThreadPool(3);
         final DiscoveryManager discovery = Mockito.mock(DiscoveryManager.class);
         final CuratorFramework curator = Mockito.mock(CuratorFramework.class);
         final RegistrationManager registrationManager = new RegistrationManager();
         final OkHttpClient httpClient = new OkHttpClient.Builder().build();
-        final CryptoFactory cryptoFactory = new CryptoFactory(config);
+        final CryptoFactory cryptoFactory = new DefaultCryptoFactory(config);
         final ShellEnvironment shellEnvironment =
                 new ShellEnvironment(config, executor, discovery, curator, registrationManager, httpClient,
                         cryptoFactory);
@@ -174,14 +175,14 @@ public class ConsoleManagerTest {
         ((ch.qos.logback.classic.Logger) LoggerFactory.getLogger(RegistrationManager.class)).setLevel(Level.OFF);
 
         final Config config =
-                ConfigFactory.parseString(String.format("%s = 1.2.3", CommonConfig.SYSTEM_VERSION.getKey()))
+                ConfigFactory.parseString(String.format("%s = 1.2.3", ConfigKeys.SYSTEM_VERSION.getKey()))
                         .withFallback(ConfigFactory.load());
         final ExecutorService executor = Executors.newFixedThreadPool(3);
         final DiscoveryManager discovery = Mockito.mock(DiscoveryManager.class);
         final CuratorFramework curator = Mockito.mock(CuratorFramework.class);
         final RegistrationManager registrationManager = new RegistrationManager();
         final OkHttpClient httpClient = new OkHttpClient.Builder().build();
-        final CryptoFactory cryptoFactory = new CryptoFactory(config);
+        final CryptoFactory cryptoFactory = new DefaultCryptoFactory(config);
         final ShellEnvironment shellEnvironment =
                 new ShellEnvironment(config, executor, discovery, curator, registrationManager, httpClient,
                         cryptoFactory);
@@ -235,14 +236,14 @@ public class ConsoleManagerTest {
 
         try {
             final Config config =
-                    ConfigFactory.parseString(String.format("%s = 1.2.3", CommonConfig.SYSTEM_VERSION.getKey()))
+                    ConfigFactory.parseString(String.format("%s = 1.2.3", ConfigKeys.SYSTEM_VERSION.getKey()))
                             .withFallback(ConfigFactory.load());
             final ExecutorService executor = Executors.newFixedThreadPool(3);
             final DiscoveryManager discovery = Mockito.mock(DiscoveryManager.class);
             final CuratorFramework curator = Mockito.mock(CuratorFramework.class);
             final RegistrationManager registrationManager = new RegistrationManager();
             final OkHttpClient httpClient = new OkHttpClient.Builder().build();
-            final CryptoFactory cryptoFactory = new CryptoFactory(config);
+            final CryptoFactory cryptoFactory = new DefaultCryptoFactory(config);
             final ShellEnvironment shellEnvironment =
                     new ShellEnvironment(config, executor, discovery, curator, registrationManager, httpClient,
                             cryptoFactory);
@@ -277,14 +278,14 @@ public class ConsoleManagerTest {
 
         try {
             final Config config =
-                    ConfigFactory.parseString(String.format("%s = 1.2.3", CommonConfig.SYSTEM_VERSION.getKey()))
+                    ConfigFactory.parseString(String.format("%s = 1.2.3", ConfigKeys.SYSTEM_VERSION.getKey()))
                             .withFallback(ConfigFactory.load());
             final ExecutorService executor = Executors.newFixedThreadPool(3);
             final DiscoveryManager discovery = Mockito.mock(DiscoveryManager.class);
             final CuratorFramework curator = Mockito.mock(CuratorFramework.class);
             final RegistrationManager registrationManager = new RegistrationManager();
             final OkHttpClient httpClient = new OkHttpClient.Builder().build();
-            final CryptoFactory cryptoFactory = new CryptoFactory(config);
+            final CryptoFactory cryptoFactory = new DefaultCryptoFactory(config);
             final ShellEnvironment shellEnvironment =
                     new ShellEnvironment(config, executor, discovery, curator, registrationManager, httpClient,
                             cryptoFactory);
@@ -332,14 +333,14 @@ public class ConsoleManagerTest {
         ((ch.qos.logback.classic.Logger) LoggerFactory.getLogger(RegistrationManager.class)).setLevel(Level.OFF);
 
         final Config config =
-                ConfigFactory.parseString(String.format("%s = 1.2.3", CommonConfig.SYSTEM_VERSION.getKey()))
+                ConfigFactory.parseString(String.format("%s = 1.2.3", ConfigKeys.SYSTEM_VERSION.getKey()))
                         .withFallback(ConfigFactory.load());
         final ExecutorService executor = Executors.newFixedThreadPool(3);
         final DiscoveryManager discovery = Mockito.mock(DiscoveryManager.class);
         final CuratorFramework curator = Mockito.mock(CuratorFramework.class);
         final RegistrationManager registrationManager = new RegistrationManager();
         final OkHttpClient httpClient = new OkHttpClient.Builder().build();
-        final CryptoFactory cryptoFactory = new CryptoFactory(config);
+        final CryptoFactory cryptoFactory = new DefaultCryptoFactory(config);
         final ShellEnvironment shellEnvironment =
                 new ShellEnvironment(config, executor, discovery, curator, registrationManager, httpClient,
                         cryptoFactory);
@@ -384,9 +385,9 @@ public class ConsoleManagerTest {
         final String tmp = System.getProperty("java.io.tmpdir");
         final Map<String, ConfigValue> map = new HashMap<>();
         map.put("user.home", ConfigValueFactory.fromAnyRef(tmp));
-        map.put(CommonConfig.SHELL_HISTORY_FILE.getKey(), ConfigValueFactory.fromAnyRef("history.txt"));
+        map.put(ConfigKeys.SHELL_HISTORY_FILE.getKey(), ConfigValueFactory.fromAnyRef("history.txt"));
         final Config config = ConfigFactory.parseMap(map).withFallback(ConfigFactory.load());
-        final String systemName = config.getString(CommonConfig.SYSTEM_NAME.getKey());
+        final String systemName = config.getString(ConfigKeys.SYSTEM_NAME.getKey());
 
         // Make the directory where the history file is stored a file instead.
         final File file = new File(String.format("%s/.%s", tmp, systemName));
@@ -399,7 +400,7 @@ public class ConsoleManagerTest {
         final CuratorFramework curator = Mockito.mock(CuratorFramework.class);
         final RegistrationManager registrationManager = new RegistrationManager();
         final OkHttpClient httpClient = new OkHttpClient.Builder().build();
-        final CryptoFactory cryptoFactory = new CryptoFactory(config);
+        final CryptoFactory cryptoFactory = new DefaultCryptoFactory(config);
         final ShellEnvironment shellEnvironment =
                 new ShellEnvironment(config, executor, discovery, curator, registrationManager, httpClient,
                         cryptoFactory);

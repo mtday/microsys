@@ -10,8 +10,9 @@ import org.mockito.Mockito;
 import org.slf4j.LoggerFactory;
 
 import ch.qos.logback.classic.Level;
-import microsys.common.config.CommonConfig;
+import microsys.common.config.ConfigKeys;
 import microsys.crypto.CryptoFactory;
+import microsys.crypto.impl.DefaultCryptoFactory;
 import microsys.service.BaseService;
 import microsys.service.model.ServiceRequest;
 import microsys.service.model.ServiceResponse;
@@ -34,12 +35,12 @@ public class RequestSigningFilterTest {
         final Optional<URL> keystore = Optional.ofNullable(getClass().getClassLoader().getResource("keystore.jks"));
         if (keystore.isPresent()) {
             final Map<String, ConfigValue> map = new HashMap<>();
-            map.put(CommonConfig.SSL_ENABLED.getKey(), ConfigValueFactory.fromAnyRef("true"));
-            map.put(CommonConfig.SSL_KEYSTORE_FILE.getKey(), ConfigValueFactory.fromAnyRef(keystore.get().getFile()));
-            map.put(CommonConfig.SSL_KEYSTORE_TYPE.getKey(), ConfigValueFactory.fromAnyRef("JKS"));
-            map.put(CommonConfig.SSL_KEYSTORE_PASSWORD.getKey(), ConfigValueFactory.fromAnyRef("changeit"));
+            map.put(ConfigKeys.SSL_ENABLED.getKey(), ConfigValueFactory.fromAnyRef("true"));
+            map.put(ConfigKeys.SSL_KEYSTORE_FILE.getKey(), ConfigValueFactory.fromAnyRef(keystore.get().getFile()));
+            map.put(ConfigKeys.SSL_KEYSTORE_TYPE.getKey(), ConfigValueFactory.fromAnyRef("JKS"));
+            map.put(ConfigKeys.SSL_KEYSTORE_PASSWORD.getKey(), ConfigValueFactory.fromAnyRef("changeit"));
             final Config config = ConfigFactory.parseMap(map).withFallback(ConfigFactory.load());
-            final CryptoFactory cryptoFactory = new CryptoFactory(config);
+            final CryptoFactory cryptoFactory = new DefaultCryptoFactory(config);
 
             final ServiceRequest serviceRequest = new ServiceRequest("request-id");
 
@@ -63,9 +64,9 @@ public class RequestSigningFilterTest {
         final Optional<URL> keystore = Optional.ofNullable(getClass().getClassLoader().getResource("keystore.jks"));
         if (keystore.isPresent()) {
             final Map<String, ConfigValue> map = new HashMap<>();
-            map.put(CommonConfig.SSL_ENABLED.getKey(), ConfigValueFactory.fromAnyRef("true"));
+            map.put(ConfigKeys.SSL_ENABLED.getKey(), ConfigValueFactory.fromAnyRef("true"));
             final Config config = ConfigFactory.parseMap(map).withFallback(ConfigFactory.load());
-            final CryptoFactory cryptoFactory = new CryptoFactory(config);
+            final CryptoFactory cryptoFactory = new DefaultCryptoFactory(config);
 
             final Request request = Mockito.mock(Request.class);
             Mockito.when(request.headers(ServiceRequest.SERVICE_REQUEST_HEADER)).thenReturn(null);
@@ -87,12 +88,12 @@ public class RequestSigningFilterTest {
         final Optional<URL> keystore = Optional.ofNullable(getClass().getClassLoader().getResource("keystore.jks"));
         if (keystore.isPresent()) {
             final Map<String, ConfigValue> map = new HashMap<>();
-            map.put(CommonConfig.SSL_ENABLED.getKey(), ConfigValueFactory.fromAnyRef("true"));
-            map.put(CommonConfig.SSL_KEYSTORE_FILE.getKey(), ConfigValueFactory.fromAnyRef(keystore.get().getFile()));
-            map.put(CommonConfig.SSL_KEYSTORE_TYPE.getKey(), ConfigValueFactory.fromAnyRef("WRONG"));
-            map.put(CommonConfig.SSL_KEYSTORE_PASSWORD.getKey(), ConfigValueFactory.fromAnyRef("changeit"));
+            map.put(ConfigKeys.SSL_ENABLED.getKey(), ConfigValueFactory.fromAnyRef("true"));
+            map.put(ConfigKeys.SSL_KEYSTORE_FILE.getKey(), ConfigValueFactory.fromAnyRef(keystore.get().getFile()));
+            map.put(ConfigKeys.SSL_KEYSTORE_TYPE.getKey(), ConfigValueFactory.fromAnyRef("WRONG"));
+            map.put(ConfigKeys.SSL_KEYSTORE_PASSWORD.getKey(), ConfigValueFactory.fromAnyRef("changeit"));
             final Config config = ConfigFactory.parseMap(map).withFallback(ConfigFactory.load());
-            final CryptoFactory cryptoFactory = new CryptoFactory(config);
+            final CryptoFactory cryptoFactory = new DefaultCryptoFactory(config);
             final ServiceRequest serviceRequest = new ServiceRequest("request-id");
 
             final Request request = Mockito.mock(Request.class);

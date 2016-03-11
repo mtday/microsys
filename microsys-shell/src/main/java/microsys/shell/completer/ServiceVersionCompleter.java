@@ -2,7 +2,7 @@ package microsys.shell.completer;
 
 import jline.console.completer.Completer;
 import jline.console.completer.StringsCompleter;
-import microsys.service.model.Service;
+import microsys.common.model.service.Service;
 import microsys.shell.model.ShellEnvironment;
 
 import java.util.List;

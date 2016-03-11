@@ -14,7 +14,9 @@ import org.slf4j.LoggerFactory;
 
 import ch.qos.logback.classic.Level;
 import microsys.crypto.CryptoFactory;
-import microsys.service.discovery.DiscoveryManager;
+import microsys.crypto.impl.DefaultCryptoFactory;
+import microsys.discovery.DiscoveryManager;
+import microsys.discovery.impl.CuratorDiscoveryManager;
 import microsys.shell.RegistrationManager;
 import microsys.shell.model.CommandPath;
 import microsys.shell.model.CommandStatus;
@@ -60,11 +62,11 @@ public class HelpCommandTest {
 
         final Config config = ConfigFactory.load();
         final ExecutorService executor = Executors.newFixedThreadPool(3);
-        final DiscoveryManager discovery = Mockito.mock(DiscoveryManager.class);
+        final CuratorDiscoveryManager discovery = Mockito.mock(CuratorDiscoveryManager.class);
         final CuratorFramework curator = Mockito.mock(CuratorFramework.class);
         final RegistrationManager registrationManager = new RegistrationManager();
         final OkHttpClient httpClient = new OkHttpClient.Builder().build();
-        final CryptoFactory cryptoFactory = new CryptoFactory(config);
+        final CryptoFactory cryptoFactory = new DefaultCryptoFactory(config);
         final ShellEnvironment shellEnvironment =
                 new ShellEnvironment(config, executor, discovery, curator, registrationManager, httpClient,
                         cryptoFactory);
@@ -103,7 +105,7 @@ public class HelpCommandTest {
         final CuratorFramework curator = Mockito.mock(CuratorFramework.class);
         final RegistrationManager registrationManager = new RegistrationManager();
         final OkHttpClient httpClient = new OkHttpClient.Builder().build();
-        final CryptoFactory cryptoFactory = new CryptoFactory(config);
+        final CryptoFactory cryptoFactory = new DefaultCryptoFactory(config);
         final ShellEnvironment shellEnvironment =
                 new ShellEnvironment(config, executor, discovery, curator, registrationManager, httpClient,
                         cryptoFactory);
@@ -144,7 +146,7 @@ public class HelpCommandTest {
         final CuratorFramework curator = Mockito.mock(CuratorFramework.class);
         final RegistrationManager registrationManager = new RegistrationManager();
         final OkHttpClient httpClient = new OkHttpClient.Builder().build();
-        final CryptoFactory cryptoFactory = new CryptoFactory(config);
+        final CryptoFactory cryptoFactory = new DefaultCryptoFactory(config);
         final ShellEnvironment shellEnvironment =
                 new ShellEnvironment(config, executor, discovery, curator, registrationManager, httpClient,
                         cryptoFactory);

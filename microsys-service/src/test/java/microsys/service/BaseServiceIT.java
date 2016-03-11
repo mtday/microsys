@@ -20,11 +20,13 @@ import org.mockito.Mockito;
 import org.slf4j.LoggerFactory;
 
 import ch.qos.logback.classic.Level;
-import microsys.common.config.CommonConfig;
-import microsys.common.model.ServiceType;
+import microsys.common.config.ConfigKeys;
+import microsys.common.model.service.ServiceType;
 import microsys.crypto.CryptoFactory;
-import microsys.service.discovery.DiscoveryException;
-import microsys.service.discovery.DiscoveryManager;
+import microsys.crypto.impl.DefaultCryptoFactory;
+import microsys.discovery.DiscoveryException;
+import microsys.discovery.DiscoveryManager;
+import microsys.discovery.impl.CuratorDiscoveryManager;
 import spark.webserver.JettySparkServer;
 
 import java.net.URL;
@@ -48,10 +50,10 @@ public class BaseServiceIT {
         BaseService baseService = null;
         try (final TestingServer zookeeper = new TestingServer()) {
             final Map<String, ConfigValue> map = new HashMap<>();
-            map.put(CommonConfig.ZOOKEEPER_HOSTS.getKey(), ConfigValueFactory.fromAnyRef(zookeeper.getConnectString()));
-            map.put(CommonConfig.ZOOKEEPER_AUTH_ENABLED.getKey(), ConfigValueFactory.fromAnyRef(true));
-            map.put(CommonConfig.ZOOKEEPER_AUTH_USER.getKey(), ConfigValueFactory.fromAnyRef("user"));
-            map.put(CommonConfig.ZOOKEEPER_AUTH_PASSWORD.getKey(), ConfigValueFactory.fromAnyRef("password"));
+            map.put(ConfigKeys.ZOOKEEPER_HOSTS.getKey(), ConfigValueFactory.fromAnyRef(zookeeper.getConnectString()));
+            map.put(ConfigKeys.ZOOKEEPER_AUTH_ENABLED.getKey(), ConfigValueFactory.fromAnyRef(true));
+            map.put(ConfigKeys.ZOOKEEPER_AUTH_USER.getKey(), ConfigValueFactory.fromAnyRef("user"));
+            map.put(ConfigKeys.ZOOKEEPER_AUTH_PASSWORD.getKey(), ConfigValueFactory.fromAnyRef("password"));
             final Config config = ConfigFactory.parseMap(map).withFallback(ConfigFactory.load());
 
             baseService = new BaseService(config, ServiceType.CONFIG, new CountDownLatch(1)) {
@@ -86,7 +88,7 @@ public class BaseServiceIT {
         BaseService baseService = null;
         try (final TestingServer zookeeper = new TestingServer()) {
             final Map<String, ConfigValue> map = new HashMap<>();
-            map.put(CommonConfig.ZOOKEEPER_HOSTS.getKey(), ConfigValueFactory.fromAnyRef(zookeeper.getConnectString()));
+            map.put(ConfigKeys.ZOOKEEPER_HOSTS.getKey(), ConfigValueFactory.fromAnyRef(zookeeper.getConnectString()));
             final Config config = ConfigFactory.parseMap(map).withFallback(ConfigFactory.load());
 
             final CuratorFramework curator = CuratorFrameworkFactory.builder().namespace("base-service")
@@ -95,8 +97,8 @@ public class BaseServiceIT {
             curator.start();
 
             final ExecutorService executor = Executors.newFixedThreadPool(2);
-            final DiscoveryManager discovery = new DiscoveryManager(config, curator);
-            final CryptoFactory crypto = new CryptoFactory(config);
+            final DiscoveryManager discovery = new CuratorDiscoveryManager(config, curator);
+            final CryptoFactory crypto = new DefaultCryptoFactory(config);
 
             baseService = new BaseService(config, executor, curator, discovery, crypto, ServiceType.CONFIG) {
             };
@@ -123,7 +125,7 @@ public class BaseServiceIT {
         BaseService baseService = null;
         try (final TestingServer zookeeper = new TestingServer()) {
             final Map<String, ConfigValue> map = new HashMap<>();
-            map.put(CommonConfig.ZOOKEEPER_HOSTS.getKey(), ConfigValueFactory.fromAnyRef(zookeeper.getConnectString()));
+            map.put(ConfigKeys.ZOOKEEPER_HOSTS.getKey(), ConfigValueFactory.fromAnyRef(zookeeper.getConnectString()));
             final Config config = ConfigFactory.parseMap(map).withFallback(ConfigFactory.load());
 
             final CuratorFramework curator = CuratorFrameworkFactory.builder().namespace("discovery")
@@ -163,7 +165,7 @@ public class BaseServiceIT {
         ((ch.qos.logback.classic.Logger) LoggerFactory.getLogger(BaseService.class)).setLevel(Level.OFF);
 
         final Map<String, ConfigValue> map = new HashMap<>();
-        map.put(CommonConfig.ZOOKEEPER_HOSTS.getKey(), ConfigValueFactory.fromAnyRef("localhost:12345"));
+        map.put(ConfigKeys.ZOOKEEPER_HOSTS.getKey(), ConfigValueFactory.fromAnyRef("localhost:12345"));
         final Config config = ConfigFactory.parseMap(map).withFallback(ConfigFactory.load());
 
         // This will fail to connect to zookeeper and result in an exception.
@@ -187,14 +189,14 @@ public class BaseServiceIT {
         BaseService baseService = null;
         try (final TestingServer zookeeper = new TestingServer()) {
             final Map<String, ConfigValue> map = new HashMap<>();
-            map.put(CommonConfig.SSL_ENABLED.getKey(), ConfigValueFactory.fromAnyRef("true"));
-            map.put(CommonConfig.SSL_KEYSTORE_FILE.getKey(), ConfigValueFactory.fromAnyRef(keystore.getFile()));
-            map.put(CommonConfig.SSL_KEYSTORE_TYPE.getKey(), ConfigValueFactory.fromAnyRef("JKS"));
-            map.put(CommonConfig.SSL_KEYSTORE_PASSWORD.getKey(), ConfigValueFactory.fromAnyRef("changeit"));
-            map.put(CommonConfig.SSL_TRUSTSTORE_FILE.getKey(), ConfigValueFactory.fromAnyRef(truststore.getFile()));
-            map.put(CommonConfig.SSL_TRUSTSTORE_TYPE.getKey(), ConfigValueFactory.fromAnyRef("JKS"));
-            map.put(CommonConfig.SSL_TRUSTSTORE_PASSWORD.getKey(), ConfigValueFactory.fromAnyRef("changeit"));
-            map.put(CommonConfig.ZOOKEEPER_HOSTS.getKey(), ConfigValueFactory.fromAnyRef(zookeeper.getConnectString()));
+            map.put(ConfigKeys.SSL_ENABLED.getKey(), ConfigValueFactory.fromAnyRef("true"));
+            map.put(ConfigKeys.SSL_KEYSTORE_FILE.getKey(), ConfigValueFactory.fromAnyRef(keystore.getFile()));
+            map.put(ConfigKeys.SSL_KEYSTORE_TYPE.getKey(), ConfigValueFactory.fromAnyRef("JKS"));
+            map.put(ConfigKeys.SSL_KEYSTORE_PASSWORD.getKey(), ConfigValueFactory.fromAnyRef("changeit"));
+            map.put(ConfigKeys.SSL_TRUSTSTORE_FILE.getKey(), ConfigValueFactory.fromAnyRef(truststore.getFile()));
+            map.put(ConfigKeys.SSL_TRUSTSTORE_TYPE.getKey(), ConfigValueFactory.fromAnyRef("JKS"));
+            map.put(ConfigKeys.SSL_TRUSTSTORE_PASSWORD.getKey(), ConfigValueFactory.fromAnyRef("changeit"));
+            map.put(ConfigKeys.ZOOKEEPER_HOSTS.getKey(), ConfigValueFactory.fromAnyRef(zookeeper.getConnectString()));
             final Config config = ConfigFactory.parseMap(map).withFallback(ConfigFactory.load());
 
             baseService = new BaseService(config, ServiceType.CONFIG, new CountDownLatch(1)) {

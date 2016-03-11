@@ -34,6 +34,7 @@ public class RegistrationManager {
      * @param shellEnvironment the {@link ShellEnvironment} providing the necessary objects used within the commands
      */
     public void loadCommands(@Nonnull final ShellEnvironment shellEnvironment) {
+        Objects.requireNonNull(shellEnvironment);
         final String packagePrefix = StringUtils.substringBeforeLast(getClass().getPackage().getName(), ".");
         final Reflections reflections = new Reflections(packagePrefix);
 
@@ -44,7 +45,9 @@ public class RegistrationManager {
 
     @Nonnull
     protected Optional<Command> createCommand(
-            final Class<? extends Command> commandClass, final ShellEnvironment shellEnvironment) {
+            @Nonnull final Class<? extends Command> commandClass, @Nonnull final ShellEnvironment shellEnvironment) {
+        Objects.requireNonNull(commandClass);
+        Objects.requireNonNull(shellEnvironment);
         try {
             if (Modifier.isAbstract(commandClass.getModifiers())) {
                 return Optional.empty();
@@ -74,6 +77,7 @@ public class RegistrationManager {
      */
     @Nonnull
     public SortedSet<Registration> getRegistrations(@Nonnull final CommandPath commandPath) {
+        Objects.requireNonNull(commandPath);
         final SortedSet<Registration> matching = new TreeSet<>();
         getRegistrations().stream().filter(registration -> registration.getPath().isPrefix(commandPath))
                 .forEach(matching::add);

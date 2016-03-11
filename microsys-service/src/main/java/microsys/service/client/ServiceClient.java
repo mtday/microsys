@@ -5,8 +5,8 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.typesafe.config.Config;
 
+import microsys.common.model.service.Service;
 import microsys.crypto.CryptoFactory;
-import microsys.service.model.Service;
 import microsys.service.model.ServiceControlStatus;
 import microsys.service.model.ServiceControlStatus.ServiceControlStatusConverter;
 import microsys.service.model.ServiceInfo;

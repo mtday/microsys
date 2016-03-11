@@ -10,7 +10,7 @@ import org.junit.Test;
 import org.mockito.Mockito;
 
 import microsys.crypto.CryptoFactory;
-import microsys.service.discovery.DiscoveryManager;
+import microsys.discovery.impl.CuratorDiscoveryManager;
 import microsys.shell.RegistrationManager;
 import okhttp3.OkHttpClient;
 
@@ -25,7 +25,7 @@ public class ShellEnvironmentTest {
     public void test() {
         final Config config = Mockito.mock(Config.class);
         final ExecutorService executor = Executors.newFixedThreadPool(3);
-        final DiscoveryManager discovery = Mockito.mock(DiscoveryManager.class);
+        final CuratorDiscoveryManager discovery = Mockito.mock(CuratorDiscoveryManager.class);
         final CuratorFramework curator = Mockito.mock(CuratorFramework.class);
         final RegistrationManager registration = Mockito.mock(RegistrationManager.class);
         final OkHttpClient httpClient = new OkHttpClient.Builder().build();

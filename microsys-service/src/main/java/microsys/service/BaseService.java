@@ -2,40 +2,37 @@ package microsys.service;
 
 import com.typesafe.config.Config;
 
-import org.apache.curator.framework.AuthInfo;
 import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.framework.CuratorFrameworkFactory;
-import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import microsys.common.config.CommonConfig;
-import microsys.common.curator.CuratorACLProvider;
-import microsys.common.model.ServiceType;
+import microsys.common.config.ConfigKeys;
+import microsys.common.model.service.Reservation;
+import microsys.common.model.service.Service;
+import microsys.common.model.service.ServiceType;
 import microsys.crypto.CryptoFactory;
 import microsys.crypto.EncryptionException;
-import microsys.service.discovery.DiscoveryException;
-import microsys.service.discovery.DiscoveryManager;
-import microsys.service.discovery.port.PortManager;
-import microsys.service.discovery.port.PortReservationException;
+import microsys.crypto.impl.DefaultCryptoFactory;
+import microsys.curator.CuratorCreator;
+import microsys.discovery.DiscoveryException;
+import microsys.discovery.DiscoveryManager;
+import microsys.discovery.impl.CuratorDiscoveryManager;
+import microsys.portres.PortManager;
+import microsys.portres.PortReservationException;
+import microsys.portres.impl.CuratorPortManager;
 import microsys.service.filter.RequestLoggingFilter;
 import microsys.service.filter.RequestSigningFilter;
-import microsys.service.model.Reservation;
-import microsys.service.model.Service;
 import microsys.service.route.ServiceControlRoute;
 import microsys.service.route.ServiceInfoRoute;
 import microsys.service.route.ServiceMemoryRoute;
 import spark.Spark;
 
-import java.nio.charset.StandardCharsets;
-import java.util.Collections;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import javax.annotation.Nonnull;
 
@@ -79,7 +76,7 @@ public abstract class BaseService {
 
         this.cryptoFactory = createCryptoFactory(this.config);
         this.executor = createExecutor(config);
-        this.curator = createCurator(config, cryptoFactory);
+        this.curator = CuratorCreator.create(config, this.cryptoFactory);
         this.discoveryManager = createDiscoveryManager(this.config, this.curator);
 
         this.service = Optional.empty();
@@ -192,53 +189,23 @@ public abstract class BaseService {
 
     @Nonnull
     protected String getHostName() {
-        return getConfig().getString(CommonConfig.SERVER_HOSTNAME.getKey());
+        return getConfig().getString(ConfigKeys.SERVER_HOSTNAME.getKey());
     }
 
     @Nonnull
     protected DiscoveryManager createDiscoveryManager(
             @Nonnull final Config config, @Nonnull final CuratorFramework curator) throws DiscoveryException {
-        return new DiscoveryManager(Objects.requireNonNull(config), Objects.requireNonNull(curator));
+        return new CuratorDiscoveryManager(Objects.requireNonNull(config), Objects.requireNonNull(curator));
     }
 
     @Nonnull
     protected ExecutorService createExecutor(@Nonnull final Config config) {
-        return Executors.newFixedThreadPool(config.getInt(CommonConfig.EXECUTOR_THREADS.getKey()));
-    }
-
-    @Nonnull
-    protected CuratorFramework createCurator(@Nonnull final Config config, @Nonnull final CryptoFactory cryptoFactory)
-            throws InterruptedException, TimeoutException, EncryptionException {
-        Objects.requireNonNull(config);
-        Objects.requireNonNull(cryptoFactory);
-
-        final String zookeepers = config.getString(CommonConfig.ZOOKEEPER_HOSTS.getKey());
-        final boolean secure = config.getBoolean(CommonConfig.ZOOKEEPER_AUTH_ENABLED.getKey());
-        final String namespace = config.getString(CommonConfig.SYSTEM_NAME.getKey());
-        final CuratorFrameworkFactory.Builder builder = CuratorFrameworkFactory.builder();
-        builder.connectString(zookeepers);
-        builder.namespace(namespace);
-        builder.retryPolicy(new ExponentialBackoffRetry(1000, 3));
-        builder.defaultData(new byte[0]);
-        if (secure) {
-            final String user = config.getString(CommonConfig.ZOOKEEPER_AUTH_USER.getKey());
-            final String pass = getCryptoFactory().getDecryptedConfig(CommonConfig.ZOOKEEPER_AUTH_PASSWORD.getKey());
-            final byte[] authData = String.format("%s:%s", user, pass).getBytes(StandardCharsets.UTF_8);
-            final AuthInfo authInfo = new AuthInfo("digest", authData);
-            builder.authorization(Collections.singletonList(authInfo));
-            builder.aclProvider(new CuratorACLProvider());
-        }
-        final CuratorFramework curator = builder.build();
-        curator.start();
-        if (!curator.blockUntilConnected(2, TimeUnit.SECONDS)) {
-            throw new TimeoutException("Failed to connect to zookeeper");
-        }
-        return curator;
+        return Executors.newFixedThreadPool(config.getInt(ConfigKeys.EXECUTOR_THREADS.getKey()));
     }
 
     @Nonnull
     protected CryptoFactory createCryptoFactory(@Nonnull final Config config) throws DiscoveryException {
-        return new CryptoFactory(Objects.requireNonNull(config));
+        return new DefaultCryptoFactory(Objects.requireNonNull(config));
     }
 
     protected void configurePort(@Nonnull final Reservation reservation) {
@@ -246,22 +213,22 @@ public abstract class BaseService {
     }
 
     protected void configureThreading() {
-        final int maxThreads = getConfig().getInt(CommonConfig.SERVER_THREADS_MAX.getKey());
-        final int minThreads = getConfig().getInt(CommonConfig.SERVER_THREADS_MIN.getKey());
-        final long timeout = getConfig().getDuration(CommonConfig.SERVER_TIMEOUT.getKey(), TimeUnit.MILLISECONDS);
+        final int maxThreads = getConfig().getInt(ConfigKeys.SERVER_THREADS_MAX.getKey());
+        final int minThreads = getConfig().getInt(ConfigKeys.SERVER_THREADS_MIN.getKey());
+        final long timeout = getConfig().getDuration(ConfigKeys.SERVER_TIMEOUT.getKey(), TimeUnit.MILLISECONDS);
 
         Spark.threadPool(maxThreads, minThreads, (int) timeout);
     }
 
     protected void configureSecurity() throws EncryptionException {
-        final boolean ssl = getConfig().getBoolean(CommonConfig.SSL_ENABLED.getKey());
+        final boolean ssl = getConfig().getBoolean(ConfigKeys.SSL_ENABLED.getKey());
         if (ssl) {
-            final String keystoreFile = getConfig().getString(CommonConfig.SSL_KEYSTORE_FILE.getKey());
+            final String keystoreFile = getConfig().getString(ConfigKeys.SSL_KEYSTORE_FILE.getKey());
             final String keystorePass =
-                    getCryptoFactory().getDecryptedConfig(CommonConfig.SSL_KEYSTORE_PASSWORD.getKey());
-            final String truststoreFile = getConfig().getString(CommonConfig.SSL_TRUSTSTORE_FILE.getKey());
+                    getCryptoFactory().getDecryptedConfig(ConfigKeys.SSL_KEYSTORE_PASSWORD.getKey());
+            final String truststoreFile = getConfig().getString(ConfigKeys.SSL_TRUSTSTORE_FILE.getKey());
             final String truststorePass =
-                    getCryptoFactory().getDecryptedConfig(CommonConfig.SSL_TRUSTSTORE_PASSWORD.getKey());
+                    getCryptoFactory().getDecryptedConfig(ConfigKeys.SSL_TRUSTSTORE_PASSWORD.getKey());
             Spark.secure(keystoreFile, keystorePass, truststoreFile, truststorePass);
         }
     }
@@ -281,7 +248,7 @@ public abstract class BaseService {
     }
 
     protected Reservation getPortReservation() throws PortReservationException {
-        try (final PortManager portManager = new PortManager(getConfig(), getCurator())) {
+        try (final PortManager portManager = new CuratorPortManager(getConfig(), getCurator())) {
             return portManager.getReservation(getServiceType(), getHostName());
         }
     }
@@ -302,8 +269,8 @@ public abstract class BaseService {
         configureRequestSigner(getConfig(), getCryptoFactory());
         configureRoutes();
 
-        final boolean ssl = getConfig().getBoolean(CommonConfig.SSL_ENABLED.getKey());
-        final String version = getConfig().getString(CommonConfig.SYSTEM_VERSION.getKey());
+        final boolean ssl = getConfig().getBoolean(ConfigKeys.SSL_ENABLED.getKey());
+        final String version = getConfig().getString(ConfigKeys.SYSTEM_VERSION.getKey());
         this.service =
                 Optional.of(new Service(getServiceType(), reservation.getHost(), reservation.getPort(), ssl, version));
 
@@ -332,12 +299,12 @@ public abstract class BaseService {
                 getDiscoveryManager().unregister(getService().get());
                 this.service = Optional.empty();
             }
-        } catch (final DiscoveryException unregisterFailed) {
+            getDiscoveryManager().close();
+        } catch (final DiscoveryException failure) {
             // Not really an issue because the ephemeral registration will disappear automatically soon.
-            LOG.warn("Failed to unregister with service discovery", unregisterFailed);
+            LOG.warn("Failed to unregister with service discovery", failure);
         }
 
-        getDiscoveryManager().close();
         getCurator().close();
         getExecutor().shutdown();
         Spark.stop();

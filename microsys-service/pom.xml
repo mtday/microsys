@@ -10,15 +10,6 @@
 
     <artifactId>microsys-service</artifactId>
 
-    <build>
-        <resources>
-            <resource>
-                <directory>src/main/resources</directory>
-                <filtering>true</filtering>
-            </resource>
-        </resources>
-    </build>
-
     <dependencies>
         <!-- Project modules -->
         <dependency>
@@ -28,6 +19,18 @@
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>microsys-crypto</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>microsys-curator</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>microsys-discovery</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>microsys-port-reservation</artifactId>
         </dependency>
 
         <!-- Service discovery with zookeeper -->

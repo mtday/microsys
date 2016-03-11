@@ -8,7 +8,7 @@ import com.google.gson.JsonParser;
 
 import org.junit.Test;
 
-import microsys.common.model.ServiceType;
+import microsys.common.model.service.ServiceType;
 
 /**
  * Perform testing on the {@link ServiceInfo} class.

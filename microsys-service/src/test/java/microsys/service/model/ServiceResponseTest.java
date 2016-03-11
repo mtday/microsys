@@ -12,9 +12,10 @@ import com.typesafe.config.ConfigValueFactory;
 
 import org.junit.Test;
 
-import microsys.common.config.CommonConfig;
+import microsys.common.config.ConfigKeys;
 import microsys.crypto.CryptoFactory;
 import microsys.crypto.EncryptionException;
+import microsys.crypto.impl.DefaultCryptoFactory;
 import microsys.service.client.ServiceException;
 import okhttp3.Protocol;
 import okhttp3.Request;
@@ -127,12 +128,12 @@ public class ServiceResponseTest {
     public void testVerifyNoServiceResponseHeader() throws ServiceException {
         final URL keystore = getClass().getClassLoader().getResource("keystore.jks");
         final Map<String, ConfigValue> map = new HashMap<>();
-        map.put(CommonConfig.SSL_ENABLED.getKey(), ConfigValueFactory.fromAnyRef("true"));
-        map.put(CommonConfig.SSL_KEYSTORE_FILE.getKey(), ConfigValueFactory.fromAnyRef(keystore.getFile()));
-        map.put(CommonConfig.SSL_KEYSTORE_TYPE.getKey(), ConfigValueFactory.fromAnyRef("JKS"));
-        map.put(CommonConfig.SSL_KEYSTORE_PASSWORD.getKey(), ConfigValueFactory.fromAnyRef("changeit"));
+        map.put(ConfigKeys.SSL_ENABLED.getKey(), ConfigValueFactory.fromAnyRef("true"));
+        map.put(ConfigKeys.SSL_KEYSTORE_FILE.getKey(), ConfigValueFactory.fromAnyRef(keystore.getFile()));
+        map.put(ConfigKeys.SSL_KEYSTORE_TYPE.getKey(), ConfigValueFactory.fromAnyRef("JKS"));
+        map.put(ConfigKeys.SSL_KEYSTORE_PASSWORD.getKey(), ConfigValueFactory.fromAnyRef("changeit"));
         final Config config = ConfigFactory.parseMap(map).withFallback(ConfigFactory.load());
-        final CryptoFactory cryptoFactory = new CryptoFactory(config);
+        final CryptoFactory cryptoFactory = new DefaultCryptoFactory(config);
 
         final ServiceRequest serviceRequest = new ServiceRequest("id");
 
@@ -146,12 +147,12 @@ public class ServiceResponseTest {
     public void testVerifyWrongId() throws ServiceException {
         final URL keystore = getClass().getClassLoader().getResource("keystore.jks");
         final Map<String, ConfigValue> map = new HashMap<>();
-        map.put(CommonConfig.SSL_ENABLED.getKey(), ConfigValueFactory.fromAnyRef("true"));
-        map.put(CommonConfig.SSL_KEYSTORE_FILE.getKey(), ConfigValueFactory.fromAnyRef(keystore.getFile()));
-        map.put(CommonConfig.SSL_KEYSTORE_TYPE.getKey(), ConfigValueFactory.fromAnyRef("JKS"));
-        map.put(CommonConfig.SSL_KEYSTORE_PASSWORD.getKey(), ConfigValueFactory.fromAnyRef("changeit"));
+        map.put(ConfigKeys.SSL_ENABLED.getKey(), ConfigValueFactory.fromAnyRef("true"));
+        map.put(ConfigKeys.SSL_KEYSTORE_FILE.getKey(), ConfigValueFactory.fromAnyRef(keystore.getFile()));
+        map.put(ConfigKeys.SSL_KEYSTORE_TYPE.getKey(), ConfigValueFactory.fromAnyRef("JKS"));
+        map.put(ConfigKeys.SSL_KEYSTORE_PASSWORD.getKey(), ConfigValueFactory.fromAnyRef("changeit"));
         final Config config = ConfigFactory.parseMap(map).withFallback(ConfigFactory.load());
-        final CryptoFactory cryptoFactory = new CryptoFactory(config);
+        final CryptoFactory cryptoFactory = new DefaultCryptoFactory(config);
 
         final ServiceRequest serviceRequest = new ServiceRequest("id");
 
@@ -167,12 +168,12 @@ public class ServiceResponseTest {
     public void testVerifyBadSignature() throws ServiceException {
         final URL keystore = getClass().getClassLoader().getResource("keystore.jks");
         final Map<String, ConfigValue> map = new HashMap<>();
-        map.put(CommonConfig.SSL_ENABLED.getKey(), ConfigValueFactory.fromAnyRef("true"));
-        map.put(CommonConfig.SSL_KEYSTORE_FILE.getKey(), ConfigValueFactory.fromAnyRef(keystore.getFile()));
-        map.put(CommonConfig.SSL_KEYSTORE_TYPE.getKey(), ConfigValueFactory.fromAnyRef("JKS"));
-        map.put(CommonConfig.SSL_KEYSTORE_PASSWORD.getKey(), ConfigValueFactory.fromAnyRef("changeit"));
+        map.put(ConfigKeys.SSL_ENABLED.getKey(), ConfigValueFactory.fromAnyRef("true"));
+        map.put(ConfigKeys.SSL_KEYSTORE_FILE.getKey(), ConfigValueFactory.fromAnyRef(keystore.getFile()));
+        map.put(ConfigKeys.SSL_KEYSTORE_TYPE.getKey(), ConfigValueFactory.fromAnyRef("JKS"));
+        map.put(ConfigKeys.SSL_KEYSTORE_PASSWORD.getKey(), ConfigValueFactory.fromAnyRef("changeit"));
         final Config config = ConfigFactory.parseMap(map).withFallback(ConfigFactory.load());
-        final CryptoFactory cryptoFactory = new CryptoFactory(config);
+        final CryptoFactory cryptoFactory = new DefaultCryptoFactory(config);
 
         final ServiceRequest serviceRequest = new ServiceRequest("id");
 
@@ -188,12 +189,12 @@ public class ServiceResponseTest {
     public void testVerifyCorrect() throws ServiceException, EncryptionException {
         final URL keystore = getClass().getClassLoader().getResource("keystore.jks");
         final Map<String, ConfigValue> map = new HashMap<>();
-        map.put(CommonConfig.SSL_ENABLED.getKey(), ConfigValueFactory.fromAnyRef("true"));
-        map.put(CommonConfig.SSL_KEYSTORE_FILE.getKey(), ConfigValueFactory.fromAnyRef(keystore.getFile()));
-        map.put(CommonConfig.SSL_KEYSTORE_TYPE.getKey(), ConfigValueFactory.fromAnyRef("JKS"));
-        map.put(CommonConfig.SSL_KEYSTORE_PASSWORD.getKey(), ConfigValueFactory.fromAnyRef("changeit"));
+        map.put(ConfigKeys.SSL_ENABLED.getKey(), ConfigValueFactory.fromAnyRef("true"));
+        map.put(ConfigKeys.SSL_KEYSTORE_FILE.getKey(), ConfigValueFactory.fromAnyRef(keystore.getFile()));
+        map.put(ConfigKeys.SSL_KEYSTORE_TYPE.getKey(), ConfigValueFactory.fromAnyRef("JKS"));
+        map.put(ConfigKeys.SSL_KEYSTORE_PASSWORD.getKey(), ConfigValueFactory.fromAnyRef("changeit"));
         final Config config = ConfigFactory.parseMap(map).withFallback(ConfigFactory.load());
-        final CryptoFactory cryptoFactory = new CryptoFactory(config);
+        final CryptoFactory cryptoFactory = new DefaultCryptoFactory(config);
 
         final String signature = cryptoFactory.getSymmetricKeyEncryption().signString("id", StandardCharsets.UTF_8);
 

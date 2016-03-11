@@ -20,7 +20,10 @@
         <module>microsys-common</module>
         <module>microsys-config</module>
         <module>microsys-crypto</module>
+        <module>microsys-curator</module>
+        <module>microsys-discovery</module>
         <module>microsys-dist</module>
+        <module>microsys-port-reservation</module>
         <module>microsys-security</module>
         <module>microsys-service</module>
         <module>microsys-shell</module>
@@ -163,7 +166,22 @@
             </dependency>
             <dependency>
                 <groupId>${project.groupId}</groupId>
+                <artifactId>microsys-curator</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>microsys-discovery</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>${project.groupId}</groupId>
                 <artifactId>microsys-dist</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>microsys-port-reservation</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -211,7 +229,7 @@
                 <scope>test</scope>
             </dependency>
 
-            <!-- Service discovery with zookeeper -->
+            <!-- Curator used to integrate with zookeeper -->
             <dependency>
                 <groupId>org.apache.curator</groupId>
                 <artifactId>curator-framework</artifactId>
@@ -219,7 +237,7 @@
             </dependency>
             <dependency>
                 <groupId>org.apache.curator</groupId>
-                <artifactId>curator-x-discovery</artifactId>
+                <artifactId>curator-recipes</artifactId>
                 <version>2.9.1</version>
             </dependency>
             <dependency>
@@ -227,6 +245,13 @@
                 <artifactId>curator-test</artifactId>
                 <version>2.9.1</version>
                 <scope>test</scope>
+            </dependency>
+
+            <!-- Service discovery with zookeeper -->
+            <dependency>
+                <groupId>org.apache.curator</groupId>
+                <artifactId>curator-x-discovery</artifactId>
+                <version>2.9.1</version>
             </dependency>
 
             <!-- JSON processing -->

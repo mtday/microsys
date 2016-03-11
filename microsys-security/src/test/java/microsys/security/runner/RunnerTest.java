@@ -13,10 +13,12 @@ import org.junit.Test;
 import org.slf4j.LoggerFactory;
 
 import ch.qos.logback.classic.Level;
-import microsys.common.config.CommonConfig;
+import microsys.common.config.ConfigKeys;
 import microsys.crypto.CryptoFactory;
+import microsys.crypto.impl.DefaultCryptoFactory;
+import microsys.discovery.DiscoveryManager;
+import microsys.discovery.impl.CuratorDiscoveryManager;
 import microsys.service.BaseService;
-import microsys.service.discovery.DiscoveryManager;
 import spark.webserver.JettySparkServer;
 
 import java.util.HashMap;
@@ -37,7 +39,7 @@ public class RunnerTest {
 
         try (final TestingServer zookeeper = new TestingServer()) {
             final Map<String, ConfigValue> map = new HashMap<>();
-            map.put(CommonConfig.ZOOKEEPER_HOSTS.getKey(), ConfigValueFactory.fromAnyRef(zookeeper.getConnectString()));
+            map.put(ConfigKeys.ZOOKEEPER_HOSTS.getKey(), ConfigValueFactory.fromAnyRef(zookeeper.getConnectString()));
             final Config config = ConfigFactory.parseMap(map).withFallback(ConfigFactory.load());
 
             new Runner(config, new CountDownLatch(1)).stop();
@@ -52,15 +54,15 @@ public class RunnerTest {
 
         try (final TestingServer zookeeper = new TestingServer()) {
             final Map<String, ConfigValue> map = new HashMap<>();
-            map.put(CommonConfig.ZOOKEEPER_HOSTS.getKey(), ConfigValueFactory.fromAnyRef(zookeeper.getConnectString()));
+            map.put(ConfigKeys.ZOOKEEPER_HOSTS.getKey(), ConfigValueFactory.fromAnyRef(zookeeper.getConnectString()));
             final Config config = ConfigFactory.parseMap(map).withFallback(ConfigFactory.load());
             final ExecutorService executor = Executors.newFixedThreadPool(3);
             final CuratorFramework curator = CuratorFrameworkFactory.builder().namespace("namespace")
                     .connectString(zookeeper.getConnectString()).defaultData(new byte[0])
                     .retryPolicy(new ExponentialBackoffRetry(1000, 3)).build();
             curator.start();
-            final DiscoveryManager discovery = new DiscoveryManager(config, curator);
-            final CryptoFactory crypto = new CryptoFactory(config);
+            final DiscoveryManager discovery = new CuratorDiscoveryManager(config, curator);
+            final CryptoFactory crypto = new DefaultCryptoFactory(config);
 
             new Runner(config, executor, curator, discovery, crypto).stop();
         }

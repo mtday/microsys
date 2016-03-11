@@ -1,25 +1,38 @@
 package microsys.shell.command.crypto;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigValue;
 import com.typesafe.config.ConfigValueFactory;
-import microsys.common.config.CommonConfig;
-import microsys.crypto.CryptoFactory;
-import microsys.service.client.ServiceClient;
-import microsys.service.discovery.DiscoveryManager;
-import microsys.shell.model.*;
+
 import org.junit.Test;
 import org.mockito.Mockito;
+
+import microsys.common.config.ConfigKeys;
+import microsys.crypto.CryptoFactory;
+import microsys.crypto.impl.DefaultCryptoFactory;
+import microsys.discovery.DiscoveryManager;
+import microsys.service.client.ServiceClient;
+import microsys.shell.model.CommandPath;
+import microsys.shell.model.CommandStatus;
+import microsys.shell.model.Option;
+import microsys.shell.model.Registration;
+import microsys.shell.model.ShellEnvironment;
+import microsys.shell.model.UserCommand;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.SortedSet;
 
 /**
  * Perform testing of the {@link VerifyCommand} class.
@@ -31,15 +44,15 @@ public class VerifyCommandTest {
 
         System.setProperty("SHARED_SECRET", "secret");
         final Map<String, ConfigValue> map = new HashMap<>();
-        map.put(CommonConfig.SHARED_SECRET_VARIABLE.getKey(), ConfigValueFactory.fromAnyRef("SHARED_SECRET"));
+        map.put(ConfigKeys.SHARED_SECRET_VARIABLE.getKey(), ConfigValueFactory.fromAnyRef("SHARED_SECRET"));
         if (keystore.isPresent()) {
-            map.put(CommonConfig.SSL_ENABLED.getKey(), ConfigValueFactory.fromAnyRef("true"));
-            map.put(CommonConfig.SSL_KEYSTORE_FILE.getKey(), ConfigValueFactory.fromAnyRef(keystore.get().getFile()));
-            map.put(CommonConfig.SSL_KEYSTORE_TYPE.getKey(), ConfigValueFactory.fromAnyRef("JKS"));
-            map.put(CommonConfig.SSL_KEYSTORE_PASSWORD.getKey(), ConfigValueFactory.fromAnyRef("changeit"));
+            map.put(ConfigKeys.SSL_ENABLED.getKey(), ConfigValueFactory.fromAnyRef("true"));
+            map.put(ConfigKeys.SSL_KEYSTORE_FILE.getKey(), ConfigValueFactory.fromAnyRef(keystore.get().getFile()));
+            map.put(ConfigKeys.SSL_KEYSTORE_TYPE.getKey(), ConfigValueFactory.fromAnyRef("JKS"));
+            map.put(ConfigKeys.SSL_KEYSTORE_PASSWORD.getKey(), ConfigValueFactory.fromAnyRef("changeit"));
         }
         final Config config = ConfigFactory.parseMap(map);
-        final CryptoFactory cryptoFactory = new CryptoFactory(config);
+        final CryptoFactory cryptoFactory = new DefaultCryptoFactory(config);
 
         final DiscoveryManager discoveryManager = Mockito.mock(DiscoveryManager.class);
         final ServiceClient serviceClient = Mockito.mock(ServiceClient.class);

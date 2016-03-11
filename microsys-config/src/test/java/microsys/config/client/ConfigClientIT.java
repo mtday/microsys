@@ -20,17 +20,19 @@ import org.mockito.Mockito;
 import org.slf4j.LoggerFactory;
 
 import ch.qos.logback.classic.Level;
-import microsys.common.config.CommonConfig;
-import microsys.common.model.ServiceType;
+import microsys.common.config.ConfigKeys;
+import microsys.common.model.service.Service;
+import microsys.common.model.service.ServiceType;
 import microsys.config.model.ConfigKeyValue;
 import microsys.config.model.ConfigKeyValueCollection;
 import microsys.config.runner.Runner;
-import microsys.config.service.CuratorConfigService;
+import microsys.config.service.impl.CuratorConfigService;
 import microsys.crypto.CryptoFactory;
+import microsys.crypto.impl.DefaultCryptoFactory;
+import microsys.discovery.DiscoveryManager;
+import microsys.discovery.impl.CuratorDiscoveryManager;
 import microsys.service.BaseService;
-import microsys.service.discovery.DiscoveryManager;
 import microsys.service.filter.RequestLoggingFilter;
-import microsys.service.model.Service;
 import okhttp3.OkHttpClient;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
@@ -73,7 +75,7 @@ public class ConfigClientIT {
         testingServer = new TestingServer();
 
         final Map<String, ConfigValue> map = new HashMap<>();
-        map.put(CommonConfig.ZOOKEEPER_HOSTS.getKey(), ConfigValueFactory.fromAnyRef(testingServer.getConnectString()));
+        map.put(ConfigKeys.ZOOKEEPER_HOSTS.getKey(), ConfigValueFactory.fromAnyRef(testingServer.getConnectString()));
         config = ConfigFactory.parseMap(map).withFallback(ConfigFactory.load());
 
         executor = Executors.newFixedThreadPool(3);
@@ -81,8 +83,8 @@ public class ConfigClientIT {
                 CuratorFrameworkFactory.builder().namespace("namespace").connectString(testingServer.getConnectString())
                         .defaultData(new byte[0]).retryPolicy(new ExponentialBackoffRetry(1000, 3)).build();
         curator.start();
-        discovery = new DiscoveryManager(config, curator);
-        crypto = new CryptoFactory(config);
+        discovery = new CuratorDiscoveryManager(config, curator);
+        crypto = new DefaultCryptoFactory(config);
         runner = new Runner(config, executor, curator, discovery, crypto);
 
         // Wait for the server to start.

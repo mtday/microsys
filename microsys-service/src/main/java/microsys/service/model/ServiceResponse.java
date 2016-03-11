@@ -10,7 +10,7 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
-import microsys.common.config.CommonConfig;
+import microsys.common.config.ConfigKeys;
 import microsys.common.model.Model;
 import microsys.crypto.CryptoFactory;
 import microsys.crypto.EncryptionException;
@@ -73,7 +73,7 @@ public class ServiceResponse implements Model, Comparable<ServiceResponse> {
     public static void verify(
             @Nonnull final Config config, @Nonnull final CryptoFactory cryptoFactory,
             @Nonnull final ServiceRequest serviceRequest, @Nonnull final Response response) throws ServiceException {
-        if (!config.getBoolean(CommonConfig.SSL_ENABLED.getKey())) {
+        if (!config.getBoolean(ConfigKeys.SSL_ENABLED.getKey())) {
             // No need to verify since security is disabled.
             return;
         }

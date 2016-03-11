@@ -2,13 +2,13 @@ package microsys.security.client;
 
 import com.google.gson.JsonParser;
 
-import microsys.common.model.ServiceType;
+import microsys.common.model.service.Service;
+import microsys.common.model.service.ServiceType;
+import microsys.discovery.DiscoveryException;
+import microsys.discovery.DiscoveryManager;
 import microsys.security.model.User;
 import microsys.security.service.UserService;
 import microsys.security.service.UserServiceException;
-import microsys.service.discovery.DiscoveryException;
-import microsys.service.discovery.DiscoveryManager;
-import microsys.service.model.Service;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;

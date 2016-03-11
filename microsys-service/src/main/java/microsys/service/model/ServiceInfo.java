@@ -10,7 +10,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
 import microsys.common.model.Model;
-import microsys.common.model.ServiceType;
+import microsys.common.model.service.ServiceType;
 
 import java.util.Objects;
 

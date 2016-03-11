@@ -4,7 +4,7 @@ import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
 
-import microsys.common.model.ServiceType;
+import microsys.common.model.service.ServiceType;
 
 import java.util.Arrays;
 import java.util.LinkedList;

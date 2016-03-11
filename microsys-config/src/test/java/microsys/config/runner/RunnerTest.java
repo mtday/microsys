@@ -10,8 +10,8 @@ import org.junit.Test;
 import org.slf4j.LoggerFactory;
 
 import ch.qos.logback.classic.Level;
-import microsys.common.config.CommonConfig;
-import microsys.config.service.CuratorConfigService;
+import microsys.common.config.ConfigKeys;
+import microsys.config.service.impl.CuratorConfigService;
 import microsys.service.BaseService;
 import spark.webserver.JettySparkServer;
 
@@ -32,7 +32,7 @@ public class RunnerTest {
 
         try (final TestingServer zookeeper = new TestingServer()) {
             final Map<String, ConfigValue> map = new HashMap<>();
-            map.put(CommonConfig.ZOOKEEPER_HOSTS.getKey(), ConfigValueFactory.fromAnyRef(zookeeper.getConnectString()));
+            map.put(ConfigKeys.ZOOKEEPER_HOSTS.getKey(), ConfigValueFactory.fromAnyRef(zookeeper.getConnectString()));
             final Config config = ConfigFactory.parseMap(map).withFallback(ConfigFactory.load());
 
             new Runner(config, new CountDownLatch(1)).stop();

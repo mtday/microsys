@@ -6,16 +6,16 @@ import com.typesafe.config.ConfigFactory;
 
 import org.apache.curator.framework.CuratorFramework;
 
-import microsys.common.model.ServiceType;
+import microsys.common.model.service.ServiceType;
 import microsys.config.route.Get;
 import microsys.config.route.GetAll;
 import microsys.config.route.Set;
 import microsys.config.route.Unset;
 import microsys.config.service.ConfigService;
-import microsys.config.service.CuratorConfigService;
+import microsys.config.service.impl.CuratorConfigService;
 import microsys.crypto.CryptoFactory;
+import microsys.discovery.DiscoveryManager;
 import microsys.service.BaseService;
-import microsys.service.discovery.DiscoveryManager;
 import spark.Spark;
 
 import java.util.Objects;

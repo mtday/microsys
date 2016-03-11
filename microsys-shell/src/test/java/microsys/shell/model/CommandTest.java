@@ -9,7 +9,8 @@ import org.junit.Test;
 import org.mockito.Mockito;
 
 import microsys.crypto.CryptoFactory;
-import microsys.service.discovery.DiscoveryManager;
+import microsys.crypto.impl.DefaultCryptoFactory;
+import microsys.discovery.impl.CuratorDiscoveryManager;
 import microsys.shell.RegistrationManager;
 import okhttp3.OkHttpClient;
 
@@ -28,11 +29,11 @@ public class CommandTest {
     public void test() {
         final Config config = Mockito.mock(Config.class);
         final ExecutorService executor = Mockito.mock(ExecutorService.class);
-        final DiscoveryManager discovery = Mockito.mock(DiscoveryManager.class);
+        final CuratorDiscoveryManager discovery = Mockito.mock(CuratorDiscoveryManager.class);
         final CuratorFramework curator = Mockito.mock(CuratorFramework.class);
         final RegistrationManager registration = Mockito.mock(RegistrationManager.class);
         final OkHttpClient httpClient = new OkHttpClient.Builder().build();
-        final CryptoFactory cryptoFactory = new CryptoFactory(config);
+        final CryptoFactory cryptoFactory = new DefaultCryptoFactory(config);
         final ShellEnvironment env =
                 new ShellEnvironment(config, executor, discovery, curator, registration, httpClient, cryptoFactory);
 

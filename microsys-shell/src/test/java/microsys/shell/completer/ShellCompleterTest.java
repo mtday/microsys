@@ -12,10 +12,11 @@ import org.mockito.Mockito;
 import org.slf4j.LoggerFactory;
 
 import ch.qos.logback.classic.Level;
-import microsys.common.model.ServiceType;
+import microsys.common.model.service.Service;
+import microsys.common.model.service.ServiceType;
 import microsys.crypto.CryptoFactory;
-import microsys.service.discovery.DiscoveryManager;
-import microsys.service.model.Service;
+import microsys.crypto.impl.DefaultCryptoFactory;
+import microsys.discovery.DiscoveryManager;
 import microsys.shell.RegistrationManager;
 import microsys.shell.model.ShellEnvironment;
 import okhttp3.OkHttpClient;
@@ -51,7 +52,7 @@ public class ShellCompleterTest {
         final CuratorFramework curator = Mockito.mock(CuratorFramework.class);
         final RegistrationManager regMgr = new RegistrationManager();
         final OkHttpClient httpClient = new OkHttpClient.Builder().build();
-        final CryptoFactory cryptoFactory = new CryptoFactory(config);
+        final CryptoFactory cryptoFactory = new DefaultCryptoFactory(config);
         final ShellEnvironment shellEnvironment =
                 new ShellEnvironment(config, executor, discovery, curator, regMgr, httpClient, cryptoFactory);
         regMgr.loadCommands(shellEnvironment);

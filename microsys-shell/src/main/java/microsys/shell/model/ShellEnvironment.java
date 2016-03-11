@@ -6,8 +6,9 @@ import org.apache.curator.framework.CuratorFramework;
 
 import microsys.config.client.ConfigClient;
 import microsys.crypto.CryptoFactory;
+import microsys.discovery.DiscoveryException;
+import microsys.discovery.DiscoveryManager;
 import microsys.service.client.ServiceClient;
-import microsys.service.discovery.DiscoveryManager;
 import microsys.shell.RegistrationManager;
 import okhttp3.OkHttpClient;
 
@@ -136,6 +137,10 @@ public class ShellEnvironment {
     public void close() {
         getExecutor().shutdown();
         getCuratorFramework().close();
-        getDiscoveryManager().close();
+        try {
+            getDiscoveryManager().close();
+        } catch (final DiscoveryException closeFailed) {
+            // Ignored.
+        }
     }
 }

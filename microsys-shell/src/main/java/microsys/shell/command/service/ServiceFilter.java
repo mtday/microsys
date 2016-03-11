@@ -3,8 +3,8 @@ package microsys.shell.command.service;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.lang3.StringUtils;
 
-import microsys.common.model.ServiceType;
-import microsys.service.model.Service;
+import microsys.common.model.service.Service;
+import microsys.common.model.service.ServiceType;
 
 import java.util.Objects;
 import java.util.Optional;

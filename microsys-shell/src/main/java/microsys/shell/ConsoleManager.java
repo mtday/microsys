@@ -9,7 +9,7 @@ import jline.TerminalFactory;
 import jline.console.ConsoleReader;
 import jline.console.UserInterruptException;
 import jline.console.history.FileHistory;
-import microsys.common.config.CommonConfig;
+import microsys.common.config.ConfigKeys;
 import microsys.shell.completer.ShellCompleter;
 import microsys.shell.model.Command;
 import microsys.shell.model.CommandPath;
@@ -124,14 +124,14 @@ public class ConsoleManager {
     @Nonnull
     protected FileHistory createHistory(@Nonnull final Config config) throws IOException {
         final String userHome = config.getString("user.home");
-        final String systemName = config.getString(CommonConfig.SYSTEM_NAME.getKey());
-        final String historyFileName = config.getString(CommonConfig.SHELL_HISTORY_FILE.getKey());
+        final String systemName = config.getString(ConfigKeys.SYSTEM_NAME.getKey());
+        final String historyFileName = config.getString(ConfigKeys.SHELL_HISTORY_FILE.getKey());
         return new FileHistory(new File(String.format("%s/.%s/%s", userHome, systemName, historyFileName)));
     }
 
     protected void printStartupOutput() throws IOException {
-        final String system = getConfig().getString(CommonConfig.SYSTEM_NAME.getKey());
-        final String version = getConfig().getString(CommonConfig.SYSTEM_VERSION.getKey());
+        final String system = getConfig().getString(ConfigKeys.SYSTEM_NAME.getKey());
+        final String version = getConfig().getString(ConfigKeys.SYSTEM_VERSION.getKey());
 
         getConsoleReader().println();
         getConsoleReader().println(String.format("%s %s", system, version));

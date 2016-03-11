@@ -157,6 +157,9 @@ public class UserTest {
         final JsonObject json = converter.doBackward(original);
         final User copy = converter.doForward(json);
         assertEquals(original, copy);
+
+        assertEquals(converter, new User.UserConverter());
+        assertEquals(452430762, converter.hashCode());
     }
 
     @Test

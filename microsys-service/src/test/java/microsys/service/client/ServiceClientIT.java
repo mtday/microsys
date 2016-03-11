@@ -20,13 +20,15 @@ import org.mockito.Mockito;
 import org.slf4j.LoggerFactory;
 
 import ch.qos.logback.classic.Level;
-import microsys.common.config.CommonConfig;
-import microsys.common.model.ServiceType;
+import microsys.common.config.ConfigKeys;
+import microsys.common.model.service.Service;
+import microsys.common.model.service.ServiceType;
 import microsys.crypto.CryptoFactory;
+import microsys.crypto.impl.DefaultCryptoFactory;
+import microsys.discovery.DiscoveryManager;
+import microsys.discovery.impl.CuratorDiscoveryManager;
 import microsys.service.BaseService;
-import microsys.service.discovery.DiscoveryManager;
 import microsys.service.filter.RequestLoggingFilter;
-import microsys.service.model.Service;
 import microsys.service.model.ServiceControlStatus;
 import microsys.service.model.ServiceInfo;
 import microsys.service.model.ServiceMemory;
@@ -72,9 +74,9 @@ public class ServiceClientIT {
         testingServer = new TestingServer();
 
         final Map<String, ConfigValue> map = new HashMap<>();
-        map.put(CommonConfig.ZOOKEEPER_HOSTS.getKey(), ConfigValueFactory.fromAnyRef(testingServer.getConnectString()));
-        map.put(CommonConfig.SYSTEM_NAME.getKey(), ConfigValueFactory.fromAnyRef("system-name"));
-        map.put(CommonConfig.SYSTEM_VERSION.getKey(), ConfigValueFactory.fromAnyRef("1.2.3"));
+        map.put(ConfigKeys.ZOOKEEPER_HOSTS.getKey(), ConfigValueFactory.fromAnyRef(testingServer.getConnectString()));
+        map.put(ConfigKeys.SYSTEM_NAME.getKey(), ConfigValueFactory.fromAnyRef("system-name"));
+        map.put(ConfigKeys.SYSTEM_VERSION.getKey(), ConfigValueFactory.fromAnyRef("1.2.3"));
         config = ConfigFactory.parseMap(map).withFallback(ConfigFactory.load());
 
         executor = Executors.newFixedThreadPool(4);
@@ -82,8 +84,8 @@ public class ServiceClientIT {
                 CuratorFrameworkFactory.builder().namespace("ns").connectString(testingServer.getConnectString())
                         .defaultData(new byte[0]).retryPolicy(new ExponentialBackoffRetry(1000, 3)).build();
         curator.start();
-        discovery = new DiscoveryManager(config, curator);
-        crypto = new CryptoFactory(config);
+        discovery = new CuratorDiscoveryManager(config, curator);
+        crypto = new DefaultCryptoFactory(config);
         baseService = new BaseService(config, executor, curator, discovery, crypto, ServiceType.CONFIG) {
         };
 

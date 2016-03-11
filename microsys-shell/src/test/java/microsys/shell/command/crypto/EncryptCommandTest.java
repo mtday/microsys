@@ -11,11 +11,12 @@ import com.typesafe.config.ConfigValueFactory;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import microsys.common.config.CommonConfig;
+import microsys.common.config.ConfigKeys;
 import microsys.crypto.CryptoFactory;
 import microsys.crypto.EncryptionType;
+import microsys.crypto.impl.DefaultCryptoFactory;
+import microsys.discovery.DiscoveryManager;
 import microsys.service.client.ServiceClient;
-import microsys.service.discovery.DiscoveryManager;
 import microsys.shell.model.CommandPath;
 import microsys.shell.model.CommandStatus;
 import microsys.shell.model.Option;
@@ -44,16 +45,16 @@ public class EncryptCommandTest {
 
         final Map<String, ConfigValue> map = new HashMap<>();
         map.put("SHARED_SECRET", ConfigValueFactory.fromAnyRef("secret"));
-        map.put(CommonConfig.SHARED_SECRET_VARIABLE.getKey(), ConfigValueFactory.fromAnyRef("SHARED_SECRET"));
+        map.put(ConfigKeys.SHARED_SECRET_VARIABLE.getKey(), ConfigValueFactory.fromAnyRef("SHARED_SECRET"));
         if (keystore.isPresent()) {
-            map.put(CommonConfig.SSL_ENABLED.getKey(), ConfigValueFactory.fromAnyRef("true"));
-            map.put(CommonConfig.SSL_KEYSTORE_FILE.getKey(), ConfigValueFactory.fromAnyRef(keystore.get().getFile()));
-            map.put(CommonConfig.SSL_KEYSTORE_TYPE.getKey(), ConfigValueFactory.fromAnyRef("JKS"));
-            map.put(CommonConfig.SSL_KEYSTORE_PASSWORD.getKey(), ConfigValueFactory.fromAnyRef("changeit"));
+            map.put(ConfigKeys.SSL_ENABLED.getKey(), ConfigValueFactory.fromAnyRef("true"));
+            map.put(ConfigKeys.SSL_KEYSTORE_FILE.getKey(), ConfigValueFactory.fromAnyRef(keystore.get().getFile()));
+            map.put(ConfigKeys.SSL_KEYSTORE_TYPE.getKey(), ConfigValueFactory.fromAnyRef("JKS"));
+            map.put(ConfigKeys.SSL_KEYSTORE_PASSWORD.getKey(), ConfigValueFactory.fromAnyRef("changeit"));
         }
         final Config config = ConfigFactory.parseMap(map).withFallback(ConfigFactory.systemProperties())
                 .withFallback(ConfigFactory.systemEnvironment());
-        final CryptoFactory cryptoFactory = new CryptoFactory(config);
+        final CryptoFactory cryptoFactory = new DefaultCryptoFactory(config);
 
         final DiscoveryManager discoveryManager = Mockito.mock(DiscoveryManager.class);
         final ServiceClient serviceClient = Mockito.mock(ServiceClient.class);

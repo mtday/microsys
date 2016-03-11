@@ -3,8 +3,8 @@ package microsys.shell.command.service;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
-import microsys.service.discovery.DiscoveryException;
-import microsys.service.model.Service;
+import microsys.common.model.service.Service;
+import microsys.discovery.DiscoveryException;
 import microsys.service.model.ServiceMemory;
 import microsys.shell.model.CommandPath;
 import microsys.shell.model.CommandStatus;

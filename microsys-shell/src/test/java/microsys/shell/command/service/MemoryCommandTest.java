@@ -6,11 +6,11 @@ import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import microsys.common.model.ServiceType;
+import microsys.common.model.service.Service;
+import microsys.common.model.service.ServiceType;
+import microsys.discovery.DiscoveryException;
+import microsys.discovery.DiscoveryManager;
 import microsys.service.client.ServiceClient;
-import microsys.service.discovery.DiscoveryException;
-import microsys.service.discovery.DiscoveryManager;
-import microsys.service.model.Service;
 import microsys.service.model.ServiceMemory;
 import microsys.shell.model.CommandPath;
 import microsys.shell.model.CommandStatus;

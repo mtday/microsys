@@ -6,17 +6,17 @@ import com.typesafe.config.ConfigFactory;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.ParseException;
-import org.apache.curator.framework.AuthInfo;
 import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.framework.CuratorFrameworkFactory;
-import org.apache.curator.retry.ExponentialBackoffRetry;
 
-import microsys.common.config.CommonConfig;
-import microsys.common.curator.CuratorACLProvider;
+import microsys.common.config.ConfigKeys;
 import microsys.crypto.CryptoFactory;
 import microsys.crypto.EncryptionException;
-import microsys.service.discovery.DiscoveryException;
-import microsys.service.discovery.DiscoveryManager;
+import microsys.crypto.impl.DefaultCryptoFactory;
+import microsys.curator.CuratorCreator;
+import microsys.curator.CuratorException;
+import microsys.discovery.DiscoveryException;
+import microsys.discovery.DiscoveryManager;
+import microsys.discovery.impl.CuratorDiscoveryManager;
 import microsys.shell.ConsoleManager;
 import microsys.shell.RegistrationManager;
 import microsys.shell.model.Option;
@@ -26,14 +26,10 @@ import okhttp3.OkHttpClient;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.Collections;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import javax.annotation.Nonnull;
 
@@ -63,15 +59,6 @@ public class Runner {
         return this.consoleManager;
     }
 
-    protected void setShellEnvironment(@Nonnull final ShellEnvironment shellEnvironment) {
-        this.shellEnvironment = shellEnvironment;
-    }
-
-    @Nonnull
-    protected ShellEnvironment getShellEnvironment() {
-        return this.shellEnvironment;
-    }
-
     protected void run(@Nonnull final File file) throws IOException {
         getConsoleManager().run(Objects.requireNonNull(file));
     }
@@ -98,13 +85,13 @@ public class Runner {
 
     @Nonnull
     protected ShellEnvironment getShellEnvironment(@Nonnull final Config config)
-            throws DiscoveryException, EncryptionException, TimeoutException, InterruptedException {
+            throws DiscoveryException, CuratorException, EncryptionException {
         Objects.requireNonNull(config);
         final ExecutorService executor =
-                Executors.newFixedThreadPool(config.getInt(CommonConfig.EXECUTOR_THREADS.getKey()));
-        final CryptoFactory cryptoFactory = new CryptoFactory(config);
-        final CuratorFramework curator = createCurator(config, cryptoFactory);
-        final DiscoveryManager discoveryManager = new DiscoveryManager(config, curator);
+                Executors.newFixedThreadPool(config.getInt(ConfigKeys.EXECUTOR_THREADS.getKey()));
+        final CryptoFactory cryptoFactory = new DefaultCryptoFactory(config);
+        final CuratorFramework curator = CuratorCreator.create(config, cryptoFactory);
+        final DiscoveryManager discoveryManager = new CuratorDiscoveryManager(config, curator);
         final RegistrationManager registrationManager = new RegistrationManager();
         final OkHttpClient httpClient = getHttpClient(cryptoFactory);
         final ShellEnvironment shellEnvironment =
@@ -112,36 +99,6 @@ public class Runner {
                         cryptoFactory);
         registrationManager.loadCommands(shellEnvironment);
         return shellEnvironment;
-    }
-
-    @Nonnull
-    protected CuratorFramework createCurator(@Nonnull final Config config, @Nonnull final CryptoFactory cryptoFactory)
-            throws TimeoutException, InterruptedException, EncryptionException {
-        Objects.requireNonNull(config);
-        Objects.requireNonNull(cryptoFactory);
-
-        final String zookeepers = config.getString(CommonConfig.ZOOKEEPER_HOSTS.getKey());
-        final boolean secure = config.getBoolean(CommonConfig.ZOOKEEPER_AUTH_ENABLED.getKey());
-        final String namespace = config.getString(CommonConfig.SYSTEM_NAME.getKey());
-        final CuratorFrameworkFactory.Builder builder = CuratorFrameworkFactory.builder();
-        builder.connectString(zookeepers);
-        builder.namespace(namespace);
-        builder.retryPolicy(new ExponentialBackoffRetry(1000, 3));
-        builder.defaultData(new byte[0]);
-        if (secure) {
-            final String user = config.getString(CommonConfig.ZOOKEEPER_AUTH_USER.getKey());
-            final String pass = cryptoFactory.getDecryptedConfig(CommonConfig.ZOOKEEPER_AUTH_PASSWORD.getKey());
-            final byte[] authData = String.format("%s:%s", user, pass).getBytes(StandardCharsets.UTF_8);
-            final AuthInfo authInfo = new AuthInfo("digest", authData);
-            builder.authorization(Collections.singletonList(authInfo));
-            builder.aclProvider(new CuratorACLProvider());
-        }
-        final CuratorFramework curator = builder.build();
-        curator.start();
-        if (!curator.blockUntilConnected(2, TimeUnit.SECONDS)) {
-            throw new TimeoutException("Failed to connect to zookeeper");
-        }
-        return curator;
     }
 
     protected static void processCommandLine(@Nonnull final Runner runner, @Nonnull final String[] args)
