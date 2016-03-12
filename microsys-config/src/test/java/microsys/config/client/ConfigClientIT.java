@@ -9,9 +9,6 @@ import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigValue;
 import com.typesafe.config.ConfigValueFactory;
 
-import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.framework.CuratorFrameworkFactory;
-import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.curator.test.TestingServer;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -27,13 +24,10 @@ import microsys.config.model.ConfigKeyValue;
 import microsys.config.model.ConfigKeyValueCollection;
 import microsys.config.runner.Runner;
 import microsys.config.service.impl.CuratorConfigService;
-import microsys.crypto.CryptoFactory;
-import microsys.crypto.impl.DefaultCryptoFactory;
 import microsys.discovery.DiscoveryManager;
-import microsys.discovery.impl.CuratorDiscoveryManager;
 import microsys.service.BaseService;
 import microsys.service.filter.RequestLoggingFilter;
-import okhttp3.OkHttpClient;
+import microsys.service.model.ServiceEnvironment;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import spark.webserver.JettySparkServer;
@@ -41,8 +35,8 @@ import spark.webserver.JettySparkServer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.LogManager;
@@ -54,13 +48,7 @@ import javax.servlet.http.HttpServletResponse;
  */
 public class ConfigClientIT {
     private static TestingServer testingServer;
-    private static Config config;
-    private static ExecutorService executor;
-    private static CuratorFramework curator;
-    private static DiscoveryManager discovery;
-    private static CryptoFactory crypto;
     private static Runner runner;
-    private static OkHttpClient httpClient;
     private static MockWebServer mockServer;
 
     @BeforeClass
@@ -76,22 +64,12 @@ public class ConfigClientIT {
 
         final Map<String, ConfigValue> map = new HashMap<>();
         map.put(ConfigKeys.ZOOKEEPER_HOSTS.getKey(), ConfigValueFactory.fromAnyRef(testingServer.getConnectString()));
-        config = ConfigFactory.parseMap(map).withFallback(ConfigFactory.load());
+        final Config config = ConfigFactory.parseMap(map).withFallback(ConfigFactory.load());
 
-        executor = Executors.newFixedThreadPool(3);
-        curator =
-                CuratorFrameworkFactory.builder().namespace("namespace").connectString(testingServer.getConnectString())
-                        .defaultData(new byte[0]).retryPolicy(new ExponentialBackoffRetry(1000, 3)).build();
-        curator.start();
-        discovery = new CuratorDiscoveryManager(config, curator);
-        crypto = new DefaultCryptoFactory(config);
-        runner = new Runner(config, executor, curator, discovery, crypto);
+        runner = new Runner(config, new CountDownLatch(1));
 
         // Wait for the server to start.
         TimeUnit.MILLISECONDS.sleep(500);
-
-        httpClient =
-                new OkHttpClient.Builder().connectTimeout(1, TimeUnit.SECONDS).retryOnConnectionFailure(false).build();
 
         mockServer = new MockWebServer();
         mockServer.start();
@@ -105,15 +83,6 @@ public class ConfigClientIT {
         if (runner != null) {
             runner.stop();
         }
-        if (executor != null) {
-            executor.shutdown();
-        }
-        if (discovery != null) {
-            discovery.close();
-        }
-        if (curator != null) {
-            curator.close();
-        }
         if (testingServer != null) {
             testingServer.close();
         }
@@ -121,7 +90,7 @@ public class ConfigClientIT {
 
     @Test
     public void test() throws Exception {
-        final ConfigClient client = new ConfigClient(config, executor, discovery, httpClient, crypto);
+        final ConfigClient client = new ConfigClient(runner.getServiceEnvironment());
 
         final ConfigKeyValueCollection coll = client.getAll().get();
         assertEquals(0, coll.size());
@@ -162,7 +131,11 @@ public class ConfigClientIT {
         final DiscoveryManager mockDiscovery = Mockito.mock(DiscoveryManager.class);
         Mockito.when(mockDiscovery.getRandom(ServiceType.CONFIG)).thenReturn(Optional.empty());
 
-        final ConfigClient client = new ConfigClient(config, executor, mockDiscovery, httpClient, crypto);
+        final ServiceEnvironment serviceEnvironment = Mockito.mock(ServiceEnvironment.class);
+        Mockito.when(serviceEnvironment.getDiscoveryManager()).thenReturn(mockDiscovery);
+        Mockito.when(serviceEnvironment.getExecutor()).thenReturn(Executors.newFixedThreadPool(1));
+
+        final ConfigClient client = new ConfigClient(serviceEnvironment);
         client.getAll().get();
     }
 
@@ -171,7 +144,11 @@ public class ConfigClientIT {
         final DiscoveryManager mockDiscovery = Mockito.mock(DiscoveryManager.class);
         Mockito.when(mockDiscovery.getRandom(ServiceType.CONFIG)).thenReturn(Optional.empty());
 
-        final ConfigClient client = new ConfigClient(config, executor, mockDiscovery, httpClient, crypto);
+        final ServiceEnvironment serviceEnvironment = Mockito.mock(ServiceEnvironment.class);
+        Mockito.when(serviceEnvironment.getDiscoveryManager()).thenReturn(mockDiscovery);
+        Mockito.when(serviceEnvironment.getExecutor()).thenReturn(Executors.newFixedThreadPool(1));
+
+        final ConfigClient client = new ConfigClient(serviceEnvironment);
         client.get("key").get();
     }
 
@@ -180,7 +157,11 @@ public class ConfigClientIT {
         final DiscoveryManager mockDiscovery = Mockito.mock(DiscoveryManager.class);
         Mockito.when(mockDiscovery.getRandom(ServiceType.CONFIG)).thenReturn(Optional.empty());
 
-        final ConfigClient client = new ConfigClient(config, executor, mockDiscovery, httpClient, crypto);
+        final ServiceEnvironment serviceEnvironment = Mockito.mock(ServiceEnvironment.class);
+        Mockito.when(serviceEnvironment.getDiscoveryManager()).thenReturn(mockDiscovery);
+        Mockito.when(serviceEnvironment.getExecutor()).thenReturn(Executors.newFixedThreadPool(1));
+
+        final ConfigClient client = new ConfigClient(serviceEnvironment);
         client.set(new ConfigKeyValue("key", "value")).get();
     }
 
@@ -189,7 +170,11 @@ public class ConfigClientIT {
         final DiscoveryManager mockDiscovery = Mockito.mock(DiscoveryManager.class);
         Mockito.when(mockDiscovery.getRandom(ServiceType.CONFIG)).thenReturn(Optional.empty());
 
-        final ConfigClient client = new ConfigClient(config, executor, mockDiscovery, httpClient, crypto);
+        final ServiceEnvironment serviceEnvironment = Mockito.mock(ServiceEnvironment.class);
+        Mockito.when(serviceEnvironment.getDiscoveryManager()).thenReturn(mockDiscovery);
+        Mockito.when(serviceEnvironment.getExecutor()).thenReturn(Executors.newFixedThreadPool(1));
+
+        final ConfigClient client = new ConfigClient(serviceEnvironment);
         client.unset("key").get();
     }
 
@@ -203,7 +188,11 @@ public class ConfigClientIT {
         Mockito.when(mockDiscovery.getRandom(ServiceType.CONFIG)).thenReturn(Optional.of(
                 new Service(ServiceType.CONFIG, mockServer.getHostName(), mockServer.getPort(), false, "1.2.3")));
 
-        final ConfigClient client = new ConfigClient(config, executor, mockDiscovery, httpClient, crypto);
+        final ServiceEnvironment serviceEnvironment = Mockito.mock(ServiceEnvironment.class);
+        Mockito.when(serviceEnvironment.getDiscoveryManager()).thenReturn(mockDiscovery);
+        Mockito.when(serviceEnvironment.getExecutor()).thenReturn(Executors.newFixedThreadPool(1));
+
+        final ConfigClient client = new ConfigClient(serviceEnvironment);
         client.getAll().get();
     }
 
@@ -217,7 +206,11 @@ public class ConfigClientIT {
         Mockito.when(mockDiscovery.getRandom(ServiceType.CONFIG)).thenReturn(Optional.of(
                 new Service(ServiceType.CONFIG, mockServer.getHostName(), mockServer.getPort(), false, "1.2.3")));
 
-        final ConfigClient client = new ConfigClient(config, executor, mockDiscovery, httpClient, crypto);
+        final ServiceEnvironment serviceEnvironment = Mockito.mock(ServiceEnvironment.class);
+        Mockito.when(serviceEnvironment.getDiscoveryManager()).thenReturn(mockDiscovery);
+        Mockito.when(serviceEnvironment.getExecutor()).thenReturn(Executors.newFixedThreadPool(1));
+
+        final ConfigClient client = new ConfigClient(serviceEnvironment);
         client.get("key").get();
     }
 
@@ -231,7 +224,11 @@ public class ConfigClientIT {
         Mockito.when(mockDiscovery.getRandom(ServiceType.CONFIG)).thenReturn(Optional.of(
                 new Service(ServiceType.CONFIG, mockServer.getHostName(), mockServer.getPort(), false, "1.2.3")));
 
-        final ConfigClient client = new ConfigClient(config, executor, mockDiscovery, httpClient, crypto);
+        final ServiceEnvironment serviceEnvironment = Mockito.mock(ServiceEnvironment.class);
+        Mockito.when(serviceEnvironment.getDiscoveryManager()).thenReturn(mockDiscovery);
+        Mockito.when(serviceEnvironment.getExecutor()).thenReturn(Executors.newFixedThreadPool(1));
+
+        final ConfigClient client = new ConfigClient(serviceEnvironment);
         client.set(new ConfigKeyValue("key", "value")).get();
     }
 
@@ -245,7 +242,11 @@ public class ConfigClientIT {
         Mockito.when(mockDiscovery.getRandom(ServiceType.CONFIG)).thenReturn(Optional.of(
                 new Service(ServiceType.CONFIG, mockServer.getHostName(), mockServer.getPort(), false, "1.2.3")));
 
-        final ConfigClient client = new ConfigClient(config, executor, mockDiscovery, httpClient, crypto);
+        final ServiceEnvironment serviceEnvironment = Mockito.mock(ServiceEnvironment.class);
+        Mockito.when(serviceEnvironment.getDiscoveryManager()).thenReturn(mockDiscovery);
+        Mockito.when(serviceEnvironment.getExecutor()).thenReturn(Executors.newFixedThreadPool(1));
+
+        final ConfigClient client = new ConfigClient(serviceEnvironment);
         client.unset("key").get();
     }
 }

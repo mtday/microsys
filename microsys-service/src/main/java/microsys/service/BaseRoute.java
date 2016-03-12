@@ -1,7 +1,6 @@
 package microsys.service;
 
-import com.typesafe.config.Config;
-
+import microsys.service.model.ServiceEnvironment;
 import spark.Route;
 
 import java.util.Objects;
@@ -13,20 +12,31 @@ import javax.annotation.Nonnull;
  */
 public abstract class BaseRoute implements Route {
     @Nonnull
-    private final Config config;
+    private final static String NO_CONTENT = "";
+
+    @Nonnull
+    private final ServiceEnvironment serviceEnvironment;
 
     /**
-     * @param config the static system configuration information
+     * @param serviceEnvironment the service environment
      */
-    public BaseRoute(@Nonnull final Config config) {
-        this.config = Objects.requireNonNull(config);
+    public BaseRoute(@Nonnull final ServiceEnvironment serviceEnvironment) {
+        this.serviceEnvironment = Objects.requireNonNull(serviceEnvironment);
     }
 
     /**
-     * @return the static system configuration information
+     * @return the service environment
      */
     @Nonnull
-    public Config getConfig() {
-        return this.config;
+    public ServiceEnvironment getServiceEnvironment() {
+        return this.serviceEnvironment;
+    }
+
+    /**
+     * @return the response to send back to the client when no content is being returned
+     */
+    @Nonnull
+    public String getNoContent() {
+        return NO_CONTENT;
     }
 }

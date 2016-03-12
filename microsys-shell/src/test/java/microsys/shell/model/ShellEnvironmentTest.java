@@ -25,21 +25,22 @@ public class ShellEnvironmentTest {
     public void test() {
         final Config config = Mockito.mock(Config.class);
         final ExecutorService executor = Executors.newFixedThreadPool(3);
-        final CuratorDiscoveryManager discovery = Mockito.mock(CuratorDiscoveryManager.class);
-        final CuratorFramework curator = Mockito.mock(CuratorFramework.class);
-        final RegistrationManager registration = Mockito.mock(RegistrationManager.class);
-        final OkHttpClient httpClient = new OkHttpClient.Builder().build();
         final CryptoFactory cryptoFactory = Mockito.mock(CryptoFactory.class);
+        final CuratorFramework curator = Mockito.mock(CuratorFramework.class);
+        final CuratorDiscoveryManager discovery = Mockito.mock(CuratorDiscoveryManager.class);
+        final OkHttpClient httpClient = new OkHttpClient.Builder().build();
+        final RegistrationManager registration = Mockito.mock(RegistrationManager.class);
 
         final ShellEnvironment env =
-                new ShellEnvironment(config, executor, discovery, curator, registration, httpClient, cryptoFactory);
+                new ShellEnvironment(config, executor, cryptoFactory, curator, discovery, httpClient, registration);
 
         assertEquals(config, env.getConfig());
-        assertEquals(discovery, env.getDiscoveryManager());
-        assertEquals(curator, env.getCuratorFramework());
-        assertEquals(registration, env.getRegistrationManager());
-        assertEquals(httpClient, env.getHttpClient());
+        assertEquals(executor, env.getExecutor());
         assertEquals(cryptoFactory, env.getCryptoFactory());
+        assertEquals(curator, env.getCuratorFramework());
+        assertEquals(discovery, env.getDiscoveryManager());
+        assertEquals(httpClient, env.getHttpClient());
+        assertEquals(registration, env.getRegistrationManager());
 
         assertNotNull(env.getServiceClient());
         assertNotNull(env.getConfigClient());

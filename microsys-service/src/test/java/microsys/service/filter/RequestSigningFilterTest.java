@@ -14,6 +14,7 @@ import microsys.common.config.ConfigKeys;
 import microsys.crypto.CryptoFactory;
 import microsys.crypto.impl.DefaultCryptoFactory;
 import microsys.service.BaseService;
+import microsys.service.model.ServiceEnvironment;
 import microsys.service.model.ServiceRequest;
 import microsys.service.model.ServiceResponse;
 import spark.Request;
@@ -41,6 +42,9 @@ public class RequestSigningFilterTest {
             map.put(ConfigKeys.SSL_KEYSTORE_PASSWORD.getKey(), ConfigValueFactory.fromAnyRef("changeit"));
             final Config config = ConfigFactory.parseMap(map).withFallback(ConfigFactory.load());
             final CryptoFactory cryptoFactory = new DefaultCryptoFactory(config);
+            final ServiceEnvironment serviceEnvironment = Mockito.mock(ServiceEnvironment.class);
+            Mockito.when(serviceEnvironment.getConfig()).thenReturn(config);
+            Mockito.when(serviceEnvironment.getCryptoFactory()).thenReturn(cryptoFactory);
 
             final ServiceRequest serviceRequest = new ServiceRequest("request-id");
 
@@ -49,7 +53,7 @@ public class RequestSigningFilterTest {
                     .thenReturn(serviceRequest.toJson().toString());
             final Response response = Mockito.mock(Response.class);
 
-            final RequestSigningFilter filter = new RequestSigningFilter(config, cryptoFactory);
+            final RequestSigningFilter filter = new RequestSigningFilter(serviceEnvironment);
 
             filter.handle(request, response);
 
@@ -67,12 +71,15 @@ public class RequestSigningFilterTest {
             map.put(ConfigKeys.SSL_ENABLED.getKey(), ConfigValueFactory.fromAnyRef("true"));
             final Config config = ConfigFactory.parseMap(map).withFallback(ConfigFactory.load());
             final CryptoFactory cryptoFactory = new DefaultCryptoFactory(config);
+            final ServiceEnvironment serviceEnvironment = Mockito.mock(ServiceEnvironment.class);
+            Mockito.when(serviceEnvironment.getConfig()).thenReturn(config);
+            Mockito.when(serviceEnvironment.getCryptoFactory()).thenReturn(cryptoFactory);
 
             final Request request = Mockito.mock(Request.class);
             Mockito.when(request.headers(ServiceRequest.SERVICE_REQUEST_HEADER)).thenReturn(null);
             final Response response = Mockito.mock(Response.class);
 
-            final RequestSigningFilter filter = new RequestSigningFilter(config, cryptoFactory);
+            final RequestSigningFilter filter = new RequestSigningFilter(serviceEnvironment);
 
             filter.handle(request, response);
 
@@ -94,6 +101,9 @@ public class RequestSigningFilterTest {
             map.put(ConfigKeys.SSL_KEYSTORE_PASSWORD.getKey(), ConfigValueFactory.fromAnyRef("changeit"));
             final Config config = ConfigFactory.parseMap(map).withFallback(ConfigFactory.load());
             final CryptoFactory cryptoFactory = new DefaultCryptoFactory(config);
+            final ServiceEnvironment serviceEnvironment = Mockito.mock(ServiceEnvironment.class);
+            Mockito.when(serviceEnvironment.getConfig()).thenReturn(config);
+            Mockito.when(serviceEnvironment.getCryptoFactory()).thenReturn(cryptoFactory);
             final ServiceRequest serviceRequest = new ServiceRequest("request-id");
 
             final Request request = Mockito.mock(Request.class);
@@ -101,7 +111,7 @@ public class RequestSigningFilterTest {
                     .thenReturn(serviceRequest.toJson().toString());
             final Response response = Mockito.mock(Response.class);
 
-            final RequestSigningFilter filter = new RequestSigningFilter(config, cryptoFactory);
+            final RequestSigningFilter filter = new RequestSigningFilter(serviceEnvironment);
 
             filter.handle(request, response);
 

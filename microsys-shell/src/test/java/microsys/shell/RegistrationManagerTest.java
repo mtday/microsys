@@ -50,7 +50,7 @@ public class RegistrationManagerTest {
         final OkHttpClient httpClient = new OkHttpClient.Builder().build();
         final CryptoFactory cryptoFactory = new DefaultCryptoFactory(config);
         final ShellEnvironment env =
-                new ShellEnvironment(config, executor, discovery, curator, rm, httpClient, cryptoFactory);
+                new ShellEnvironment(config, executor, cryptoFactory, curator, discovery, httpClient, rm);
 
         rm.loadCommands(env);
 
@@ -82,6 +82,7 @@ public class RegistrationManagerTest {
         assertFalse(command.isPresent());
     }
 
+    @SuppressWarnings("unused")
     public static abstract class TestCommand extends Command {
         public TestCommand(@Nonnull final ShellEnvironment shellEnvironment) {
             super(shellEnvironment);
@@ -90,7 +91,7 @@ public class RegistrationManagerTest {
 
     private static class BrokenCommand extends Command {
         public BrokenCommand() {
-            super(null);
+            super(Mockito.mock(ShellEnvironment.class));
         }
 
         @Nonnull

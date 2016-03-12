@@ -2,12 +2,11 @@ package microsys.security.route;
 
 import static org.junit.Assert.assertEquals;
 
-import com.typesafe.config.Config;
-
 import org.junit.Test;
 import org.mockito.Mockito;
 
 import microsys.security.service.UserService;
+import microsys.service.model.ServiceEnvironment;
 import spark.Request;
 import spark.Response;
 
@@ -17,17 +16,17 @@ import spark.Response;
 public class BaseUserRouteTest {
     @Test
     public void test() {
-        final Config config = Mockito.mock(Config.class);
+        final ServiceEnvironment serviceEnvironment = Mockito.mock(ServiceEnvironment.class);
         final UserService userService = Mockito.mock(UserService.class);
 
-        final BaseUserRoute route = new BaseUserRoute(config, userService) {
+        final BaseUserRoute route = new BaseUserRoute(serviceEnvironment, userService) {
             @Override
             public Object handle(final Request request, final Response response) throws Exception {
                 return null;
             }
         };
 
-        assertEquals(config, route.getConfig());
+        assertEquals(serviceEnvironment, route.getServiceEnvironment());
         assertEquals(userService, route.getUserService());
     }
 }

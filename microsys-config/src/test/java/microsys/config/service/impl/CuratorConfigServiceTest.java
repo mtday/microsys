@@ -18,6 +18,7 @@ import ch.qos.logback.classic.Level;
 import microsys.config.model.ConfigKeyValue;
 import microsys.config.model.ConfigKeyValueCollection;
 import microsys.config.service.ConfigServiceException;
+import microsys.service.model.ServiceEnvironment;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
@@ -41,9 +42,14 @@ public class CuratorConfigServiceTest {
                 .connectString(testingServer.getConnectString()).defaultData(new byte[0])
                 .retryPolicy(new ExponentialBackoffRetry(1000, 3)).build();
         curator.start();
+        curator.blockUntilConnected(5, TimeUnit.SECONDS);
+
+        final ServiceEnvironment serviceEnvironment = Mockito.mock(ServiceEnvironment.class);
+        Mockito.when(serviceEnvironment.getExecutor()).thenReturn(executor);
+        Mockito.when(serviceEnvironment.getCuratorFramework()).thenReturn(curator);
 
         try {
-            final CuratorConfigService svc = new CuratorConfigService(executor, curator);
+            final CuratorConfigService svc = new CuratorConfigService(serviceEnvironment);
 
             final ConfigKeyValueCollection coll = svc.getAll().get();
             assertEquals(0, coll.size());
@@ -94,12 +100,17 @@ public class CuratorConfigServiceTest {
                 .connectString(testingServer.getConnectString()).defaultData(new byte[0])
                 .retryPolicy(new ExponentialBackoffRetry(1000, 3)).build();
         curator.start();
+        curator.blockUntilConnected(5, TimeUnit.SECONDS);
+
+        final ServiceEnvironment serviceEnvironment = Mockito.mock(ServiceEnvironment.class);
+        Mockito.when(serviceEnvironment.getExecutor()).thenReturn(executor);
+        Mockito.when(serviceEnvironment.getCuratorFramework()).thenReturn(curator);
 
         try {
             curator.create().forPath("/dynamic-config");
             curator.create().forPath("/dynamic-config/key", "value".getBytes(StandardCharsets.UTF_8));
 
-            final CuratorConfigService svc = new CuratorConfigService(executor, curator);
+            final CuratorConfigService svc = new CuratorConfigService(serviceEnvironment);
 
             // Wait a little to allow the value to be stored.
             TimeUnit.MILLISECONDS.sleep(300);
@@ -124,9 +135,14 @@ public class CuratorConfigServiceTest {
                 .connectString(testingServer.getConnectString()).defaultData(new byte[0])
                 .retryPolicy(new ExponentialBackoffRetry(1000, 3)).build();
         curator.start();
+        curator.blockUntilConnected(5, TimeUnit.SECONDS);
+
+        final ServiceEnvironment serviceEnvironment = Mockito.mock(ServiceEnvironment.class);
+        Mockito.when(serviceEnvironment.getExecutor()).thenReturn(executor);
+        Mockito.when(serviceEnvironment.getCuratorFramework()).thenReturn(curator);
 
         try {
-            final CuratorConfigService svc = new CuratorConfigService(executor, curator);
+            final CuratorConfigService svc = new CuratorConfigService(serviceEnvironment);
 
             final ConfigKeyValue kv = Mockito.mock(ConfigKeyValue.class);
             Mockito.when(kv.getKey()).thenReturn("key");
@@ -146,24 +162,22 @@ public class CuratorConfigServiceTest {
 
         final ExecutorService executor = Executors.newSingleThreadExecutor();
         final TestingServer testingServer = new TestingServer();
-        final CuratorFramework curator = CuratorFrameworkFactory.builder().namespace("namespace-unset")
-                .connectString(testingServer.getConnectString()).defaultData(new byte[0])
-                .retryPolicy(new ExponentialBackoffRetry(1000, 3)).build();
-        curator.start();
+
+        final ServiceEnvironment serviceEnvironment = Mockito.mock(ServiceEnvironment.class);
+        Mockito.when(serviceEnvironment.getExecutor()).thenReturn(executor);
+        Mockito.when(serviceEnvironment.getCuratorFramework()).thenThrow(new RuntimeException("Fake"));
 
         try {
             final TreeCache treeCache = Mockito.mock(TreeCache.class);
             Mockito.when(treeCache.getCurrentData(Mockito.anyString())).thenReturn(Mockito.mock(ChildData.class));
 
             final CuratorConfigService svc = Mockito.mock(CuratorConfigService.class);
-            Mockito.when(svc.getExecutor()).thenReturn(executor);
+            Mockito.when(svc.getServiceEnvironment()).thenReturn(serviceEnvironment);
             Mockito.when(svc.getTreeCache()).thenReturn(treeCache);
-            Mockito.when(svc.getCurator()).thenThrow(new RuntimeException("Fake"));
             Mockito.when(svc.unset(Mockito.anyString())).thenCallRealMethod();
 
             svc.unset("key").get();
         } finally {
-            curator.close();
             testingServer.close();
         }
     }
@@ -174,6 +188,10 @@ public class CuratorConfigServiceTest {
         final CuratorFramework curator = Mockito.mock(CuratorFramework.class);
         Mockito.when(curator.checkExists()).thenThrow(new RuntimeException("Fake"));
 
-        new CuratorConfigService(executor, curator);
+        final ServiceEnvironment serviceEnvironment = Mockito.mock(ServiceEnvironment.class);
+        Mockito.when(serviceEnvironment.getExecutor()).thenReturn(executor);
+        Mockito.when(serviceEnvironment.getCuratorFramework()).thenReturn(curator);
+
+        new CuratorConfigService(serviceEnvironment);
     }
 }

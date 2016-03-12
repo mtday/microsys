@@ -11,6 +11,7 @@ import com.typesafe.config.ConfigValue;
 import com.typesafe.config.ConfigValueFactory;
 
 import org.junit.Test;
+import org.mockito.Mockito;
 
 import microsys.common.config.ConfigKeys;
 import microsys.crypto.CryptoFactory;
@@ -135,12 +136,16 @@ public class ServiceResponseTest {
         final Config config = ConfigFactory.parseMap(map).withFallback(ConfigFactory.load());
         final CryptoFactory cryptoFactory = new DefaultCryptoFactory(config);
 
+        final ServiceEnvironment serviceEnvironment = Mockito.mock(ServiceEnvironment.class);
+        Mockito.when(serviceEnvironment.getConfig()).thenReturn(config);
+        Mockito.when(serviceEnvironment.getCryptoFactory()).thenReturn(cryptoFactory);
+
         final ServiceRequest serviceRequest = new ServiceRequest("id");
 
         final Request request = new Request.Builder().url("http://localhost/").build();
         final Response response = new Response.Builder().request(request).protocol(Protocol.HTTP_1_1).code(200).build();
 
-        ServiceResponse.verify(config, cryptoFactory, serviceRequest, response);
+        ServiceResponse.verify(serviceEnvironment, serviceRequest, response);
     }
 
     @Test(expected = ServiceException.class)
@@ -154,6 +159,10 @@ public class ServiceResponseTest {
         final Config config = ConfigFactory.parseMap(map).withFallback(ConfigFactory.load());
         final CryptoFactory cryptoFactory = new DefaultCryptoFactory(config);
 
+        final ServiceEnvironment serviceEnvironment = Mockito.mock(ServiceEnvironment.class);
+        Mockito.when(serviceEnvironment.getConfig()).thenReturn(config);
+        Mockito.when(serviceEnvironment.getCryptoFactory()).thenReturn(cryptoFactory);
+
         final ServiceRequest serviceRequest = new ServiceRequest("id");
 
         final Request request = new Request.Builder().url("http://localhost/").build();
@@ -161,7 +170,7 @@ public class ServiceResponseTest {
                 .addHeader(ServiceResponse.SERVICE_RESPONSE_HEADER, "{\"requestId\":\"WRONG\",\"signature\":\"sig\"}")
                 .build();
 
-        ServiceResponse.verify(config, cryptoFactory, serviceRequest, response);
+        ServiceResponse.verify(serviceEnvironment, serviceRequest, response);
     }
 
     @Test(expected = ServiceException.class)
@@ -175,6 +184,10 @@ public class ServiceResponseTest {
         final Config config = ConfigFactory.parseMap(map).withFallback(ConfigFactory.load());
         final CryptoFactory cryptoFactory = new DefaultCryptoFactory(config);
 
+        final ServiceEnvironment serviceEnvironment = Mockito.mock(ServiceEnvironment.class);
+        Mockito.when(serviceEnvironment.getConfig()).thenReturn(config);
+        Mockito.when(serviceEnvironment.getCryptoFactory()).thenReturn(cryptoFactory);
+
         final ServiceRequest serviceRequest = new ServiceRequest("id");
 
         final Request request = new Request.Builder().url("http://localhost/").build();
@@ -182,7 +195,7 @@ public class ServiceResponseTest {
                 .addHeader(ServiceResponse.SERVICE_RESPONSE_HEADER, "{\"requestId\":\"id\",\"signature\":\"sign\"}")
                 .build();
 
-        ServiceResponse.verify(config, cryptoFactory, serviceRequest, response);
+        ServiceResponse.verify(serviceEnvironment, serviceRequest, response);
     }
 
     @Test
@@ -196,6 +209,10 @@ public class ServiceResponseTest {
         final Config config = ConfigFactory.parseMap(map).withFallback(ConfigFactory.load());
         final CryptoFactory cryptoFactory = new DefaultCryptoFactory(config);
 
+        final ServiceEnvironment serviceEnvironment = Mockito.mock(ServiceEnvironment.class);
+        Mockito.when(serviceEnvironment.getConfig()).thenReturn(config);
+        Mockito.when(serviceEnvironment.getCryptoFactory()).thenReturn(cryptoFactory);
+
         final String signature = cryptoFactory.getSymmetricKeyEncryption().signString("id", StandardCharsets.UTF_8);
 
         final ServiceRequest serviceRequest = new ServiceRequest("id");
@@ -205,6 +222,6 @@ public class ServiceResponseTest {
                 .addHeader(ServiceResponse.SERVICE_RESPONSE_HEADER, "{\"requestId\":\"id\",\"signature\":\"" + signature + "\"}")
                 .build();
 
-        ServiceResponse.verify(config, cryptoFactory, serviceRequest, response);
+        ServiceResponse.verify(serviceEnvironment, serviceRequest, response);
     }
 }

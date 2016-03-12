@@ -16,6 +16,7 @@ import org.mockito.Mockito;
 
 import microsys.common.config.ConfigKeys;
 import microsys.common.model.service.ServiceType;
+import microsys.service.model.ServiceEnvironment;
 import spark.Request;
 import spark.Response;
 
@@ -34,7 +35,11 @@ public class ServiceInfoRouteTest {
         map.put(ConfigKeys.SYSTEM_NAME.getKey(), ConfigValueFactory.fromAnyRef("system-name"));
         map.put(ConfigKeys.SYSTEM_VERSION.getKey(), ConfigValueFactory.fromAnyRef("1.2.3"));
         final Config config = ConfigFactory.parseMap(map).withFallback(ConfigFactory.load());
-        final ServiceInfoRoute route = new ServiceInfoRoute(config, ServiceType.CONFIG);
+        final ServiceEnvironment serviceEnvironment = Mockito.mock(ServiceEnvironment.class);
+        Mockito.when(serviceEnvironment.getConfig()).thenReturn(config);
+        Mockito.when(serviceEnvironment.getServiceType()).thenReturn(ServiceType.CONFIG);
+
+        final ServiceInfoRoute route = new ServiceInfoRoute(serviceEnvironment);
 
         final Request request = Mockito.mock(Request.class);
         final Response response = Mockito.mock(Response.class);

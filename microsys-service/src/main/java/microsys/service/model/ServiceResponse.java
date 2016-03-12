@@ -3,7 +3,6 @@ package microsys.service.model;
 import com.google.common.base.Preconditions;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.typesafe.config.Config;
 
 import org.apache.commons.lang3.builder.CompareToBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -12,7 +11,6 @@ import org.apache.commons.lang3.builder.ToStringStyle;
 
 import microsys.common.config.ConfigKeys;
 import microsys.common.model.Model;
-import microsys.crypto.CryptoFactory;
 import microsys.crypto.EncryptionException;
 import microsys.service.client.ServiceException;
 import okhttp3.Response;
@@ -64,16 +62,15 @@ public class ServiceResponse implements Model, Comparable<ServiceResponse> {
 
     /**
      * Verify the provided {@link ServiceRequest} matches the response.
-     * @param config the static system configuration information
-     * @param cryptoFactory the {@link CryptoFactory} used to verify the response signature
+     * @param serviceEnvironment the service environment
      * @param serviceRequest the request to verify
      * @param response the {@link Response} to verify
      * @throws ServiceException if there is a problem verifying the response
      */
     public static void verify(
-            @Nonnull final Config config, @Nonnull final CryptoFactory cryptoFactory,
-            @Nonnull final ServiceRequest serviceRequest, @Nonnull final Response response) throws ServiceException {
-        if (!config.getBoolean(ConfigKeys.SSL_ENABLED.getKey())) {
+            @Nonnull final ServiceEnvironment serviceEnvironment, @Nonnull final ServiceRequest serviceRequest,
+            @Nonnull final Response response) throws ServiceException {
+        if (!serviceEnvironment.getConfig().getBoolean(ConfigKeys.SSL_ENABLED.getKey())) {
             // No need to verify since security is disabled.
             return;
         }
@@ -92,7 +89,7 @@ public class ServiceResponse implements Model, Comparable<ServiceResponse> {
         }
 
         try {
-            Objects.requireNonNull(cryptoFactory).getSymmetricKeyEncryption()
+            serviceEnvironment.getCryptoFactory().getSymmetricKeyEncryption()
                     .verifyString(serviceResponse.getRequestId(), StandardCharsets.UTF_8,
                             serviceResponse.getSignature());
         } catch (final EncryptionException encryptionException) {

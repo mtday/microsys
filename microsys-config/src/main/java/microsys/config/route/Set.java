@@ -3,10 +3,10 @@ package microsys.config.route;
 import com.google.common.base.Preconditions;
 import com.google.common.net.MediaType;
 import com.google.gson.JsonParser;
-import com.typesafe.config.Config;
 
 import microsys.config.model.ConfigKeyValue;
 import microsys.config.service.ConfigService;
+import microsys.service.model.ServiceEnvironment;
 import spark.Request;
 import spark.Response;
 
@@ -24,11 +24,11 @@ import javax.servlet.http.HttpServletResponse;
  */
 public class Set extends BaseConfigRoute {
     /**
-     * @param config the system configuration properties
+     * @param serviceEnvironment the service environment
      * @param configService the {@link ConfigService} used to manage the dynamic system configuration properties
      */
-    public Set(@Nonnull final Config config, @Nonnull final ConfigService configService) {
-        super(config, configService);
+    public Set(@Nonnull final ServiceEnvironment serviceEnvironment, @Nonnull final ConfigService configService) {
+        super(serviceEnvironment, configService);
     }
 
     /**
@@ -52,7 +52,7 @@ public class Set extends BaseConfigRoute {
                 return oldValue.get().toJson();
             } else {
                 response.status(HttpServletResponse.SC_NO_CONTENT);
-                return NO_CONTENT;
+                return getNoContent();
             }
         } catch (final IllegalArgumentException badInput) {
             response.status(HttpServletResponse.SC_BAD_REQUEST);

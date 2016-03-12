@@ -6,13 +6,13 @@ import static org.junit.Assert.assertTrue;
 
 import com.google.common.net.MediaType;
 import com.google.gson.JsonObject;
-import com.typesafe.config.Config;
 
 import org.junit.Test;
 import org.mockito.Mockito;
 
 import microsys.security.model.User;
 import microsys.security.service.UserService;
+import microsys.service.model.ServiceEnvironment;
 import spark.Request;
 import spark.Response;
 
@@ -28,10 +28,10 @@ import javax.servlet.http.HttpServletResponse;
 public class GetByNameTest {
     @Test
     public void testNoKey() throws Exception {
-        final Config config = Mockito.mock(Config.class);
+        final ServiceEnvironment serviceEnvironment = Mockito.mock(ServiceEnvironment.class);
         final UserService userService = Mockito.mock(UserService.class);
 
-        final GetByName get = new GetByName(config, userService);
+        final GetByName get = new GetByName(serviceEnvironment, userService);
 
         final Request request = Mockito.mock(Request.class);
         final Response response = Mockito.mock(Response.class);
@@ -44,12 +44,12 @@ public class GetByNameTest {
 
     @Test
     public void testMissingKey() throws Exception {
-        final Config config = Mockito.mock(Config.class);
+        final ServiceEnvironment serviceEnvironment = Mockito.mock(ServiceEnvironment.class);
         final UserService userService = Mockito.mock(UserService.class);
         Mockito.when(userService.getByName(Mockito.anyString()))
                 .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
 
-        final GetByName get = new GetByName(config, userService);
+        final GetByName get = new GetByName(serviceEnvironment, userService);
 
         final Request request = Mockito.mock(Request.class);
         Mockito.when(request.params("name")).thenReturn("missing");
@@ -63,12 +63,12 @@ public class GetByNameTest {
 
     @Test
     public void testWithResponse() throws Exception {
-        final Config config = Mockito.mock(Config.class);
+        final ServiceEnvironment serviceEnvironment = Mockito.mock(ServiceEnvironment.class);
         final UserService userService = Mockito.mock(UserService.class);
         Mockito.when(userService.getByName(Mockito.anyString())).thenReturn(
                 CompletableFuture.completedFuture(Optional.of(new User("id", "name", Arrays.asList("A", "B")))));
 
-        final GetByName get = new GetByName(config, userService);
+        final GetByName get = new GetByName(serviceEnvironment, userService);
 
         final Request request = Mockito.mock(Request.class);
         Mockito.when(request.params("name")).thenReturn("name");

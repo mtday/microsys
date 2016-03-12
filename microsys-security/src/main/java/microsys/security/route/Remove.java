@@ -1,12 +1,12 @@
 package microsys.security.route;
 
 import com.google.common.net.MediaType;
-import com.typesafe.config.Config;
 
 import org.apache.commons.lang3.StringUtils;
 
 import microsys.security.model.User;
 import microsys.security.service.UserService;
+import microsys.service.model.ServiceEnvironment;
 import spark.Request;
 import spark.Response;
 
@@ -24,11 +24,11 @@ import javax.servlet.http.HttpServletResponse;
  */
 public class Remove extends BaseUserRoute {
     /**
-     * @param config the static system configuration properties
+     * @param serviceEnvironment the service environment
      * @param userService the {@link UserService} used to manage the system user accounts
      */
-    public Remove(@Nonnull final Config config, @Nonnull final UserService userService) {
-        super(config, userService);
+    public Remove(@Nonnull final ServiceEnvironment serviceEnvironment, @Nonnull final UserService userService) {
+        super(serviceEnvironment, userService);
     }
 
     /**
@@ -53,7 +53,7 @@ public class Remove extends BaseUserRoute {
                 return value.get().toJson();
             } else {
                 response.status(HttpServletResponse.SC_NO_CONTENT);
-                return NO_CONTENT;
+                return getNoContent();
             }
         }
     }

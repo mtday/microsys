@@ -1,14 +1,9 @@
 package microsys.security.runner;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 
-import org.apache.curator.framework.CuratorFramework;
-
 import microsys.common.model.service.ServiceType;
-import microsys.crypto.CryptoFactory;
-import microsys.discovery.DiscoveryManager;
 import microsys.security.route.GetById;
 import microsys.security.route.GetByName;
 import microsys.security.route.Remove;
@@ -20,7 +15,6 @@ import spark.Spark;
 
 import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
 
 import javax.annotation.Nonnull;
 
@@ -41,31 +35,11 @@ public class Runner extends BaseService {
         addRoutes(new MemoryUserService());
     }
 
-    /**
-     * This constructor initializes the system configuration, then configures the REST end-points and starts the
-     * micro service
-     *
-     * @param config the static system configuration information
-     * @param executor the {@link ExecutorService} used to process asynchronous tasks
-     * @param curator the {@link CuratorFramework} used to perform communication with zookeeper
-     * @param discoveryManager the {@link DiscoveryManager} used to manage available services
-     * @param cryptoFactory the {@link CryptoFactory} used to manage encryption and decryption operations
-     * @throws Exception if there is a problem during service initialization
-     */
-    @VisibleForTesting
-    public Runner(
-            @Nonnull final Config config, @Nonnull final ExecutorService executor,
-            @Nonnull final CuratorFramework curator, @Nonnull final DiscoveryManager discoveryManager,
-            @Nonnull final CryptoFactory cryptoFactory) throws Exception {
-        super(config, executor, curator, discoveryManager, cryptoFactory, ServiceType.SECURITY);
-        addRoutes(new MemoryUserService());
-    }
-
     protected void addRoutes(@Nonnull final UserService userService) {
-        Spark.get("/id/:id", new GetById(getConfig(), userService));
-        Spark.get("/name/:name", new GetByName(getConfig(), userService));
-        Spark.post("/", new Save(getConfig(), userService));
-        Spark.delete("/:id", new Remove(getConfig(), userService));
+        Spark.get("/id/:id", new GetById(getServiceEnvironment(), userService));
+        Spark.get("/name/:name", new GetByName(getServiceEnvironment(), userService));
+        Spark.post("/", new Save(getServiceEnvironment(), userService));
+        Spark.delete("/:id", new Remove(getServiceEnvironment(), userService));
     }
 
     /**

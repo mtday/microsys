@@ -6,30 +6,16 @@ import com.typesafe.config.ConfigFactory;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.ParseException;
-import org.apache.curator.framework.CuratorFramework;
 
-import microsys.common.config.ConfigKeys;
-import microsys.crypto.CryptoFactory;
-import microsys.crypto.EncryptionException;
-import microsys.crypto.impl.DefaultCryptoFactory;
-import microsys.curator.CuratorCreator;
-import microsys.curator.CuratorException;
-import microsys.discovery.DiscoveryException;
-import microsys.discovery.DiscoveryManager;
-import microsys.discovery.impl.CuratorDiscoveryManager;
 import microsys.shell.ConsoleManager;
-import microsys.shell.RegistrationManager;
 import microsys.shell.model.Option;
 import microsys.shell.model.Options;
 import microsys.shell.model.ShellEnvironment;
-import okhttp3.OkHttpClient;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import javax.annotation.Nonnull;
 
@@ -38,16 +24,16 @@ import javax.annotation.Nonnull;
  */
 public class Runner {
     @Nonnull
-    private ConsoleManager consoleManager;
-    @Nonnull
     private ShellEnvironment shellEnvironment;
+    @Nonnull
+    private ConsoleManager consoleManager;
 
     /**
      * @throws Exception if there is a problem running the shell
      */
     protected Runner(@Nonnull final Config config) throws Exception {
-        this.shellEnvironment = getShellEnvironment(config);
-        this.consoleManager = new ConsoleManager(config, shellEnvironment);
+        this.shellEnvironment = new ShellEnvironment(Objects.requireNonNull(config));
+        this.consoleManager = new ConsoleManager(config, this.shellEnvironment);
     }
 
     protected void setConsoleManager(@Nonnull final ConsoleManager consoleManager) {
@@ -74,31 +60,6 @@ public class Runner {
 
     protected void shutdown() {
         this.shellEnvironment.close();
-    }
-
-    @Nonnull
-    protected OkHttpClient getHttpClient(@Nonnull final CryptoFactory cryptoFactory) throws EncryptionException {
-        final OkHttpClient.Builder builder = new OkHttpClient.Builder();
-        builder.sslSocketFactory(cryptoFactory.getSSLContext().getSocketFactory());
-        return builder.build();
-    }
-
-    @Nonnull
-    protected ShellEnvironment getShellEnvironment(@Nonnull final Config config)
-            throws DiscoveryException, CuratorException, EncryptionException {
-        Objects.requireNonNull(config);
-        final ExecutorService executor =
-                Executors.newFixedThreadPool(config.getInt(ConfigKeys.EXECUTOR_THREADS.getKey()));
-        final CryptoFactory cryptoFactory = new DefaultCryptoFactory(config);
-        final CuratorFramework curator = CuratorCreator.create(config, cryptoFactory);
-        final DiscoveryManager discoveryManager = new CuratorDiscoveryManager(config, curator);
-        final RegistrationManager registrationManager = new RegistrationManager();
-        final OkHttpClient httpClient = getHttpClient(cryptoFactory);
-        final ShellEnvironment shellEnvironment =
-                new ShellEnvironment(config, executor, discoveryManager, curator, registrationManager, httpClient,
-                        cryptoFactory);
-        registrationManager.loadCommands(shellEnvironment);
-        return shellEnvironment;
     }
 
     protected static void processCommandLine(@Nonnull final Runner runner, @Nonnull final String[] args)

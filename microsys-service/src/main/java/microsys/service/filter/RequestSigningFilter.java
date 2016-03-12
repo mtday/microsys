@@ -1,7 +1,6 @@
 package microsys.service.filter;
 
 import com.google.gson.JsonParser;
-import com.typesafe.config.Config;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -9,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import microsys.common.config.ConfigKeys;
 import microsys.crypto.CryptoFactory;
 import microsys.crypto.EncryptionException;
+import microsys.service.model.ServiceEnvironment;
 import microsys.service.model.ServiceRequest;
 import microsys.service.model.ServiceResponse;
 import spark.Filter;
@@ -29,23 +29,22 @@ public class RequestSigningFilter implements Filter {
     private final static Logger LOG = LoggerFactory.getLogger(RequestSigningFilter.class);
 
     @Nonnull
-    private final CryptoFactory cryptoFactory;
+    private final ServiceEnvironment serviceEnvironment;
     private final boolean secureMode;
 
     /**
-     * @param config the static system configuration information
-     * @param cryptoFactory the {@link CryptoFactory} responsible for signing requests
+     * @param serviceEnvironment the service environment
      */
-    public RequestSigningFilter(@Nonnull final Config config, @Nonnull final CryptoFactory cryptoFactory) {
-        this.cryptoFactory = Objects.requireNonNull(cryptoFactory);
-        this.secureMode = config.getBoolean(ConfigKeys.SSL_ENABLED.getKey());
+    public RequestSigningFilter(@Nonnull final ServiceEnvironment serviceEnvironment) {
+        this.serviceEnvironment = Objects.requireNonNull(serviceEnvironment);
+        this.secureMode = serviceEnvironment.getConfig().getBoolean(ConfigKeys.SSL_ENABLED.getKey());
     }
 
     /**
      * @return the {@link CryptoFactory} responsible for signing requests
      */
-    protected CryptoFactory getCryptoFactory() {
-        return this.cryptoFactory;
+    protected ServiceEnvironment getServiceEnvironment() {
+        return this.serviceEnvironment;
     }
 
     /**
@@ -76,7 +75,7 @@ public class RequestSigningFilter implements Filter {
     protected Optional<ServiceResponse> getServiceResponse(@Nonnull final Optional<ServiceRequest> serviceRequest) {
         try {
             if (serviceRequest.isPresent()) {
-                final String signature = getCryptoFactory().getSymmetricKeyEncryption()
+                final String signature = getServiceEnvironment().getCryptoFactory().getSymmetricKeyEncryption()
                         .signString(serviceRequest.get().getRequestId(), StandardCharsets.UTF_8);
                 return Optional.of(new ServiceResponse(serviceRequest.get().getRequestId(), signature));
             }

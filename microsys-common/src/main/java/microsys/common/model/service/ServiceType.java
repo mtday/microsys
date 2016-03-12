@@ -20,6 +20,11 @@ public enum ServiceType {
     SECURITY,
 
     /**
+     * The shell interface.
+     */
+    SHELL,
+
+    /**
      * The web user interface service.
      */
     WEB,

@@ -1,9 +1,9 @@
 package microsys.service.route;
 
 import com.google.common.net.MediaType;
-import com.typesafe.config.Config;
 
 import microsys.service.BaseRoute;
+import microsys.service.model.ServiceEnvironment;
 import microsys.service.model.ServiceMemory;
 import spark.Request;
 import spark.Response;
@@ -19,10 +19,10 @@ import javax.servlet.http.HttpServletResponse;
  */
 public class ServiceMemoryRoute extends BaseRoute {
     /**
-     * @param config the static system configuration information
+     * @param serviceEnvironment the service environment
      */
-    public ServiceMemoryRoute(@Nonnull final Config config) {
-        super(config);
+    public ServiceMemoryRoute(@Nonnull final ServiceEnvironment serviceEnvironment) {
+        super(serviceEnvironment);
     }
 
     @Nonnull

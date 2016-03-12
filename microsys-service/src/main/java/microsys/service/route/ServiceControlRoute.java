@@ -19,7 +19,7 @@ import javax.annotation.Nonnull;
 import javax.servlet.http.HttpServletResponse;
 
 /**
- * A base route that provides some REST end-points for controlling the service.
+ * A route that provides some REST end-points for controlling the service.
  */
 public class ServiceControlRoute extends BaseRoute {
     private final static Logger LOG = LoggerFactory.getLogger(ServiceControlRoute.class);
@@ -31,7 +31,7 @@ public class ServiceControlRoute extends BaseRoute {
      * @param service the {@link BaseService} providing access to the main service object that will be controlled
      */
     public ServiceControlRoute(@Nonnull final BaseService service) {
-        super(Objects.requireNonNull(service).getConfig());
+        super(Objects.requireNonNull(service).getServiceEnvironment());
         this.service = service;
     }
 
@@ -57,7 +57,7 @@ public class ServiceControlRoute extends BaseRoute {
      * @param restart whether the service should be restarted
      */
     protected void stop(final boolean restart) {
-        getService().getExecutor().submit(() -> {
+        getService().getServiceEnvironment().getExecutor().submit(() -> {
             try {
                 // Wait a little to allow for the response to make it back to the caller.
                 LOG.info("Scheduling service {}", restart ? "restart" : "shutdown");

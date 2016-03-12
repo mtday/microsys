@@ -11,6 +11,7 @@ import com.typesafe.config.ConfigFactory;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import microsys.service.model.ServiceEnvironment;
 import microsys.service.model.ServiceMemory;
 import spark.Request;
 import spark.Response;
@@ -24,7 +25,10 @@ public class ServiceMemoryRouteTest {
     @Test
     public void testHandle() {
         final Config config = ConfigFactory.load();
-        final ServiceMemoryRoute route = new ServiceMemoryRoute(config);
+        final ServiceEnvironment serviceEnvironment = Mockito.mock(ServiceEnvironment.class);
+        Mockito.when(serviceEnvironment.getConfig()).thenReturn(config);
+
+        final ServiceMemoryRoute route = new ServiceMemoryRoute(serviceEnvironment);
 
         final Request request = Mockito.mock(Request.class);
         final Response response = Mockito.mock(Response.class);

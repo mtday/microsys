@@ -1,6 +1,5 @@
 package microsys.service;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -27,6 +26,7 @@ import microsys.crypto.impl.DefaultCryptoFactory;
 import microsys.discovery.DiscoveryException;
 import microsys.discovery.DiscoveryManager;
 import microsys.discovery.impl.CuratorDiscoveryManager;
+import okhttp3.OkHttpClient;
 import spark.webserver.JettySparkServer;
 
 import java.net.URL;
@@ -59,8 +59,7 @@ public class BaseServiceIT {
             baseService = new BaseService(config, ServiceType.CONFIG, new CountDownLatch(1)) {
             };
 
-            assertEquals(config, baseService.getConfig());
-            assertNotNull(baseService.getExecutor());
+            assertNotNull(baseService.getServiceEnvironment());
 
             // Sleep a little to wait for the spark service to start and register with service discovery.
             TimeUnit.MILLISECONDS.sleep(500);
@@ -99,12 +98,12 @@ public class BaseServiceIT {
             final ExecutorService executor = Executors.newFixedThreadPool(2);
             final DiscoveryManager discovery = new CuratorDiscoveryManager(config, curator);
             final CryptoFactory crypto = new DefaultCryptoFactory(config);
+            final OkHttpClient httpClient = new OkHttpClient.Builder().build();
 
-            baseService = new BaseService(config, executor, curator, discovery, crypto, ServiceType.CONFIG) {
+            baseService = new BaseService(config, ServiceType.CONFIG, executor, crypto, curator, discovery, httpClient) {
             };
 
-            assertEquals(config, baseService.getConfig());
-            assertNotNull(baseService.getExecutor());
+            assertNotNull(baseService.getServiceEnvironment());
 
             discovery.close();
             executor.shutdown();
@@ -138,12 +137,12 @@ public class BaseServiceIT {
             Mockito.doThrow(new DiscoveryException("Fake")).when(discovery).register(Mockito.any());
             Mockito.doThrow(new DiscoveryException("Fake")).when(discovery).unregister(Mockito.any());
             final CryptoFactory crypto = Mockito.mock(CryptoFactory.class);
+            final OkHttpClient httpClient = new OkHttpClient.Builder().build();
 
-            baseService = new BaseService(config, executor, curator, discovery, crypto, ServiceType.CONFIG) {
+            baseService = new BaseService(config, ServiceType.CONFIG, executor, crypto, curator, discovery, httpClient) {
             };
 
-            assertEquals(config, baseService.getConfig());
-            assertNotNull(baseService.getExecutor());
+            assertNotNull(baseService.getServiceEnvironment());
 
             // Sleep a little to wait for the spark service to start and register with service discovery.
             TimeUnit.MILLISECONDS.sleep(500);
@@ -202,8 +201,7 @@ public class BaseServiceIT {
             baseService = new BaseService(config, ServiceType.CONFIG, new CountDownLatch(1)) {
             };
 
-            assertEquals(config, baseService.getConfig());
-            assertNotNull(baseService.getExecutor());
+            assertNotNull(baseService.getServiceEnvironment());
         } finally {
             if (baseService != null) {
                 baseService.stop();

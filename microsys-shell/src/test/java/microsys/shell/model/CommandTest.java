@@ -35,7 +35,7 @@ public class CommandTest {
         final OkHttpClient httpClient = new OkHttpClient.Builder().build();
         final CryptoFactory cryptoFactory = new DefaultCryptoFactory(config);
         final ShellEnvironment env =
-                new ShellEnvironment(config, executor, discovery, curator, registration, httpClient, cryptoFactory);
+                new ShellEnvironment(config, executor, cryptoFactory, curator, discovery, httpClient, registration);
 
         final TestCommand testCommand = new TestCommand(env);
         assertEquals(env, testCommand.getShellEnvironment());

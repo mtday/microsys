@@ -3,10 +3,10 @@ package microsys.security.route;
 import com.google.common.base.Preconditions;
 import com.google.common.net.MediaType;
 import com.google.gson.JsonParser;
-import com.typesafe.config.Config;
 
 import microsys.security.model.User;
 import microsys.security.service.UserService;
+import microsys.service.model.ServiceEnvironment;
 import spark.Request;
 import spark.Response;
 
@@ -24,11 +24,11 @@ import javax.servlet.http.HttpServletResponse;
  */
 public class Save extends BaseUserRoute {
     /**
-     * @param config the static system configuration properties
+     * @param serviceEnvironment the service environment
      * @param userService the {@link UserService} used to manage the user accounts in the system
      */
-    public Save(@Nonnull final Config config, @Nonnull final UserService userService) {
-        super(config, userService);
+    public Save(@Nonnull final ServiceEnvironment serviceEnvironment, @Nonnull final UserService userService) {
+        super(serviceEnvironment, userService);
     }
 
     /**
@@ -52,7 +52,7 @@ public class Save extends BaseUserRoute {
                 return oldValue.get().toJson();
             } else {
                 response.status(HttpServletResponse.SC_NO_CONTENT);
-                return NO_CONTENT;
+                return getNoContent();
             }
         } catch (final IllegalArgumentException badInput) {
             response.status(HttpServletResponse.SC_BAD_REQUEST);

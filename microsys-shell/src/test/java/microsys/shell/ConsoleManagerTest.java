@@ -55,9 +55,8 @@ public class ConsoleManagerTest {
         // Don't want to see stack traces in the output when attempting to create invalid commands during testing.
         ((ch.qos.logback.classic.Logger) LoggerFactory.getLogger(RegistrationManager.class)).setLevel(Level.OFF);
 
-        final Config config =
-                ConfigFactory.parseString(String.format("%s = 1.2.3", ConfigKeys.SYSTEM_VERSION.getKey()))
-                        .withFallback(ConfigFactory.load());
+        final Config config = ConfigFactory.parseString(String.format("%s = 1.2.3", ConfigKeys.SYSTEM_VERSION.getKey()))
+                .withFallback(ConfigFactory.load());
         final ExecutorService executor = Executors.newFixedThreadPool(3);
         final DiscoveryManager discovery = Mockito.mock(DiscoveryManager.class);
         final CuratorFramework curator = Mockito.mock(CuratorFramework.class);
@@ -65,8 +64,8 @@ public class ConsoleManagerTest {
         final OkHttpClient httpClient = new OkHttpClient.Builder().build();
         final CryptoFactory cryptoFactory = new DefaultCryptoFactory(config);
         final ShellEnvironment shellEnvironment =
-                new ShellEnvironment(config, executor, discovery, curator, registrationManager, httpClient,
-                        cryptoFactory);
+                new ShellEnvironment(config, executor, cryptoFactory, curator, discovery, httpClient,
+                        registrationManager);
         registrationManager.loadCommands(shellEnvironment);
 
         final CapturingConsoleReader consoleReader =
@@ -134,9 +133,8 @@ public class ConsoleManagerTest {
         // Don't want to see stack traces in the output when attempting to create invalid commands during testing.
         ((ch.qos.logback.classic.Logger) LoggerFactory.getLogger(RegistrationManager.class)).setLevel(Level.OFF);
 
-        final Config config =
-                ConfigFactory.parseString(String.format("%s = 1.2.3", ConfigKeys.SYSTEM_VERSION.getKey()))
-                        .withFallback(ConfigFactory.load());
+        final Config config = ConfigFactory.parseString(String.format("%s = 1.2.3", ConfigKeys.SYSTEM_VERSION.getKey()))
+                .withFallback(ConfigFactory.load());
         final ExecutorService executor = Executors.newFixedThreadPool(3);
         final DiscoveryManager discovery = Mockito.mock(DiscoveryManager.class);
         final CuratorFramework curator = Mockito.mock(CuratorFramework.class);
@@ -144,8 +142,8 @@ public class ConsoleManagerTest {
         final OkHttpClient httpClient = new OkHttpClient.Builder().build();
         final CryptoFactory cryptoFactory = new DefaultCryptoFactory(config);
         final ShellEnvironment shellEnvironment =
-                new ShellEnvironment(config, executor, discovery, curator, registrationManager, httpClient,
-                        cryptoFactory);
+                new ShellEnvironment(config, executor, cryptoFactory, curator, discovery, httpClient,
+                        registrationManager);
         registrationManager.loadCommands(shellEnvironment);
 
         final CapturingConsoleReader consoleReader = new CapturingConsoleReader("help");
@@ -174,9 +172,8 @@ public class ConsoleManagerTest {
         // Don't want to see stack traces in the output when attempting to create invalid commands during testing.
         ((ch.qos.logback.classic.Logger) LoggerFactory.getLogger(RegistrationManager.class)).setLevel(Level.OFF);
 
-        final Config config =
-                ConfigFactory.parseString(String.format("%s = 1.2.3", ConfigKeys.SYSTEM_VERSION.getKey()))
-                        .withFallback(ConfigFactory.load());
+        final Config config = ConfigFactory.parseString(String.format("%s = 1.2.3", ConfigKeys.SYSTEM_VERSION.getKey()))
+                .withFallback(ConfigFactory.load());
         final ExecutorService executor = Executors.newFixedThreadPool(3);
         final DiscoveryManager discovery = Mockito.mock(DiscoveryManager.class);
         final CuratorFramework curator = Mockito.mock(CuratorFramework.class);
@@ -184,8 +181,8 @@ public class ConsoleManagerTest {
         final OkHttpClient httpClient = new OkHttpClient.Builder().build();
         final CryptoFactory cryptoFactory = new DefaultCryptoFactory(config);
         final ShellEnvironment shellEnvironment =
-                new ShellEnvironment(config, executor, discovery, curator, registrationManager, httpClient,
-                        cryptoFactory);
+                new ShellEnvironment(config, executor, cryptoFactory, curator, discovery, httpClient,
+                        registrationManager);
         registrationManager.loadCommands(shellEnvironment);
 
         final CapturingConsoleReader consoleReader = new CapturingConsoleReader("help");
@@ -245,8 +242,8 @@ public class ConsoleManagerTest {
             final OkHttpClient httpClient = new OkHttpClient.Builder().build();
             final CryptoFactory cryptoFactory = new DefaultCryptoFactory(config);
             final ShellEnvironment shellEnvironment =
-                    new ShellEnvironment(config, executor, discovery, curator, registrationManager, httpClient,
-                            cryptoFactory);
+                    new ShellEnvironment(config, executor, cryptoFactory, curator, discovery, httpClient,
+                            registrationManager);
             registrationManager.loadCommands(shellEnvironment);
 
             final CapturingConsoleReader consoleReader = new CapturingConsoleReader();
@@ -287,8 +284,8 @@ public class ConsoleManagerTest {
             final OkHttpClient httpClient = new OkHttpClient.Builder().build();
             final CryptoFactory cryptoFactory = new DefaultCryptoFactory(config);
             final ShellEnvironment shellEnvironment =
-                    new ShellEnvironment(config, executor, discovery, curator, registrationManager, httpClient,
-                            cryptoFactory);
+                    new ShellEnvironment(config, executor, cryptoFactory, curator, discovery, httpClient,
+                            registrationManager);
             registrationManager.loadCommands(shellEnvironment);
 
             final CapturingConsoleReader consoleReader = new CapturingConsoleReader();
@@ -332,9 +329,8 @@ public class ConsoleManagerTest {
         // Don't want to see stack traces in the output when attempting to create invalid commands during testing.
         ((ch.qos.logback.classic.Logger) LoggerFactory.getLogger(RegistrationManager.class)).setLevel(Level.OFF);
 
-        final Config config =
-                ConfigFactory.parseString(String.format("%s = 1.2.3", ConfigKeys.SYSTEM_VERSION.getKey()))
-                        .withFallback(ConfigFactory.load());
+        final Config config = ConfigFactory.parseString(String.format("%s = 1.2.3", ConfigKeys.SYSTEM_VERSION.getKey()))
+                .withFallback(ConfigFactory.load());
         final ExecutorService executor = Executors.newFixedThreadPool(3);
         final DiscoveryManager discovery = Mockito.mock(DiscoveryManager.class);
         final CuratorFramework curator = Mockito.mock(CuratorFramework.class);
@@ -342,8 +338,8 @@ public class ConsoleManagerTest {
         final OkHttpClient httpClient = new OkHttpClient.Builder().build();
         final CryptoFactory cryptoFactory = new DefaultCryptoFactory(config);
         final ShellEnvironment shellEnvironment =
-                new ShellEnvironment(config, executor, discovery, curator, registrationManager, httpClient,
-                        cryptoFactory);
+                new ShellEnvironment(config, executor, cryptoFactory, curator, discovery, httpClient,
+                        registrationManager);
         registrationManager.loadCommands(shellEnvironment);
 
         final CapturingConsoleReader consoleReader = new CapturingConsoleReader();
@@ -402,8 +398,8 @@ public class ConsoleManagerTest {
         final OkHttpClient httpClient = new OkHttpClient.Builder().build();
         final CryptoFactory cryptoFactory = new DefaultCryptoFactory(config);
         final ShellEnvironment shellEnvironment =
-                new ShellEnvironment(config, executor, discovery, curator, registrationManager, httpClient,
-                        cryptoFactory);
+                new ShellEnvironment(config, executor, cryptoFactory, curator, discovery, httpClient,
+                        registrationManager);
         registrationManager.loadCommands(shellEnvironment);
 
         final CapturingConsoleReader consoleReader = new CapturingConsoleReader();

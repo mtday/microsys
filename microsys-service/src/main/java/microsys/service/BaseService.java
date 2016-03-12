@@ -1,5 +1,6 @@
 package microsys.service;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.typesafe.config.Config;
 
 import org.apache.curator.framework.CuratorFramework;
@@ -12,26 +13,24 @@ import microsys.common.model.service.Service;
 import microsys.common.model.service.ServiceType;
 import microsys.crypto.CryptoFactory;
 import microsys.crypto.EncryptionException;
-import microsys.crypto.impl.DefaultCryptoFactory;
-import microsys.curator.CuratorCreator;
 import microsys.discovery.DiscoveryException;
 import microsys.discovery.DiscoveryManager;
-import microsys.discovery.impl.CuratorDiscoveryManager;
 import microsys.portres.PortManager;
 import microsys.portres.PortReservationException;
 import microsys.portres.impl.CuratorPortManager;
 import microsys.service.filter.RequestLoggingFilter;
 import microsys.service.filter.RequestSigningFilter;
+import microsys.service.model.ServiceEnvironment;
 import microsys.service.route.ServiceControlRoute;
 import microsys.service.route.ServiceInfoRoute;
 import microsys.service.route.ServiceMemoryRoute;
+import okhttp3.OkHttpClient;
 import spark.Spark;
 
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import javax.annotation.Nonnull;
@@ -43,21 +42,10 @@ public abstract class BaseService {
     private final static Logger LOG = LoggerFactory.getLogger(BaseService.class);
 
     @Nonnull
-    private final Config config;
-    @Nonnull
-    private final ServiceType serviceType;
+    private final ServiceEnvironment serviceEnvironment;
+
     @Nonnull
     private final Optional<CountDownLatch> serverStopLatch;
-
-    @Nonnull
-    private final ExecutorService executor;
-    @Nonnull
-    private final CuratorFramework curator;
-    @Nonnull
-    private final DiscoveryManager discoveryManager;
-    @Nonnull
-    private final CryptoFactory cryptoFactory;
-
     @Nonnull
     private Optional<Service> service;
     private boolean shouldRestart = false;
@@ -70,15 +58,8 @@ public abstract class BaseService {
     public BaseService(
             @Nonnull final Config config, @Nonnull final ServiceType serviceType,
             @Nonnull final CountDownLatch serverStopLatch) throws Exception {
-        this.config = Objects.requireNonNull(config);
-        this.serviceType = Objects.requireNonNull(serviceType);
+        this.serviceEnvironment = new ServiceEnvironment(config, serviceType);
         this.serverStopLatch = Optional.of(Objects.requireNonNull(serverStopLatch));
-
-        this.cryptoFactory = createCryptoFactory(this.config);
-        this.executor = createExecutor(config);
-        this.curator = CuratorCreator.create(config, this.cryptoFactory);
-        this.discoveryManager = createDiscoveryManager(this.config, this.curator);
-
         this.service = Optional.empty();
 
         start();
@@ -86,23 +67,22 @@ public abstract class BaseService {
 
     /**
      * @param config           the static system configuration information
+     * @param serviceType      the type of this service
      * @param executor         the {@link ExecutorService} used to perform asynchronous task processing
+     * @param cryptoFactory    the {@link CryptoFactory} used to manage encryption and decryption operations
      * @param curator          the {@link CuratorFramework} used to perform communication with zookeeper
      * @param discoveryManager the {@link DiscoveryManager} used to manage available services
-     * @param cryptoFactory    the {@link CryptoFactory} used to manage encryption and decryption operations
-     * @param serviceType      the type of this service
+     * @param httpClient       the {@link OkHttpClient} used to make REST calls to other services
      */
+    @VisibleForTesting
     public BaseService(
-            @Nonnull final Config config, @Nonnull final ExecutorService executor,
+            @Nonnull final Config config, @Nonnull final ServiceType serviceType,
+            @Nonnull final ExecutorService executor, @Nonnull final CryptoFactory cryptoFactory,
             @Nonnull final CuratorFramework curator, @Nonnull final DiscoveryManager discoveryManager,
-            @Nonnull final CryptoFactory cryptoFactory, @Nonnull final ServiceType serviceType) throws Exception {
-        this.config = Objects.requireNonNull(config);
-        this.executor = Objects.requireNonNull(executor);
-        this.curator = Objects.requireNonNull(curator);
-        this.discoveryManager = Objects.requireNonNull(discoveryManager);
-        this.cryptoFactory = Objects.requireNonNull(cryptoFactory);
-        this.serviceType = Objects.requireNonNull(serviceType);
-
+            @Nonnull final OkHttpClient httpClient) throws Exception {
+        this.serviceEnvironment =
+                new ServiceEnvironment(config, serviceType, executor, cryptoFactory, curator, discoveryManager,
+                        httpClient);
         this.serverStopLatch = Optional.empty();
         this.service = Optional.empty();
 
@@ -110,58 +90,18 @@ public abstract class BaseService {
     }
 
     /**
-     * @return the static system configuration information
+     * @return the environment objects available to the service
      */
     @Nonnull
-    public Config getConfig() {
-        return this.config;
-    }
-
-    /**
-     * @return the {@link ExecutorService} used to perform asynchronous task processing
-     */
-    @Nonnull
-    public ExecutorService getExecutor() {
-        return this.executor;
-    }
-
-    /**
-     * @return the {@link CuratorFramework} used to perform communication with zookeeper
-     */
-    @Nonnull
-    public CuratorFramework getCurator() {
-        return this.curator;
-    }
-
-    /**
-     * @return the {@link DiscoveryManager} used to manage available services
-     */
-    @Nonnull
-    public DiscoveryManager getDiscoveryManager() {
-        return this.discoveryManager;
-    }
-
-    /**
-     * @return the {@link CryptoFactory} used to manage encryption and decryption operations
-     */
-    @Nonnull
-    public CryptoFactory getCryptoFactory() {
-        return this.cryptoFactory;
-    }
-
-    /**
-     * @return the type of service being hosted
-     */
-    @Nonnull
-    public ServiceType getServiceType() {
-        return this.serviceType;
+    public ServiceEnvironment getServiceEnvironment() {
+        return this.serviceEnvironment;
     }
 
     /**
      * @return the {@link CountDownLatch} tracking the running server process
      */
     @Nonnull
-    public Optional<CountDownLatch> getServerStopLatch() {
+    protected Optional<CountDownLatch> getServerStopLatch() {
         return this.serverStopLatch;
     }
 
@@ -174,7 +114,7 @@ public abstract class BaseService {
     }
 
     /**
-     * @return whether the service should be restarted
+     * @return whether the service should be restarted after being shut down
      */
     public boolean getShouldRestart() {
         return this.shouldRestart;
@@ -189,23 +129,7 @@ public abstract class BaseService {
 
     @Nonnull
     protected String getHostName() {
-        return getConfig().getString(ConfigKeys.SERVER_HOSTNAME.getKey());
-    }
-
-    @Nonnull
-    protected DiscoveryManager createDiscoveryManager(
-            @Nonnull final Config config, @Nonnull final CuratorFramework curator) throws DiscoveryException {
-        return new CuratorDiscoveryManager(Objects.requireNonNull(config), Objects.requireNonNull(curator));
-    }
-
-    @Nonnull
-    protected ExecutorService createExecutor(@Nonnull final Config config) {
-        return Executors.newFixedThreadPool(config.getInt(ConfigKeys.EXECUTOR_THREADS.getKey()));
-    }
-
-    @Nonnull
-    protected CryptoFactory createCryptoFactory(@Nonnull final Config config) throws DiscoveryException {
-        return new DefaultCryptoFactory(Objects.requireNonNull(config));
+        return getServiceEnvironment().getConfig().getString(ConfigKeys.SERVER_HOSTNAME.getKey());
     }
 
     protected void configurePort(@Nonnull final Reservation reservation) {
@@ -213,22 +137,25 @@ public abstract class BaseService {
     }
 
     protected void configureThreading() {
-        final int maxThreads = getConfig().getInt(ConfigKeys.SERVER_THREADS_MAX.getKey());
-        final int minThreads = getConfig().getInt(ConfigKeys.SERVER_THREADS_MIN.getKey());
-        final long timeout = getConfig().getDuration(ConfigKeys.SERVER_TIMEOUT.getKey(), TimeUnit.MILLISECONDS);
+        final int maxThreads = getServiceEnvironment().getConfig().getInt(ConfigKeys.SERVER_THREADS_MAX.getKey());
+        final int minThreads = getServiceEnvironment().getConfig().getInt(ConfigKeys.SERVER_THREADS_MIN.getKey());
+        final long timeoutMillis = getServiceEnvironment().getConfig()
+                .getDuration(ConfigKeys.SERVER_TIMEOUT.getKey(), TimeUnit.MILLISECONDS);
 
-        Spark.threadPool(maxThreads, minThreads, (int) timeout);
+        Spark.threadPool(maxThreads, minThreads, (int) timeoutMillis);
     }
 
     protected void configureSecurity() throws EncryptionException {
-        final boolean ssl = getConfig().getBoolean(ConfigKeys.SSL_ENABLED.getKey());
+        final boolean ssl = getServiceEnvironment().getConfig().getBoolean(ConfigKeys.SSL_ENABLED.getKey());
         if (ssl) {
-            final String keystoreFile = getConfig().getString(ConfigKeys.SSL_KEYSTORE_FILE.getKey());
-            final String keystorePass =
-                    getCryptoFactory().getDecryptedConfig(ConfigKeys.SSL_KEYSTORE_PASSWORD.getKey());
-            final String truststoreFile = getConfig().getString(ConfigKeys.SSL_TRUSTSTORE_FILE.getKey());
-            final String truststorePass =
-                    getCryptoFactory().getDecryptedConfig(ConfigKeys.SSL_TRUSTSTORE_PASSWORD.getKey());
+            final String keystoreFile =
+                    getServiceEnvironment().getConfig().getString(ConfigKeys.SSL_KEYSTORE_FILE.getKey());
+            final String keystorePass = getServiceEnvironment().getCryptoFactory()
+                    .getDecryptedConfig(ConfigKeys.SSL_KEYSTORE_PASSWORD.getKey());
+            final String truststoreFile =
+                    getServiceEnvironment().getConfig().getString(ConfigKeys.SSL_TRUSTSTORE_FILE.getKey());
+            final String truststorePass = getServiceEnvironment().getCryptoFactory()
+                    .getDecryptedConfig(ConfigKeys.SSL_TRUSTSTORE_PASSWORD.getKey());
             Spark.secure(keystoreFile, keystorePass, truststoreFile, truststorePass);
         }
     }
@@ -237,19 +164,55 @@ public abstract class BaseService {
         Spark.before(new RequestLoggingFilter());
     }
 
-    protected void configureRequestSigner(@Nonnull final Config config, @Nonnull final CryptoFactory cryptoFactory) {
-        Spark.before(new RequestSigningFilter(config, cryptoFactory));
+    protected void configureRequestSigner() {
+        Spark.before(new RequestSigningFilter(getServiceEnvironment()));
     }
 
     protected void configureRoutes() {
-        Spark.get("/service/info", new ServiceInfoRoute(getConfig(), getServiceType()));
-        Spark.get("/service/memory", new ServiceMemoryRoute(getConfig()));
+        Spark.get("/service/info", new ServiceInfoRoute(getServiceEnvironment()));
+        Spark.get("/service/memory", new ServiceMemoryRoute(getServiceEnvironment()));
         Spark.get("/service/control/:action", new ServiceControlRoute(this));
     }
 
     protected Reservation getPortReservation() throws PortReservationException {
-        try (final PortManager portManager = new CuratorPortManager(getConfig(), getCurator())) {
-            return portManager.getReservation(getServiceType(), getHostName());
+        try (final PortManager portManager = new CuratorPortManager(
+                getServiceEnvironment().getConfig(), getServiceEnvironment().getCuratorFramework())) {
+            return portManager.getReservation(getServiceEnvironment().getServiceType(), getHostName());
+        }
+    }
+
+    protected void registerWithServiceDiscovery(final Reservation reservation) {
+        final ServiceType serviceType = getServiceEnvironment().getServiceType();
+        final boolean ssl = getServiceEnvironment().getConfig().getBoolean(ConfigKeys.SSL_ENABLED.getKey());
+        final String version = getServiceEnvironment().getConfig().getString(ConfigKeys.SYSTEM_VERSION.getKey());
+        this.service =
+                Optional.of(new Service(serviceType, reservation.getHost(), reservation.getPort(), ssl, version));
+
+        // Register with service discovery once the server has started.
+        getServiceEnvironment().getExecutor().submit(() -> {
+            Spark.awaitInitialization();
+            LOG.info("Service {} started on {}:{}", serviceType, reservation.getHost(), reservation.getPort());
+
+            try {
+                if (getService().isPresent()) {
+                    getServiceEnvironment().getDiscoveryManager().register(getService().get());
+                }
+            } catch (final DiscoveryException registerFailed) {
+                LOG.error("Failed to register with service discovery", registerFailed);
+                stop();
+            }
+        });
+    }
+
+    protected void unregisterWithServiceDiscovery() {
+        try {
+            if (getService().isPresent()) {
+                getServiceEnvironment().getDiscoveryManager().unregister(getService().get());
+                this.service = Optional.empty();
+            }
+        } catch (final DiscoveryException failure) {
+            // Not really an issue because the ephemeral registration will disappear automatically soon.
+            LOG.warn("Failed to unregister with service discovery", failure);
         }
     }
 
@@ -266,48 +229,20 @@ public abstract class BaseService {
         configureThreading();
         configureSecurity();
         configureRequestLogger();
-        configureRequestSigner(getConfig(), getCryptoFactory());
+        configureRequestSigner();
         configureRoutes();
 
-        final boolean ssl = getConfig().getBoolean(ConfigKeys.SSL_ENABLED.getKey());
-        final String version = getConfig().getString(ConfigKeys.SYSTEM_VERSION.getKey());
-        this.service =
-                Optional.of(new Service(getServiceType(), reservation.getHost(), reservation.getPort(), ssl, version));
-
-        // Register with service discovery once the server has started.
-        this.executor.submit(() -> {
-            Spark.awaitInitialization();
-            LOG.info("Service {} started on {}:{}", getServiceType(), reservation.getHost(), reservation.getPort());
-
-            try {
-                if (getService().isPresent()) {
-                    getDiscoveryManager().register(getService().get());
-                }
-            } catch (final DiscoveryException registerFailed) {
-                LOG.error("Failed to register with service discovery", registerFailed);
-                stop();
-            }
-        });
+        registerWithServiceDiscovery(reservation);
     }
 
     /**
      * Stop the service.
      */
     public void stop() {
-        try {
-            if (getService().isPresent()) {
-                getDiscoveryManager().unregister(getService().get());
-                this.service = Optional.empty();
-            }
-            getDiscoveryManager().close();
-        } catch (final DiscoveryException failure) {
-            // Not really an issue because the ephemeral registration will disappear automatically soon.
-            LOG.warn("Failed to unregister with service discovery", failure);
-        }
+        unregisterWithServiceDiscovery();
 
-        getCurator().close();
-        getExecutor().shutdown();
         Spark.stop();
+        getServiceEnvironment().close();
 
         if (getServerStopLatch().isPresent()) {
             getServerStopLatch().get().countDown();

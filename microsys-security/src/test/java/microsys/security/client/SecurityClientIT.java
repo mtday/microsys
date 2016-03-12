@@ -9,9 +9,6 @@ import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigValue;
 import com.typesafe.config.ConfigValueFactory;
 
-import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.framework.CuratorFrameworkFactory;
-import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.curator.test.TestingServer;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -23,14 +20,12 @@ import ch.qos.logback.classic.Level;
 import microsys.common.config.ConfigKeys;
 import microsys.common.model.service.Service;
 import microsys.common.model.service.ServiceType;
-import microsys.crypto.CryptoFactory;
-import microsys.crypto.impl.DefaultCryptoFactory;
 import microsys.discovery.DiscoveryManager;
-import microsys.discovery.impl.CuratorDiscoveryManager;
 import microsys.security.model.User;
 import microsys.security.runner.Runner;
 import microsys.service.BaseService;
 import microsys.service.filter.RequestLoggingFilter;
+import microsys.service.model.ServiceEnvironment;
 import okhttp3.OkHttpClient;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
@@ -40,8 +35,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.LogManager;
@@ -53,12 +48,7 @@ import javax.servlet.http.HttpServletResponse;
  */
 public class SecurityClientIT {
     private static TestingServer testingServer;
-    private static ExecutorService executor;
-    private static CuratorFramework curator;
-    private static DiscoveryManager discovery;
-    private static CryptoFactory crypto;
     private static Runner runner;
-    private static OkHttpClient httpClient;
     private static MockWebServer mockServer;
 
     @BeforeClass
@@ -75,20 +65,10 @@ public class SecurityClientIT {
         map.put(ConfigKeys.ZOOKEEPER_HOSTS.getKey(), ConfigValueFactory.fromAnyRef(testingServer.getConnectString()));
         final Config config = ConfigFactory.parseMap(map).withFallback(ConfigFactory.load());
 
-        executor = Executors.newFixedThreadPool(3);
-        curator = CuratorFrameworkFactory.builder().namespace("sec-client")
-                .connectString(testingServer.getConnectString()).defaultData(new byte[0])
-                .retryPolicy(new ExponentialBackoffRetry(1000, 3)).build();
-        curator.start();
-        discovery = new CuratorDiscoveryManager(config, curator);
-        crypto = new DefaultCryptoFactory(config);
-        runner = new Runner(config, executor, curator, discovery, crypto);
+        runner = new Runner(config, new CountDownLatch(1));
 
         // Wait for the server to start.
         TimeUnit.MILLISECONDS.sleep(500);
-
-        httpClient =
-                new OkHttpClient.Builder().connectTimeout(1, TimeUnit.SECONDS).retryOnConnectionFailure(false).build();
 
         mockServer = new MockWebServer();
         mockServer.start();
@@ -102,15 +82,6 @@ public class SecurityClientIT {
         if (runner != null) {
             runner.stop();
         }
-        if (executor != null) {
-            executor.shutdown();
-        }
-        if (discovery != null) {
-            discovery.close();
-        }
-        if (curator != null) {
-            curator.close();
-        }
         if (testingServer != null) {
             testingServer.close();
         }
@@ -118,7 +89,7 @@ public class SecurityClientIT {
 
     @Test
     public void test() throws Exception {
-        final SecurityClient client = new SecurityClient(executor, discovery, httpClient);
+        final SecurityClient client = new SecurityClient(runner.getServiceEnvironment());
 
         final Optional<User> byId = client.getById("id").get();
         assertFalse(byId.isPresent());
@@ -164,7 +135,12 @@ public class SecurityClientIT {
         final DiscoveryManager mockDiscovery = Mockito.mock(DiscoveryManager.class);
         Mockito.when(mockDiscovery.getRandom(ServiceType.SECURITY)).thenReturn(Optional.empty());
 
-        final SecurityClient client = new SecurityClient(executor, mockDiscovery, httpClient);
+        final ServiceEnvironment serviceEnvironment = Mockito.mock(ServiceEnvironment.class);
+        Mockito.when(serviceEnvironment.getDiscoveryManager()).thenReturn(mockDiscovery);
+        Mockito.when(serviceEnvironment.getExecutor()).thenReturn(Executors.newFixedThreadPool(1));
+        Mockito.when(serviceEnvironment.getHttpClient()).thenReturn(new OkHttpClient.Builder().build());
+
+        final SecurityClient client = new SecurityClient(serviceEnvironment);
         client.getById("id").get();
     }
 
@@ -173,7 +149,12 @@ public class SecurityClientIT {
         final DiscoveryManager mockDiscovery = Mockito.mock(DiscoveryManager.class);
         Mockito.when(mockDiscovery.getRandom(ServiceType.SECURITY)).thenReturn(Optional.empty());
 
-        final SecurityClient client = new SecurityClient(executor, mockDiscovery, httpClient);
+        final ServiceEnvironment serviceEnvironment = Mockito.mock(ServiceEnvironment.class);
+        Mockito.when(serviceEnvironment.getDiscoveryManager()).thenReturn(mockDiscovery);
+        Mockito.when(serviceEnvironment.getExecutor()).thenReturn(Executors.newFixedThreadPool(1));
+        Mockito.when(serviceEnvironment.getHttpClient()).thenReturn(new OkHttpClient.Builder().build());
+
+        final SecurityClient client = new SecurityClient(serviceEnvironment);
         client.getByName("name").get();
     }
 
@@ -182,7 +163,12 @@ public class SecurityClientIT {
         final DiscoveryManager mockDiscovery = Mockito.mock(DiscoveryManager.class);
         Mockito.when(mockDiscovery.getRandom(ServiceType.SECURITY)).thenReturn(Optional.empty());
 
-        final SecurityClient client = new SecurityClient(executor, mockDiscovery, httpClient);
+        final ServiceEnvironment serviceEnvironment = Mockito.mock(ServiceEnvironment.class);
+        Mockito.when(serviceEnvironment.getDiscoveryManager()).thenReturn(mockDiscovery);
+        Mockito.when(serviceEnvironment.getExecutor()).thenReturn(Executors.newFixedThreadPool(1));
+        Mockito.when(serviceEnvironment.getHttpClient()).thenReturn(new OkHttpClient.Builder().build());
+
+        final SecurityClient client = new SecurityClient(serviceEnvironment);
         client.save(new User("id", "name", Arrays.asList("A", "B"))).get();
     }
 
@@ -191,7 +177,12 @@ public class SecurityClientIT {
         final DiscoveryManager mockDiscovery = Mockito.mock(DiscoveryManager.class);
         Mockito.when(mockDiscovery.getRandom(ServiceType.SECURITY)).thenReturn(Optional.empty());
 
-        final SecurityClient client = new SecurityClient(executor, mockDiscovery, httpClient);
+        final ServiceEnvironment serviceEnvironment = Mockito.mock(ServiceEnvironment.class);
+        Mockito.when(serviceEnvironment.getDiscoveryManager()).thenReturn(mockDiscovery);
+        Mockito.when(serviceEnvironment.getExecutor()).thenReturn(Executors.newFixedThreadPool(1));
+        Mockito.when(serviceEnvironment.getHttpClient()).thenReturn(new OkHttpClient.Builder().build());
+
+        final SecurityClient client = new SecurityClient(serviceEnvironment);
         client.remove("id").get();
     }
 
@@ -205,7 +196,12 @@ public class SecurityClientIT {
         Mockito.when(mockDiscovery.getRandom(ServiceType.SECURITY)).thenReturn(Optional.of(
                 new Service(ServiceType.SECURITY, mockServer.getHostName(), mockServer.getPort(), false, "1.2.3")));
 
-        final SecurityClient client = new SecurityClient(executor, mockDiscovery, httpClient);
+        final ServiceEnvironment serviceEnvironment = Mockito.mock(ServiceEnvironment.class);
+        Mockito.when(serviceEnvironment.getDiscoveryManager()).thenReturn(mockDiscovery);
+        Mockito.when(serviceEnvironment.getExecutor()).thenReturn(Executors.newFixedThreadPool(1));
+        Mockito.when(serviceEnvironment.getHttpClient()).thenReturn(new OkHttpClient.Builder().build());
+
+        final SecurityClient client = new SecurityClient(serviceEnvironment);
         client.getById("id").get();
     }
 
@@ -219,7 +215,12 @@ public class SecurityClientIT {
         Mockito.when(mockDiscovery.getRandom(ServiceType.SECURITY)).thenReturn(Optional.of(
                 new Service(ServiceType.SECURITY, mockServer.getHostName(), mockServer.getPort(), false, "1.2.3")));
 
-        final SecurityClient client = new SecurityClient(executor, mockDiscovery, httpClient);
+        final ServiceEnvironment serviceEnvironment = Mockito.mock(ServiceEnvironment.class);
+        Mockito.when(serviceEnvironment.getDiscoveryManager()).thenReturn(mockDiscovery);
+        Mockito.when(serviceEnvironment.getExecutor()).thenReturn(Executors.newFixedThreadPool(1));
+        Mockito.when(serviceEnvironment.getHttpClient()).thenReturn(new OkHttpClient.Builder().build());
+
+        final SecurityClient client = new SecurityClient(serviceEnvironment);
         client.getByName("name").get();
     }
 
@@ -233,7 +234,12 @@ public class SecurityClientIT {
         Mockito.when(mockDiscovery.getRandom(ServiceType.SECURITY)).thenReturn(Optional.of(
                 new Service(ServiceType.SECURITY, mockServer.getHostName(), mockServer.getPort(), false, "1.2.3")));
 
-        final SecurityClient client = new SecurityClient(executor, mockDiscovery, httpClient);
+        final ServiceEnvironment serviceEnvironment = Mockito.mock(ServiceEnvironment.class);
+        Mockito.when(serviceEnvironment.getDiscoveryManager()).thenReturn(mockDiscovery);
+        Mockito.when(serviceEnvironment.getExecutor()).thenReturn(Executors.newFixedThreadPool(1));
+        Mockito.when(serviceEnvironment.getHttpClient()).thenReturn(new OkHttpClient.Builder().build());
+
+        final SecurityClient client = new SecurityClient(serviceEnvironment);
         client.save(new User("id", "name", Arrays.asList("A", "B"))).get();
     }
 
@@ -247,7 +253,12 @@ public class SecurityClientIT {
         Mockito.when(mockDiscovery.getRandom(ServiceType.SECURITY)).thenReturn(Optional.of(
                 new Service(ServiceType.SECURITY, mockServer.getHostName(), mockServer.getPort(), false, "1.2.3")));
 
-        final SecurityClient client = new SecurityClient(executor, mockDiscovery, httpClient);
+        final ServiceEnvironment serviceEnvironment = Mockito.mock(ServiceEnvironment.class);
+        Mockito.when(serviceEnvironment.getDiscoveryManager()).thenReturn(mockDiscovery);
+        Mockito.when(serviceEnvironment.getExecutor()).thenReturn(Executors.newFixedThreadPool(1));
+        Mockito.when(serviceEnvironment.getHttpClient()).thenReturn(new OkHttpClient.Builder().build());
+
+        final SecurityClient client = new SecurityClient(serviceEnvironment);
         client.remove("id").get();
     }
 }

@@ -5,12 +5,11 @@ import com.google.gson.JsonParser;
 import microsys.common.model.service.Service;
 import microsys.common.model.service.ServiceType;
 import microsys.discovery.DiscoveryException;
-import microsys.discovery.DiscoveryManager;
 import microsys.security.model.User;
 import microsys.security.service.UserService;
 import microsys.security.service.UserServiceException;
+import microsys.service.model.ServiceEnvironment;
 import okhttp3.MediaType;
-import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
@@ -18,7 +17,6 @@ import okhttp3.Response;
 import java.io.IOException;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
 import javax.annotation.Nonnull;
@@ -29,47 +27,21 @@ import javax.servlet.http.HttpServletResponse;
  */
 public class SecurityClient implements UserService {
     @Nonnull
-    private final ExecutorService executor;
-    @Nonnull
-    private final DiscoveryManager discoveryManager;
-    @Nonnull
-    private final OkHttpClient httpClient;
+    private final ServiceEnvironment serviceEnvironment;
 
     /**
-     * @param executor used to execute asynchronous processing of the configuration client
-     * @param discoveryManager the service discovery manager used to find configuration service end-points
-     * @param httpClient the HTTP client used to perform REST communication
+     * @param serviceEnvironment the service environment
      */
-    public SecurityClient(
-            @Nonnull final ExecutorService executor, @Nonnull final DiscoveryManager discoveryManager,
-            @Nonnull final OkHttpClient httpClient) {
-        this.executor = Objects.requireNonNull(executor);
-        this.discoveryManager = Objects.requireNonNull(discoveryManager);
-        this.httpClient = Objects.requireNonNull(httpClient);
+    public SecurityClient(@Nonnull final ServiceEnvironment serviceEnvironment) {
+        this.serviceEnvironment = Objects.requireNonNull(serviceEnvironment);
     }
 
     /**
-     * @return the {@link ExecutorService} used to execute asynchronous processing of the configuration client
+     * @return the service environment
      */
     @Nonnull
-    protected ExecutorService getExecutor() {
-        return this.executor;
-    }
-
-    /**
-     * @return the service discovery manager used to find configuration service end-points
-     */
-    @Nonnull
-    protected DiscoveryManager getDiscoveryManager() {
-        return this.discoveryManager;
-    }
-
-    /**
-     * @return the service discovery manager used to find configuration service end-points
-     */
-    @Nonnull
-    protected OkHttpClient getHttpClient() {
-        return this.httpClient;
+    protected ServiceEnvironment getServiceEnvironment() {
+        return this.serviceEnvironment;
     }
 
     /**
@@ -80,7 +52,7 @@ public class SecurityClient implements UserService {
      */
     @Nonnull
     protected Service getRandom() throws DiscoveryException, UserServiceException {
-        final Optional<Service> random = getDiscoveryManager().getRandom(ServiceType.SECURITY);
+        final Optional<Service> random = getServiceEnvironment().getDiscoveryManager().getRandom(ServiceType.SECURITY);
         if (!random.isPresent()) {
             throw new UserServiceException("Unable to find a running security service");
         }
@@ -114,9 +86,9 @@ public class SecurityClient implements UserService {
     @Nonnull
     protected Future<Optional<User>> get(@Nonnull final String url) {
         Objects.requireNonNull(url);
-        return getExecutor().submit(() -> {
+        return getServiceEnvironment().getExecutor().submit(() -> {
             final Request request = new Request.Builder().url(getRandom().asUrl() + url).get().build();
-            return handleResponse(getHttpClient().newCall(request).execute());
+            return handleResponse(getServiceEnvironment().getHttpClient().newCall(request).execute());
         });
     }
 
@@ -145,11 +117,11 @@ public class SecurityClient implements UserService {
     @Nonnull
     public Future<Optional<User>> save(@Nonnull final User user) {
         Objects.requireNonNull(user);
-        return getExecutor().submit(() -> {
+        return getServiceEnvironment().getExecutor().submit(() -> {
             final RequestBody body =
                     RequestBody.create(MediaType.parse("application/json; charset=utf-8"), user.toJson().toString());
             final Request request = new Request.Builder().url(getRandom().asUrl()).post(body).build();
-            return handleResponse(getHttpClient().newCall(request).execute());
+            return handleResponse(getServiceEnvironment().getHttpClient().newCall(request).execute());
         });
     }
 
@@ -160,9 +132,9 @@ public class SecurityClient implements UserService {
     @Nonnull
     public Future<Optional<User>> remove(@Nonnull final String id) {
         Objects.requireNonNull(id);
-        return getExecutor().submit(() -> {
+        return getServiceEnvironment().getExecutor().submit(() -> {
             final Request request = new Request.Builder().url(getRandom().asUrl() + id).delete().build();
-            return handleResponse(getHttpClient().newCall(request).execute());
+            return handleResponse(getServiceEnvironment().getHttpClient().newCall(request).execute());
         });
     }
 }

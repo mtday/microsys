@@ -1,9 +1,9 @@
 package microsys.config.route;
 
 import com.google.common.net.MediaType;
-import com.typesafe.config.Config;
 
 import microsys.config.service.ConfigService;
+import microsys.service.model.ServiceEnvironment;
 import spark.Request;
 import spark.Response;
 
@@ -19,11 +19,11 @@ import javax.servlet.http.HttpServletResponse;
  */
 public class GetAll extends BaseConfigRoute {
     /**
-     * @param config the system configuration properties
+     * @param serviceEnvironment the service environment
      * @param configService the {@link ConfigService} used to manage the dynamic system configuration properties
      */
-    public GetAll(@Nonnull final Config config, @Nonnull final ConfigService configService) {
-        super(config, configService);
+    public GetAll(@Nonnull final ServiceEnvironment serviceEnvironment, @Nonnull final ConfigService configService) {
+        super(serviceEnvironment, configService);
     }
 
     /**

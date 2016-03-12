@@ -6,7 +6,6 @@ import static org.junit.Assert.assertTrue;
 
 import com.google.common.net.MediaType;
 import com.google.gson.JsonObject;
-import com.typesafe.config.Config;
 
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -14,6 +13,7 @@ import org.mockito.Mockito;
 import microsys.config.model.ConfigKeyValue;
 import microsys.config.model.ConfigKeyValueCollection;
 import microsys.config.service.ConfigService;
+import microsys.service.model.ServiceEnvironment;
 import spark.Request;
 import spark.Response;
 
@@ -31,11 +31,11 @@ public class GetAllTest {
         final ConfigKeyValue kv2 = new ConfigKeyValue("key2", "value2");
         final ConfigKeyValueCollection coll = new ConfigKeyValueCollection(kv1, kv2);
 
-        final Config config = Mockito.mock(Config.class);
+        final ServiceEnvironment serviceEnvironment = Mockito.mock(ServiceEnvironment.class);
         final ConfigService configService = Mockito.mock(ConfigService.class);
         Mockito.when(configService.getAll()).thenReturn(CompletableFuture.completedFuture(coll));
 
-        final GetAll getAll = new GetAll(config, configService);
+        final GetAll getAll = new GetAll(serviceEnvironment, configService);
 
         final Request request = Mockito.mock(Request.class);
         final Response response = Mockito.mock(Response.class);

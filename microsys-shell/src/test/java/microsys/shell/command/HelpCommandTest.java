@@ -68,8 +68,8 @@ public class HelpCommandTest {
         final OkHttpClient httpClient = new OkHttpClient.Builder().build();
         final CryptoFactory cryptoFactory = new DefaultCryptoFactory(config);
         final ShellEnvironment shellEnvironment =
-                new ShellEnvironment(config, executor, discovery, curator, registrationManager, httpClient,
-                        cryptoFactory);
+                new ShellEnvironment(config, executor, cryptoFactory, curator, discovery, httpClient,
+                        registrationManager);
         registrationManager.loadCommands(shellEnvironment);
         final HelpCommand helpCommand = new HelpCommand(shellEnvironment);
 
@@ -107,8 +107,8 @@ public class HelpCommandTest {
         final OkHttpClient httpClient = new OkHttpClient.Builder().build();
         final CryptoFactory cryptoFactory = new DefaultCryptoFactory(config);
         final ShellEnvironment shellEnvironment =
-                new ShellEnvironment(config, executor, discovery, curator, registrationManager, httpClient,
-                        cryptoFactory);
+                new ShellEnvironment(config, executor, cryptoFactory, curator, discovery, httpClient,
+                        registrationManager);
         registrationManager.loadCommands(shellEnvironment);
         final HelpCommand helpCommand = new HelpCommand(shellEnvironment);
 
@@ -148,8 +148,8 @@ public class HelpCommandTest {
         final OkHttpClient httpClient = new OkHttpClient.Builder().build();
         final CryptoFactory cryptoFactory = new DefaultCryptoFactory(config);
         final ShellEnvironment shellEnvironment =
-                new ShellEnvironment(config, executor, discovery, curator, registrationManager, httpClient,
-                        cryptoFactory);
+                new ShellEnvironment(config, executor, cryptoFactory, curator, discovery, httpClient,
+                        registrationManager);
         registrationManager.loadCommands(shellEnvironment);
         final HelpCommand helpCommand = new HelpCommand(shellEnvironment);
 

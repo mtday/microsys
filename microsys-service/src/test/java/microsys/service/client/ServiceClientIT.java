@@ -30,6 +30,7 @@ import microsys.discovery.impl.CuratorDiscoveryManager;
 import microsys.service.BaseService;
 import microsys.service.filter.RequestLoggingFilter;
 import microsys.service.model.ServiceControlStatus;
+import microsys.service.model.ServiceEnvironment;
 import microsys.service.model.ServiceInfo;
 import microsys.service.model.ServiceMemory;
 import okhttp3.OkHttpClient;
@@ -86,13 +87,13 @@ public class ServiceClientIT {
         curator.start();
         discovery = new CuratorDiscoveryManager(config, curator);
         crypto = new DefaultCryptoFactory(config);
-        baseService = new BaseService(config, executor, curator, discovery, crypto, ServiceType.CONFIG) {
+        httpClient = new OkHttpClient.Builder().connectTimeout(1, TimeUnit.SECONDS).retryOnConnectionFailure(false).build();
+
+        baseService = new BaseService(config, ServiceType.CONFIG, executor, crypto, curator, discovery, httpClient) {
         };
 
         // Wait for the server to start.
         TimeUnit.MILLISECONDS.sleep(500);
-
-        httpClient = new OkHttpClient.Builder().connectTimeout(1, TimeUnit.SECONDS).retryOnConnectionFailure(false).build();
 
         mockServer = new MockWebServer();
         mockServer.start();
@@ -122,7 +123,13 @@ public class ServiceClientIT {
 
     @Test
     public void test() throws Exception {
-        final ServiceClient client = new ServiceClient(config, executor, httpClient, crypto);
+        final ServiceEnvironment serviceEnvironment = Mockito.mock(ServiceEnvironment.class);
+        Mockito.when(serviceEnvironment.getConfig()).thenReturn(config);
+        Mockito.when(serviceEnvironment.getExecutor()).thenReturn(executor);
+        Mockito.when(serviceEnvironment.getHttpClient()).thenReturn(httpClient);
+        Mockito.when(serviceEnvironment.getCryptoFactory()).thenReturn(crypto);
+
+        final ServiceClient client = new ServiceClient(serviceEnvironment);
 
         final Optional<Service> service = baseService.getService();
         assertTrue(service.isPresent());
@@ -153,12 +160,16 @@ public class ServiceClientIT {
         response.setBody(new ServiceControlStatus(true, "stop").toJson().toString());
         mockServer.enqueue(response);
 
+        final ServiceEnvironment serviceEnvironment = Mockito.mock(ServiceEnvironment.class);
+        Mockito.when(serviceEnvironment.getConfig()).thenReturn(config);
+        Mockito.when(serviceEnvironment.getExecutor()).thenReturn(executor);
+        Mockito.when(serviceEnvironment.getHttpClient()).thenReturn(httpClient);
+        Mockito.when(serviceEnvironment.getCryptoFactory()).thenReturn(crypto);
+
         final Service service = new Service(ServiceType.CONFIG, mockServer.getHostName(), mockServer.getPort(),
                 false, "1.2.3");
-        final DiscoveryManager mockDiscovery = Mockito.mock(DiscoveryManager.class);
-        Mockito.when(mockDiscovery.getRandom(ServiceType.CONFIG)).thenReturn(Optional.of(service));
 
-        final ServiceClient client = new ServiceClient(config, executor, httpClient, crypto);
+        final ServiceClient client = new ServiceClient(serviceEnvironment);
         client.stop(service).get();
     }
 
@@ -169,12 +180,16 @@ public class ServiceClientIT {
         response.setBody(new ServiceControlStatus(true, "stop").toJson().toString());
         mockServer.enqueue(response);
 
+        final ServiceEnvironment serviceEnvironment = Mockito.mock(ServiceEnvironment.class);
+        Mockito.when(serviceEnvironment.getConfig()).thenReturn(config);
+        Mockito.when(serviceEnvironment.getExecutor()).thenReturn(executor);
+        Mockito.when(serviceEnvironment.getHttpClient()).thenReturn(httpClient);
+        Mockito.when(serviceEnvironment.getCryptoFactory()).thenReturn(crypto);
+
         final Service service = new Service(ServiceType.CONFIG, mockServer.getHostName(), mockServer.getPort(),
                 false, "1.2.3");
-        final DiscoveryManager mockDiscovery = Mockito.mock(DiscoveryManager.class);
-        Mockito.when(mockDiscovery.getRandom(ServiceType.CONFIG)).thenReturn(Optional.of(service));
 
-        final ServiceClient client = new ServiceClient(config, executor, httpClient, crypto);
+        final ServiceClient client = new ServiceClient(serviceEnvironment);
         client.stop(Collections.singletonList(service)).get();
     }
 
@@ -185,12 +200,16 @@ public class ServiceClientIT {
         response.setBody(new ServiceControlStatus(true, "restart").toJson().toString());
         mockServer.enqueue(response);
 
+        final ServiceEnvironment serviceEnvironment = Mockito.mock(ServiceEnvironment.class);
+        Mockito.when(serviceEnvironment.getConfig()).thenReturn(config);
+        Mockito.when(serviceEnvironment.getExecutor()).thenReturn(executor);
+        Mockito.when(serviceEnvironment.getHttpClient()).thenReturn(httpClient);
+        Mockito.when(serviceEnvironment.getCryptoFactory()).thenReturn(crypto);
+
         final Service service = new Service(ServiceType.CONFIG, mockServer.getHostName(), mockServer.getPort(),
                 false, "1.2.3");
-        final DiscoveryManager mockDiscovery = Mockito.mock(DiscoveryManager.class);
-        Mockito.when(mockDiscovery.getRandom(ServiceType.CONFIG)).thenReturn(Optional.of(service));
 
-        final ServiceClient client = new ServiceClient(config, executor, httpClient, crypto);
+        final ServiceClient client = new ServiceClient(serviceEnvironment);
         client.restart(service).get();
     }
 
@@ -201,12 +220,16 @@ public class ServiceClientIT {
         response.setBody(new ServiceControlStatus(true, "restart").toJson().toString());
         mockServer.enqueue(response);
 
+        final ServiceEnvironment serviceEnvironment = Mockito.mock(ServiceEnvironment.class);
+        Mockito.when(serviceEnvironment.getConfig()).thenReturn(config);
+        Mockito.when(serviceEnvironment.getExecutor()).thenReturn(executor);
+        Mockito.when(serviceEnvironment.getHttpClient()).thenReturn(httpClient);
+        Mockito.when(serviceEnvironment.getCryptoFactory()).thenReturn(crypto);
+
         final Service service = new Service(ServiceType.CONFIG, mockServer.getHostName(), mockServer.getPort(),
                 false, "1.2.3");
-        final DiscoveryManager mockDiscovery = Mockito.mock(DiscoveryManager.class);
-        Mockito.when(mockDiscovery.getRandom(ServiceType.CONFIG)).thenReturn(Optional.of(service));
 
-        final ServiceClient client = new ServiceClient(config, executor, httpClient, crypto);
+        final ServiceClient client = new ServiceClient(serviceEnvironment);
         client.restart(Collections.singletonList(service)).get();
     }
 
@@ -216,12 +239,16 @@ public class ServiceClientIT {
         response.setResponseCode(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
         mockServer.enqueue(response);
 
+        final ServiceEnvironment serviceEnvironment = Mockito.mock(ServiceEnvironment.class);
+        Mockito.when(serviceEnvironment.getConfig()).thenReturn(config);
+        Mockito.when(serviceEnvironment.getExecutor()).thenReturn(executor);
+        Mockito.when(serviceEnvironment.getHttpClient()).thenReturn(httpClient);
+        Mockito.when(serviceEnvironment.getCryptoFactory()).thenReturn(crypto);
+
         final Service service = new Service(ServiceType.CONFIG, mockServer.getHostName(), mockServer.getPort(),
                 false, "1.2.3");
-        final DiscoveryManager mockDiscovery = Mockito.mock(DiscoveryManager.class);
-        Mockito.when(mockDiscovery.getRandom(ServiceType.CONFIG)).thenReturn(Optional.of(service));
 
-        final ServiceClient client = new ServiceClient(config, executor, httpClient, crypto);
+        final ServiceClient client = new ServiceClient(serviceEnvironment);
         client.stop(service).get();
     }
 
@@ -231,12 +258,16 @@ public class ServiceClientIT {
         response.setResponseCode(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
         mockServer.enqueue(response);
 
+        final ServiceEnvironment serviceEnvironment = Mockito.mock(ServiceEnvironment.class);
+        Mockito.when(serviceEnvironment.getConfig()).thenReturn(config);
+        Mockito.when(serviceEnvironment.getExecutor()).thenReturn(executor);
+        Mockito.when(serviceEnvironment.getHttpClient()).thenReturn(httpClient);
+        Mockito.when(serviceEnvironment.getCryptoFactory()).thenReturn(crypto);
+
         final Service service = new Service(ServiceType.CONFIG, mockServer.getHostName(), mockServer.getPort(),
                 false, "1.2.3");
-        final DiscoveryManager mockDiscovery = Mockito.mock(DiscoveryManager.class);
-        Mockito.when(mockDiscovery.getRandom(ServiceType.CONFIG)).thenReturn(Optional.of(service));
 
-        final ServiceClient client = new ServiceClient(config, executor, httpClient, crypto);
+        final ServiceClient client = new ServiceClient(serviceEnvironment);
         client.stop(Collections.singletonList(service)).get();
     }
 
@@ -246,12 +277,16 @@ public class ServiceClientIT {
         response.setResponseCode(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
         mockServer.enqueue(response);
 
+        final ServiceEnvironment serviceEnvironment = Mockito.mock(ServiceEnvironment.class);
+        Mockito.when(serviceEnvironment.getConfig()).thenReturn(config);
+        Mockito.when(serviceEnvironment.getExecutor()).thenReturn(executor);
+        Mockito.when(serviceEnvironment.getHttpClient()).thenReturn(httpClient);
+        Mockito.when(serviceEnvironment.getCryptoFactory()).thenReturn(crypto);
+
         final Service service = new Service(ServiceType.CONFIG, mockServer.getHostName(), mockServer.getPort(),
                 false, "1.2.3");
-        final DiscoveryManager mockDiscovery = Mockito.mock(DiscoveryManager.class);
-        Mockito.when(mockDiscovery.getRandom(ServiceType.CONFIG)).thenReturn(Optional.of(service));
 
-        final ServiceClient client = new ServiceClient(config, executor, httpClient, crypto);
+        final ServiceClient client = new ServiceClient(serviceEnvironment);
         client.restart(service).get();
     }
 
@@ -261,12 +296,16 @@ public class ServiceClientIT {
         response.setResponseCode(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
         mockServer.enqueue(response);
 
+        final ServiceEnvironment serviceEnvironment = Mockito.mock(ServiceEnvironment.class);
+        Mockito.when(serviceEnvironment.getConfig()).thenReturn(config);
+        Mockito.when(serviceEnvironment.getExecutor()).thenReturn(executor);
+        Mockito.when(serviceEnvironment.getHttpClient()).thenReturn(httpClient);
+        Mockito.when(serviceEnvironment.getCryptoFactory()).thenReturn(crypto);
+
         final Service service = new Service(ServiceType.CONFIG, mockServer.getHostName(), mockServer.getPort(),
                 false, "1.2.3");
-        final DiscoveryManager mockDiscovery = Mockito.mock(DiscoveryManager.class);
-        Mockito.when(mockDiscovery.getRandom(ServiceType.CONFIG)).thenReturn(Optional.of(service));
 
-        final ServiceClient client = new ServiceClient(config, executor, httpClient, crypto);
+        final ServiceClient client = new ServiceClient(serviceEnvironment);
         client.restart(Collections.singletonList(service)).get();
     }
 
@@ -276,12 +315,16 @@ public class ServiceClientIT {
         response.setResponseCode(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
         mockServer.enqueue(response);
 
+        final ServiceEnvironment serviceEnvironment = Mockito.mock(ServiceEnvironment.class);
+        Mockito.when(serviceEnvironment.getConfig()).thenReturn(config);
+        Mockito.when(serviceEnvironment.getExecutor()).thenReturn(executor);
+        Mockito.when(serviceEnvironment.getHttpClient()).thenReturn(httpClient);
+        Mockito.when(serviceEnvironment.getCryptoFactory()).thenReturn(crypto);
+
         final Service service = new Service(ServiceType.CONFIG, mockServer.getHostName(), mockServer.getPort(),
                 false, "1.2.3");
-        final DiscoveryManager mockDiscovery = Mockito.mock(DiscoveryManager.class);
-        Mockito.when(mockDiscovery.getRandom(ServiceType.CONFIG)).thenReturn(Optional.of(service));
 
-        final ServiceClient client = new ServiceClient(config, executor, httpClient, crypto);
+        final ServiceClient client = new ServiceClient(serviceEnvironment);
         client.getMemory(service).get();
     }
 
@@ -291,12 +334,16 @@ public class ServiceClientIT {
         response.setResponseCode(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
         mockServer.enqueue(response);
 
+        final ServiceEnvironment serviceEnvironment = Mockito.mock(ServiceEnvironment.class);
+        Mockito.when(serviceEnvironment.getConfig()).thenReturn(config);
+        Mockito.when(serviceEnvironment.getExecutor()).thenReturn(executor);
+        Mockito.when(serviceEnvironment.getHttpClient()).thenReturn(httpClient);
+        Mockito.when(serviceEnvironment.getCryptoFactory()).thenReturn(crypto);
+
         final Service service = new Service(ServiceType.CONFIG, mockServer.getHostName(), mockServer.getPort(),
                 false, "1.2.3");
-        final DiscoveryManager mockDiscovery = Mockito.mock(DiscoveryManager.class);
-        Mockito.when(mockDiscovery.getRandom(ServiceType.CONFIG)).thenReturn(Optional.of(service));
 
-        final ServiceClient client = new ServiceClient(config, executor, httpClient, crypto);
+        final ServiceClient client = new ServiceClient(serviceEnvironment);
         client.getMemory(Collections.singletonList(service)).get();
     }
 }

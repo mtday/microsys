@@ -3,19 +3,17 @@ package microsys.service.client;
 import com.google.common.base.Converter;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.typesafe.config.Config;
 
 import microsys.common.model.service.Service;
-import microsys.crypto.CryptoFactory;
 import microsys.service.model.ServiceControlStatus;
 import microsys.service.model.ServiceControlStatus.ServiceControlStatusConverter;
+import microsys.service.model.ServiceEnvironment;
 import microsys.service.model.ServiceInfo;
 import microsys.service.model.ServiceInfo.ServiceInfoConverter;
 import microsys.service.model.ServiceMemory;
 import microsys.service.model.ServiceMemory.ServiceMemoryConverter;
 import microsys.service.model.ServiceRequest;
 import microsys.service.model.ServiceResponse;
-import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Request.Builder;
 import okhttp3.Response;
@@ -27,7 +25,6 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.TreeMap;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -40,59 +37,22 @@ import javax.servlet.http.HttpServletResponse;
  */
 public class ServiceClient {
     @Nonnull
-    private final Config config;
-    @Nonnull
-    private final ExecutorService executor;
-    @Nonnull
-    private final OkHttpClient httpClient;
-    @Nonnull
-    private final CryptoFactory cryptoFactory;
+    private final ServiceEnvironment serviceEnvironment;
 
     /**
-     * @param config        the static system configuration information
-     * @param executor      used to execute asynchronous processing of the client
-     * @param httpClient    the HTTP client used to perform REST communication
-     * @param cryptoFactory the {@link CryptoFactory} used to verify remote service response signatures
+     * @param serviceEnvironment the service environment
      */
     public ServiceClient(
-            @Nonnull final Config config, @Nonnull final ExecutorService executor,
-            @Nonnull final OkHttpClient httpClient, @Nonnull final CryptoFactory cryptoFactory) {
-        this.config = Objects.requireNonNull(config);
-        this.executor = Objects.requireNonNull(executor);
-        this.httpClient = Objects.requireNonNull(httpClient);
-        this.cryptoFactory = Objects.requireNonNull(cryptoFactory);
+            @Nonnull final ServiceEnvironment serviceEnvironment) {
+        this.serviceEnvironment = Objects.requireNonNull(serviceEnvironment);
     }
 
     /**
-     * @return the static system configuration information
+     * @return the service environment
      */
     @Nonnull
-    protected Config getConfig() {
-        return this.config;
-    }
-
-    /**
-     * @return the {@link ExecutorService} used to execute asynchronous processing of the configuration client
-     */
-    @Nonnull
-    protected ExecutorService getExecutor() {
-        return this.executor;
-    }
-
-    /**
-     * @return the service discovery manager used to find configuration service end-points
-     */
-    @Nonnull
-    protected OkHttpClient getHttpClient() {
-        return this.httpClient;
-    }
-
-    /**
-     * @return the {@link CryptoFactory} used to verify remote service response signatures
-     */
-    @Nonnull
-    protected CryptoFactory getCryptoFactory() {
-        return this.cryptoFactory;
+    protected ServiceEnvironment getServiceEnvironment() {
+        return this.serviceEnvironment;
     }
 
     /**
@@ -112,11 +72,11 @@ public class ServiceClient {
         final ServiceRequest serviceRequest = new ServiceRequest();
         final Request request = new Builder().url(service.asUrl() + url)
                 .header(ServiceRequest.SERVICE_REQUEST_HEADER, serviceRequest.toJson().toString()).get().build();
-        final Response response = getHttpClient().newCall(request).execute();
+        final Response response = getServiceEnvironment().getHttpClient().newCall(request).execute();
         final String responseBody = response.body().string();
         switch (response.code()) {
             case HttpServletResponse.SC_OK:
-                ServiceResponse.verify(getConfig(), getCryptoFactory(), serviceRequest, response);
+                ServiceResponse.verify(getServiceEnvironment(), serviceRequest, response);
                 final T ret = converter.convert(new JsonParser().parse(responseBody).getAsJsonObject());
                 if (ret != null) {
                     return ret;
@@ -142,10 +102,10 @@ public class ServiceClient {
     protected <T> Future<Map<Service, T>> getMap(
             @Nonnull final Collection<Service> services, @Nonnull final String url,
             @Nonnull final Converter<JsonObject, T> converter) {
-        return getExecutor().submit(() -> {
+        return getServiceEnvironment().getExecutor().submit(() -> {
             final Map<Service, Future<T>> futureMap = new TreeMap<>();
-            services.forEach(
-                    service -> futureMap.put(service, getExecutor().submit(() -> get(service, url, converter))));
+            services.forEach(service -> futureMap
+                    .put(service, getServiceEnvironment().getExecutor().submit(() -> get(service, url, converter))));
 
             final Map<Service, T> map = new TreeMap<>();
             for (final Entry<Service, Future<T>> entry : futureMap.entrySet()) {
@@ -169,7 +129,8 @@ public class ServiceClient {
     @Nonnull
     public Future<ServiceInfo> getInfo(@Nonnull final Service service) {
         Objects.requireNonNull(service);
-        return getExecutor().submit(() -> get(service, "service/info", new ServiceInfoConverter()));
+        return getServiceEnvironment().getExecutor()
+                .submit(() -> get(service, "service/info", new ServiceInfoConverter()));
     }
 
     /**
@@ -181,7 +142,7 @@ public class ServiceClient {
     @Nonnull
     public Future<Map<Service, ServiceInfo>> getInfo(@Nonnull final Collection<Service> services) {
         Objects.requireNonNull(services);
-        return getExecutor()
+        return getServiceEnvironment().getExecutor()
                 .submit(() -> getMap(services, "service/info", new ServiceInfoConverter()).get(10, TimeUnit.SECONDS));
     }
 
@@ -192,7 +153,8 @@ public class ServiceClient {
     @Nonnull
     public Future<ServiceMemory> getMemory(@Nonnull final Service service) {
         Objects.requireNonNull(service);
-        return getExecutor().submit(() -> get(service, "service/memory", new ServiceMemoryConverter()));
+        return getServiceEnvironment().getExecutor()
+                .submit(() -> get(service, "service/memory", new ServiceMemoryConverter()));
     }
 
     /**
@@ -204,8 +166,9 @@ public class ServiceClient {
     @Nonnull
     public Future<Map<Service, ServiceMemory>> getMemory(@Nonnull final Collection<Service> services) {
         Objects.requireNonNull(services);
-        return getExecutor().submit(() -> getMap(services, "service/memory", new ServiceMemoryConverter())
-                .get(10, TimeUnit.SECONDS));
+        return getServiceEnvironment().getExecutor()
+                .submit(() -> getMap(services, "service/memory", new ServiceMemoryConverter())
+                        .get(10, TimeUnit.SECONDS));
     }
 
     /**
@@ -216,7 +179,8 @@ public class ServiceClient {
     @Nonnull
     protected Future<ServiceControlStatus> control(@Nonnull final Service service, @Nonnull final String url) {
         Objects.requireNonNull(service);
-        return getExecutor().submit(() -> get(service, url, new ServiceControlStatusConverter()));
+        return getServiceEnvironment().getExecutor()
+                .submit(() -> get(service, url, new ServiceControlStatusConverter()));
     }
 
     /**
@@ -229,7 +193,7 @@ public class ServiceClient {
     protected Future<Map<Service, ServiceControlStatus>> control(
             @Nonnull final Collection<Service> services, @Nonnull final String url) {
         Objects.requireNonNull(services);
-        return getExecutor()
+        return getServiceEnvironment().getExecutor()
                 .submit(() -> getMap(services, url, new ServiceControlStatusConverter()).get(10, TimeUnit.SECONDS));
     }
 

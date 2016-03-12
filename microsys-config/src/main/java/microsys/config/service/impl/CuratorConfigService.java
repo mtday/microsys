@@ -12,6 +12,7 @@ import microsys.config.model.ConfigKeyValue;
 import microsys.config.model.ConfigKeyValueCollection;
 import microsys.config.service.ConfigService;
 import microsys.config.service.ConfigServiceException;
+import microsys.service.model.ServiceEnvironment;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
@@ -19,7 +20,6 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
 import javax.annotation.Nonnull;
@@ -34,28 +34,24 @@ public class CuratorConfigService implements ConfigService, TreeCacheListener {
     private final static String PATH = "/dynamic-config";
 
     @Nonnull
-    private final ExecutorService executor;
-    @Nonnull
-    private final CuratorFramework curator;
+    private final ServiceEnvironment serviceEnvironment;
     @Nonnull
     private final TreeCache treeCache;
 
     /**
-     * @param executor used to execute asynchronous processing of the configuration service
-     * @param curator the {@link CuratorFramework} used to communicate configuration information with zookeeper
+     * @param serviceEnvironment the service environment
      * @throws ConfigServiceException if there is a problem with zookeeper communications
      */
-    public CuratorConfigService(@Nonnull final ExecutorService executor, @Nonnull final CuratorFramework curator)
-            throws ConfigServiceException {
-        this.executor = Objects.requireNonNull(executor);
-        this.curator = Objects.requireNonNull(curator);
+    public CuratorConfigService(@Nonnull final ServiceEnvironment serviceEnvironment) throws ConfigServiceException {
+        this.serviceEnvironment = Objects.requireNonNull(serviceEnvironment);
 
         try {
-            if (this.curator.checkExists().forPath(PATH) == null) {
-                this.curator.create().creatingParentsIfNeeded().forPath(PATH);
+            final CuratorFramework curator = this.serviceEnvironment.getCuratorFramework();
+            if (curator.checkExists().forPath(PATH) == null) {
+                curator.create().creatingParentsIfNeeded().forPath(PATH);
             }
 
-            this.treeCache = new TreeCache(this.curator, PATH);
+            this.treeCache = new TreeCache(curator, PATH);
             this.treeCache.start();
         } catch (final Exception exception) {
             throw new ConfigServiceException("Failed to initialize config service", exception);
@@ -66,19 +62,11 @@ public class CuratorConfigService implements ConfigService, TreeCacheListener {
     }
 
     /**
-     * @return the {@link ExecutorService} used to execute asynchronous processing of the configuration service
+     * @return the {@link ServiceEnvironment}
      */
     @Nonnull
-    protected ExecutorService getExecutor() {
-        return this.executor;
-    }
-
-    /**
-     * @return the {@link CuratorFramework} used to communicate configuration information with zookeeper
-     */
-    @Nonnull
-    protected CuratorFramework getCurator() {
-        return this.curator;
+    protected ServiceEnvironment getServiceEnvironment() {
+        return this.serviceEnvironment;
     }
 
     /**
@@ -113,11 +101,13 @@ public class CuratorConfigService implements ConfigService, TreeCacheListener {
     @Override
     @Nonnull
     public Future<ConfigKeyValueCollection> getAll() {
-        return getExecutor().submit(() -> {
+        return getServiceEnvironment().getExecutor().submit(() -> {
             final Collection<ConfigKeyValue> coll = new LinkedList<>();
-            final Map<String, ChildData> data = getTreeCache().getCurrentChildren(PATH);
-            data.entrySet().stream()
-                    .forEach(e -> coll.add(new ConfigKeyValue(e.getKey(), getValue(e.getValue().getData()))));
+            final Optional<Map<String, ChildData>> data = Optional.ofNullable(getTreeCache().getCurrentChildren(PATH));
+            if (data.isPresent()) {
+                data.get().entrySet().stream()
+                        .forEach(e -> coll.add(new ConfigKeyValue(e.getKey(), getValue(e.getValue().getData()))));
+            }
             return new ConfigKeyValueCollection(coll);
         });
     }
@@ -129,7 +119,7 @@ public class CuratorConfigService implements ConfigService, TreeCacheListener {
     @Nonnull
     public Future<Optional<ConfigKeyValue>> get(@Nonnull final String key) {
         Objects.requireNonNull(key);
-        return getExecutor().submit(() -> {
+        return getServiceEnvironment().getExecutor().submit(() -> {
             final Optional<ChildData> existing = Optional.ofNullable(getTreeCache().getCurrentData(getPath(key)));
             if (existing.isPresent()) {
                 return Optional.of(new ConfigKeyValue(key, getValue(existing.get().getData())));
@@ -145,16 +135,17 @@ public class CuratorConfigService implements ConfigService, TreeCacheListener {
     @Nonnull
     public Future<Optional<ConfigKeyValue>> set(@Nonnull final ConfigKeyValue kv) {
         Objects.requireNonNull(kv);
-        return getExecutor().submit(() -> {
+        return getServiceEnvironment().getExecutor().submit(() -> {
             final Optional<ChildData> existing =
                     Optional.ofNullable(getTreeCache().getCurrentData(getPath(kv.getKey())));
             try {
                 final String path = getPath(kv.getKey());
                 final byte[] value = kv.getValue().getBytes(StandardCharsets.UTF_8);
                 if (existing.isPresent()) {
-                    getCurator().setData().forPath(path, value);
+                    getServiceEnvironment().getCuratorFramework().setData().forPath(path, value);
                 } else {
-                    getCurator().create().creatingParentsIfNeeded().forPath(path, value);
+                    getServiceEnvironment().getCuratorFramework().create().creatingParentsIfNeeded()
+                            .forPath(path, value);
                 }
             } catch (final Exception setException) {
                 LOG.error("Failed to set configuration value for key: {}", kv.getKey());
@@ -176,11 +167,11 @@ public class CuratorConfigService implements ConfigService, TreeCacheListener {
     @Nonnull
     public Future<Optional<ConfigKeyValue>> unset(@Nonnull final String key) {
         Objects.requireNonNull(key);
-        return getExecutor().submit(() -> {
+        return getServiceEnvironment().getExecutor().submit(() -> {
             final Optional<ChildData> existing = Optional.ofNullable(getTreeCache().getCurrentData(getPath(key)));
             try {
                 if (existing.isPresent()) {
-                    getCurator().delete().forPath(getPath(key));
+                    getServiceEnvironment().getCuratorFramework().delete().forPath(getPath(key));
                 }
             } catch (final Exception unsetException) {
                 LOG.error("Failed to remove configuration value with key: {}", key);

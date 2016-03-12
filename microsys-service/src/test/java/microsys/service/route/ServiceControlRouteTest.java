@@ -1,24 +1,30 @@
 package microsys.service.route;
 
-import ch.qos.logback.classic.Level;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 import com.google.common.net.MediaType;
 import com.google.gson.JsonObject;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
-import microsys.service.BaseService;
-import microsys.service.model.ServiceControlStatus;
+
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.slf4j.LoggerFactory;
+
+import ch.qos.logback.classic.Level;
+import microsys.service.BaseService;
+import microsys.service.model.ServiceControlStatus;
+import microsys.service.model.ServiceEnvironment;
 import spark.Request;
 import spark.Response;
 
-import javax.servlet.http.HttpServletResponse;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.*;
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * Perform testing on the {@link ServiceControlRoute} class.
@@ -30,10 +36,12 @@ public class ServiceControlRouteTest {
 
         final Config config = ConfigFactory.load();
         final ExecutorService executor = Executors.newFixedThreadPool(2);
+        final ServiceEnvironment serviceEnvironment = Mockito.mock(ServiceEnvironment.class);
+        Mockito.when(serviceEnvironment.getConfig()).thenReturn(config);
+        Mockito.when(serviceEnvironment.getExecutor()).thenReturn(executor);
 
         final BaseService service = Mockito.mock(BaseService.class);
-        Mockito.when(service.getConfig()).thenReturn(config);
-        Mockito.when(service.getExecutor()).thenReturn(executor);
+        Mockito.when(service.getServiceEnvironment()).thenReturn(serviceEnvironment);
 
         final ServiceControlRoute route = Mockito.mock(ServiceControlRoute.class);
         Mockito.when(route.getService()).thenReturn(service);
@@ -62,10 +70,12 @@ public class ServiceControlRouteTest {
 
         final Config config = ConfigFactory.load();
         final ExecutorService executor = Executors.newFixedThreadPool(2);
+        final ServiceEnvironment serviceEnvironment = Mockito.mock(ServiceEnvironment.class);
+        Mockito.when(serviceEnvironment.getConfig()).thenReturn(config);
+        Mockito.when(serviceEnvironment.getExecutor()).thenReturn(executor);
 
         final BaseService service = Mockito.mock(BaseService.class);
-        Mockito.when(service.getConfig()).thenReturn(config);
-        Mockito.when(service.getExecutor()).thenReturn(executor);
+        Mockito.when(service.getServiceEnvironment()).thenReturn(serviceEnvironment);
 
         final ServiceControlRoute route = Mockito.mock(ServiceControlRoute.class);
         Mockito.when(route.getService()).thenReturn(service);
@@ -94,10 +104,12 @@ public class ServiceControlRouteTest {
 
         final Config config = ConfigFactory.load();
         final ExecutorService executor = Executors.newFixedThreadPool(2);
+        final ServiceEnvironment serviceEnvironment = Mockito.mock(ServiceEnvironment.class);
+        Mockito.when(serviceEnvironment.getConfig()).thenReturn(config);
+        Mockito.when(serviceEnvironment.getExecutor()).thenReturn(executor);
 
         final BaseService service = Mockito.mock(BaseService.class);
-        Mockito.when(service.getConfig()).thenReturn(config);
-        Mockito.when(service.getExecutor()).thenReturn(executor);
+        Mockito.when(service.getServiceEnvironment()).thenReturn(serviceEnvironment);
 
         final ServiceControlRoute route = new ServiceControlRoute(service);
 
@@ -119,10 +131,12 @@ public class ServiceControlRouteTest {
 
         final Config config = ConfigFactory.load();
         final ExecutorService executor = Executors.newFixedThreadPool(2);
+        final ServiceEnvironment serviceEnvironment = Mockito.mock(ServiceEnvironment.class);
+        Mockito.when(serviceEnvironment.getConfig()).thenReturn(config);
+        Mockito.when(serviceEnvironment.getExecutor()).thenReturn(executor);
 
         final BaseService service = Mockito.mock(BaseService.class);
-        Mockito.when(service.getConfig()).thenReturn(config);
-        Mockito.when(service.getExecutor()).thenReturn(executor);
+        Mockito.when(service.getServiceEnvironment()).thenReturn(serviceEnvironment);
 
         final ServiceControlRoute route = new ServiceControlRoute(service);
 
@@ -138,8 +152,10 @@ public class ServiceControlRouteTest {
     @Test
     public void testNoParam() {
         final Config config = ConfigFactory.load();
+        final ServiceEnvironment serviceEnvironment = Mockito.mock(ServiceEnvironment.class);
+        Mockito.when(serviceEnvironment.getConfig()).thenReturn(config);
         final BaseService service = Mockito.mock(BaseService.class);
-        Mockito.when(service.getConfig()).thenReturn(config);
+        Mockito.when(service.getServiceEnvironment()).thenReturn(serviceEnvironment);
         final ServiceControlRoute route = new ServiceControlRoute(service);
 
         final Request request = Mockito.mock(Request.class);

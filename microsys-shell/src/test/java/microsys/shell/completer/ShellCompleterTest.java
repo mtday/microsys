@@ -54,7 +54,7 @@ public class ShellCompleterTest {
         final OkHttpClient httpClient = new OkHttpClient.Builder().build();
         final CryptoFactory cryptoFactory = new DefaultCryptoFactory(config);
         final ShellEnvironment shellEnvironment =
-                new ShellEnvironment(config, executor, discovery, curator, regMgr, httpClient, cryptoFactory);
+                new ShellEnvironment(config, executor, cryptoFactory, curator, discovery, httpClient, regMgr);
         regMgr.loadCommands(shellEnvironment);
 
         shellCompleter = new ShellCompleter(regMgr);

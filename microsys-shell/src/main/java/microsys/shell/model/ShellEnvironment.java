@@ -4,11 +4,15 @@ import com.typesafe.config.Config;
 
 import org.apache.curator.framework.CuratorFramework;
 
+import microsys.common.model.service.ServiceType;
 import microsys.config.client.ConfigClient;
 import microsys.crypto.CryptoFactory;
+import microsys.crypto.EncryptionException;
+import microsys.curator.CuratorException;
 import microsys.discovery.DiscoveryException;
 import microsys.discovery.DiscoveryManager;
 import microsys.service.client.ServiceClient;
+import microsys.service.model.ServiceEnvironment;
 import microsys.shell.RegistrationManager;
 import okhttp3.OkHttpClient;
 
@@ -20,21 +24,19 @@ import javax.annotation.Nonnull;
 /**
  * Provides shell environmental configuration and utilities for use within commands.
  */
-public class ShellEnvironment {
-    @Nonnull
-    private final Config config;
-    @Nonnull
-    private final ExecutorService executor;
-    @Nonnull
-    private final DiscoveryManager discoveryManager;
-    @Nonnull
-    private final CuratorFramework curatorFramework;
+public class ShellEnvironment extends ServiceEnvironment {
     @Nonnull
     private final RegistrationManager registrationManager;
-    @Nonnull
-    private final OkHttpClient httpClient;
-    @Nonnull
-    private final CryptoFactory cryptoFactory;
+
+    /**
+     * @param config the static system configuration information
+     */
+    public ShellEnvironment(@Nonnull final Config config)
+            throws DiscoveryException, CuratorException, EncryptionException {
+        super(config, ServiceType.SHELL);
+        this.registrationManager = new RegistrationManager();
+        this.registrationManager.loadCommands(this);
+    }
 
     /**
      * @param config the static system configuration information
@@ -47,48 +49,11 @@ public class ShellEnvironment {
      */
     public ShellEnvironment(
             @Nonnull final Config config, @Nonnull final ExecutorService executor,
-            @Nonnull final DiscoveryManager discoveryManager, @Nonnull final CuratorFramework curatorFramework,
-            @Nonnull final RegistrationManager registrationManager, @Nonnull final OkHttpClient httpClient,
-            @Nonnull final CryptoFactory cryptoFactory) {
-        this.config = Objects.requireNonNull(config);
-        this.executor = Objects.requireNonNull(executor);
-        this.discoveryManager = Objects.requireNonNull(discoveryManager);
-        this.curatorFramework = Objects.requireNonNull(curatorFramework);
+            @Nonnull final CryptoFactory cryptoFactory, @Nonnull final CuratorFramework curatorFramework,
+            @Nonnull final DiscoveryManager discoveryManager, @Nonnull final OkHttpClient httpClient,
+            @Nonnull final RegistrationManager registrationManager) {
+        super(config, ServiceType.SHELL, executor, cryptoFactory, curatorFramework, discoveryManager, httpClient);
         this.registrationManager = Objects.requireNonNull(registrationManager);
-        this.httpClient = Objects.requireNonNull(httpClient);
-        this.cryptoFactory = Objects.requireNonNull(cryptoFactory);
-    }
-
-    /**
-     * @return the static system configuration information
-     */
-    @Nonnull
-    public Config getConfig() {
-        return this.config;
-    }
-
-    /**
-     * @return the {@link ExecutorService} used to perform asynchronous task processing
-     */
-    @Nonnull
-    public ExecutorService getExecutor() {
-        return this.executor;
-    }
-
-    /**
-     * @return the service discovery manager used to find and manage available micro services
-     */
-    @Nonnull
-    public DiscoveryManager getDiscoveryManager() {
-        return this.discoveryManager;
-    }
-
-    /**
-     * @return the curator framework used to manage interactions with zookeeper
-     */
-    @Nonnull
-    public CuratorFramework getCuratorFramework() {
-        return this.curatorFramework;
     }
 
     /**
@@ -100,27 +65,11 @@ public class ShellEnvironment {
     }
 
     /**
-     * @return the {@link OkHttpClient} used to make REST calls to other services
-     */
-    @Nonnull
-    public OkHttpClient getHttpClient() {
-        return this.httpClient;
-    }
-
-    /**
-     * @return the {@link CryptoFactory} used to perform encryption operations
-     */
-    @Nonnull
-    public CryptoFactory getCryptoFactory() {
-        return this.cryptoFactory;
-    }
-
-    /**
      * @return a {@link ServiceClient} used to make remote service calls to other services
      */
     @Nonnull
     public ServiceClient getServiceClient() {
-        return new ServiceClient(getConfig(), getExecutor(), getHttpClient(), getCryptoFactory());
+        return new ServiceClient(this);
     }
 
     /**
@@ -128,19 +77,6 @@ public class ShellEnvironment {
      */
     @Nonnull
     public ConfigClient getConfigClient() {
-        return new ConfigClient(getConfig(), getExecutor(), getDiscoveryManager(), getHttpClient(), getCryptoFactory());
-    }
-
-    /**
-     * Close down the resources associated with this environment.
-     */
-    public void close() {
-        getExecutor().shutdown();
-        getCuratorFramework().close();
-        try {
-            getDiscoveryManager().close();
-        } catch (final DiscoveryException closeFailed) {
-            // Ignored.
-        }
+        return new ConfigClient(this);
     }
 }
